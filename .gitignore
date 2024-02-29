@@ -1,2 +1,4 @@
 *.db
 /note-taking-app
+/.env
+/.envrc

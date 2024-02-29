@@ -1,0 +1,3 @@
+#!/bin/bash
+export GO_VERSION=
+export SERVER_ADDRESS=

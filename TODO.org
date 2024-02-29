@@ -12,11 +12,13 @@
    + [X] Create a new Go module for the project to manage dependencies.
 
 ** TODO Environment
-1. [ ] Install Docker:
-   + [ ] Install Docker on your local machine for containerization.
-   + [ ] Verify Docker installation and ensure that Docker daemon is running.
+1. [X] Install Docker:
+   + [X] Install Docker on your local machine for containerization.
+   + [X] Verify Docker installation and ensure that Docker daemon is running.
 
-2. [ ] Create Docker Compose Configuration:
+2. [-] Create Docker Compose Configuration: (Add env variables regularly)
+   + [X] Create .env file, Dockerfile, Makefile, docker-compose and things a long the way
+   + [ ] Keep .env file, Dockerfile, Makefile, docker-compose updated with changes in your repo
    + [ ] Define a Docker Compose file for defining services, networks, and volumes for local development environment.
    + [ ] Specify the setup for database containers (PostgreSQL, MongoDB), backend service, and any other required services.
 
