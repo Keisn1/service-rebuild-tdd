@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestGetNotes(t *testing.T) {
-	t.Run("Server returns all notes", func(t *testing.T) {
+	t.Run("Server returns array of notes", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/notes", nil)
 		response := httptest.NewRecorder()
 		NotesService(response, request)

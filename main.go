@@ -1,11 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/Keisn1/note-taking-app/server"
+	"log"
 )
 
-func NotesService(w http.ResponseWriter, r *http.Request) {
-	notes := []string{"Note number 1", "Note number 2"}
-	json.NewEncoder(w).Encode(notes)
+func main() {
+	handler := http.HandlerFunc(server.NotesService)
+	log.Fatal(http.ListenAndServe(":3000", handler))
 }
