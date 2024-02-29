@@ -1,0 +1,186 @@
+#+title: Todo
+
+* Technical Requirements
+[[file:PRD.org::*Technical Requirements for MVP (Backend):][Technical Requirements for MVP (Backend)]]
+
+* [ ] Setup
+** [ ] Local setup
+1. [ ] *Setup Go Development Environment:**
+   + [ ] Install Go programming language and set up the development environment.
+
+2. [ ] *Initialize Go Module:**
+   + [ ] Create a new Go module for the project to manage dependencies.
+
+** [ ] Environment
+1. [ ] Install Docker:
+   + [ ] Install Docker on your local machine for containerization.
+   + [ ] Verify Docker installation and ensure that Docker daemon is running.
+
+2. [ ] Create Docker Compose Configuration:
+   + [ ] Define a Docker Compose file for defining services, networks, and volumes for local development environment.
+   + [ ] Specify the setup for database containers (PostgreSQL, MongoDB), backend service, and any other required services.
+
+3. [ ] Local Testing Environment:
+   + [ ] Set up local testing environment using Docker Compose to run the backend application and associated services locally.
+   + [ ] Verify that the application is accessible and functional in the local Docker environment.
+
+4. [ ] Docker Image Build:
+   + [ ] Create Docker build scripts to build Docker images for the backend application and associated services.
+   + [ ] Include dependencies and configurations required for running the application in production.
+
+5. [ ] Staging Environment:
+   + [ ] Define Docker Compose configuration for staging environment with similar services as production, including database containers, backend service, etc.
+   + [ ] Set up the staging environment to mimic production environment closely for testing and validation purposes.
+
+6. [ ] Deployment Testing and Validation:
+   + [ ] Deploy the Dockerized application to the staging environment using Docker Compose.
+   + [ ] Conduct testing and validation in the staging environment to ensure the application functions as expected.
+
+7. [ ] Integration Testing:
+   + [ ] Implement integration tests to verify the interactions between components and services in the Dockerized environment.
+   + [ ] Automate integration tests to streamline the testing process and ensure consistent results.
+** [ ] Makefile
+1. [ ] Create a Makefile:
+   - [ ] Create a new file named "Makefile" in the root directory of your project.
+
+2. [ ] Define Variables:
+   - [ ] Define variables for compiler commands, flags, paths, etc. for easy configuration and reuse.
+
+3. [ ] Set Up Build Rules:
+   - [ ] Define a rule for building the project, compiling source code, and generating executable.
+
+4. [ ] Add Test Rules:
+   - [ ] Include rules for running tests, checking code quality, and performing static analysis.
+
+5. [ ] Implement Clean Rule:
+   - [ ] Create a rule to clean up temporary files, compiled binaries, and build artifacts.
+
+6. [ ] Include Phony Targets:
+   - [ ] Define phony targets for common tasks like "clean", "test", "build", etc.
+
+7. [ ] Document Each Rule:
+   - [ ] Add comments to explain each rule and its purpose in the Makefile.
+
+8. [ ] Test Makefile Commands:
+   - [ ] Test each rule in the Makefile to ensure they work as expected.
+
+* [ ] Routes
+** [ ] Business Logic
+1. [ ] Route: =GET /notes=
+   + [ ] Retrieve All Notes Functionality:
+     - [ ] Retrieve all notes from the database.
+     - [ ] Format the response with a list of notes.
+
+2. [ ] Route: =GET /notes/{id}=
+   + [ ] Retrieve Specific Note Functionality:
+     - [ ] Extract note ID from the request parameters.
+     - [ ] Retrieve the specific note from the database based on the ID.
+
+3. [ ] Route: =POST /notes=
+   + [ ] Create Note Functionality:
+     - [ ] Parse request body to extract note data.
+     - [ ] Validate and sanitize input data.
+     - [ ] Create a new note in the database.
+
+4. [ ] Route: =PUT /notes/{id}=
+   + [ ] Update Note Functionality:
+     - [ ] Extract note ID from the request parameters.
+     - [ ] Parse request body to get updated note data.
+     - [ ] Update the specific note in the database.
+
+5. [ ] Route: =DELETE /notes/{id}=
+   + [ ] Delete Note Functionality:
+     - [ ] Extract note ID from the request parameters.
+     - [ ] Delete the specific note from the database.
+
+** [ ] Authentication
+~Keep in mind JWT requirement~
+1. [ ] Route: =POST /signup=
+   + [ ] Sign up Functionality:
+     - [ ] Parse request body to extract user sign-up data (e.g., username, password).
+     - [ ] Validate and sanitize input user data.
+     - [ ] Hash and securely store user password in the database.
+     - [ ] Create a new user account.
+
+2. [ ] Route: =POST /signin=
+   + [ ] Sign in Functionality:
+     - [ ] Parse request body to extract user login credentials (e.g., username, password).
+     - [ ] Validate and sanitize input login data.
+     - [ ] Verify user credentials against stored data in the database.
+     - [ ] Generate and return a JWT token upon successful authentication.
+
+3. [ ] Route: =POST /signout=
+   + [ ] Sign out Functionality:
+     - [ ] Clear user authentication token to log out the user session.
+
+* [ ] Database
+** [ ] GORM and PostgreSQL
+1. [ ] Install and Set Up PostgreSQL:
+   - [ ] Install PostgreSQL on your local machine or set up a cloud-based PostgreSQL database.
+   - [ ] Create a new PostgreSQL database for the application.
+
+2. [ ] Configure GORM Connection to PostgreSQL:
+   - [ ] Initialize GORM in your Go application and configure the connection settings for PostgreSQL.
+   - [ ] Define and set up the database models (structs) corresponding to your data schema.
+
+3. [ ] Define CRUD Operations with GORM:
+   - [ ] Implement functions for CRUD operations using GORM to interact with the PostgreSQL database.
+   - [ ] Test the CRUD operations to ensure data retrieval, creation, update, and deletion functionalities work correctly.
+
+4. [ ] Handle Database Migrations:
+   - [ ] Set up database migrations using GORM to manage changes in the database schema.
+   - [ ] Create migration files to handle schema changes and versioning.
+
+5. [ ] Secure Database Connection:
+   - [ ] Implement secure database connection best practices, such as using environment variables for sensitive information.
+   - [ ] Ensure proper error handling and logging for database connections and queries.
+** [ ] MongoDB
+1. [ ] Install and Configure MongoDB:
+   - [ ] Install MongoDB locally or set up a cloud-based MongoDB instance.
+   - [ ] Create a MongoDB database and initialize collections for the application data.
+
+2. [ ] Connect MongoDB with Go Application:
+   - [ ] Install the official MongoDB Go driver to interact with MongoDB from your Go application.
+   - [ ] Configure connection settings to establish a connection with the MongoDB database.
+
+3. [ ] Define Data Models and CRUD Operations:
+   - [ ] Define Go struct models that represent the data schema stored in MongoDB collections.
+   - [ ] Implement CRUD operations using the MongoDB Go driver to perform Create, Read, Update, and Delete operations on the database.
+
+4. [ ] Index Setting and Query Optimization:
+   - [ ] Set up appropriate indexes on MongoDB collections to optimize query performance.
+   - [ ] Review and optimize queries to ensure efficient data retrieval and manipulation.
+
+5. [ ] Handle Error and Session Management:
+   - [ ] Implement error handling mechanisms to capture and manage errors during database interactions.
+   - [ ] Manage MongoDB sessions efficiently to handle connections and ensure proper resource utilization.
+
+6. [ ] Secure Database Operations:
+   - [ ] Implement secure database access by configuring authentication and authorization mechanisms.
+   - [ ] Ensure data encryption and secure data transmission between the Go application and MongoDB.
+* [ ] Documentation
+1. [ ] Generate Documentation:
+   - [ ] Add documentation comments (using tools like GoDoc) to functions, structs, and package-level elements in your Go code.
+   - [ ] Run a documentation generator tool (e.g., =godoc=) to create documentation files from the comments.
+
+2. [ ] Create README File:
+   - [ ] Write a comprehensive =README.md= file that includes project description, installation instructions, usage examples, and any other relevant information.
+
+3. [ ] Setup Documentation Website:
+   - [ ] Publish project documentation online using platforms like GitHub Pages or a dedicated documentation site generator (e.g., =Hugo=).
+   - [ ] Ensure that the documentation is easily accessible and navigable for users and contributors.
+
+4. [ ] Continuous Integration (CI) Workflow:
+   - [ ] Integrate a CI system (e.g., GitHub Actions, Travis CI) to automate code quality checks, tests, and documentation builds on each commit.
+
+5. [ ] Version Control and Repository Management:
+   - [ ] Use Git for version control and maintain a structured repository with clear commit messages and branching strategy.
+   - [ ] Keep the repository up-to-date with the latest code changes and documentation updates.
+
+6. [ ] Code Publishing:
+   - [ ] Publish the code repository to a version control platform (e.g., GitHub, GitLab) for sharing with the community.
+   - [ ] Share the repository link through project documentation, social media, forums, or other relevant channels to increase visibility and promote collaboration.
+
+7. [ ] License and Copyright Notice:
+   - [ ] Include a license file (e.g., =LICENSE=) specifying the terms under which the code is shared.
+   - [ ] Add a copyright notice and attribution to protect intellectual property rights.
