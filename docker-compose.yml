@@ -6,4 +6,4 @@ services:
       args:
         GO_VERSION: ${GO_VERSION}
     ports:
-      - "3000:3000"
+      - ${HOST_PORT}:${SERVER_ADDRESS}

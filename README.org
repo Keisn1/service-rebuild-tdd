@@ -1,0 +1,55 @@
+#+title: Readme
+
+* Project Title
+This project README contains build and usage instructions for a note-taking application.
+
+** Setting Up Environment Variables
+
+1. Create a file named =.env= in the project root directory.
+2. Add the following content to the =.env= file:
+   #+begin_src shell
+   #!/usr/bin/env zsh
+   export GO_VERSION=      # Specify the desired Golang version
+   export SERVER_ADDRESS=  # Specify the server address
+   #+end_src
+3. Update the =GO_VERSION= and =SERVER_ADDRESS= values as needed.
+
+** Building and Running the Application
+
+*** Makefile
+
+The project includes a Makefile with the following commands:
+- =build=: Build the Docker containers.
+- =up=: Start the Docker containers in the background.
+- =down=: Stop and remove the Docker containers.
+- =test=: Run tests in the Golang server container.
+- =unit_test=: Run tests on local machine
+- =restart=: Restart the Docker containers.
+
+To run these commands, execute the following in the terminal:
+#+begin_src bash
+make <command>
+#+end_src
+
+*** Dockerfile
+
+The Dockerfile is used to build the Docker image for the Golang server application. To build the image, run the following command:
+#+begin_src bash
+docker build -t golang-server .
+#+end_src
+
+*** docker-compose.yml
+
+The =docker-compose.yml= file defines a service for the Golang server, exposing port 3000. To start the service using Docker Compose, run:
+#+begin_src bash
+docker-compose up -d
+#+end_src
+
+To stop the service, run:
+#+begin_src bash
+docker-compose down
+#+end_src
+
+** Maintainer
+
+For any questions or issues, contact the maintainer at =<kay@kayarch>=.

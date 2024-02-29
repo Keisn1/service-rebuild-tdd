@@ -30,5 +30,5 @@ func main() {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
 	handler := http.HandlerFunc(server.NotesService)
-	log.Fatal(http.ListenAndServe(cfg.Server.Address, handler))
+	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, handler))
 }
