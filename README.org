@@ -13,7 +13,7 @@ This project README contains build and usage instructions for a note-taking appl
    export SERVER_ADDRESS=  # Specify the server address
    export HOST_PORT=       # Specify the host machine address
    #+end_src
-3. Update the =GO_VERSION= and =SERVER_ADDRESS= values as needed.
+3. Update the values as needed
 
 ** Building and Running the Application
 
