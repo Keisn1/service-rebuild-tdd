@@ -3,15 +3,15 @@
 * Technical Requirements
 [[file:PRD.org::*Technical Requirements for MVP (Backend):][Technical Requirements for MVP (Backend)]]
 
-* [ ] Setup
-** [ ] Local setup
-1. [ ] *Setup Go Development Environment:**
-   + [ ] Install Go programming language and set up the development environment.
+* TODO Setup
+** DONE Local setup
+1. [X] *Setup Go Development Environment:**
+   + [X] Install Go programming language and set up the development environment.
 
-2. [ ] *Initialize Go Module:**
-   + [ ] Create a new Go module for the project to manage dependencies.
+2. [X] *Initialize Go Module:**
+   + [X] Create a new Go module for the project to manage dependencies.
 
-** [ ] Environment
+** TODO Environment
 1. [ ] Install Docker:
    + [ ] Install Docker on your local machine for containerization.
    + [ ] Verify Docker installation and ensure that Docker daemon is running.
@@ -39,7 +39,11 @@
 7. [ ] Integration Testing:
    + [ ] Implement integration tests to verify the interactions between components and services in the Dockerized environment.
    + [ ] Automate integration tests to streamline the testing process and ensure consistent results.
+<<<<<<< HEAD
 ** [ ] Makefile
+=======
+** TODO Makefile
+>>>>>>> 3ff496c (Initial commit)
 1. [ ] Create a Makefile:
    - [ ] Create a new file named "Makefile" in the root directory of your project.
 
@@ -64,8 +68,13 @@
 8. [ ] Test Makefile Commands:
    - [ ] Test each rule in the Makefile to ensure they work as expected.
 
+<<<<<<< HEAD
 * [ ] Routes
 ** [ ] Business Logic
+=======
+* TODO Routes
+** TODO Business Logic
+>>>>>>> 3ff496c (Initial commit)
 1. [ ] Route: =GET /notes=
    + [ ] Retrieve All Notes Functionality:
      - [ ] Retrieve all notes from the database.
@@ -93,7 +102,11 @@
      - [ ] Extract note ID from the request parameters.
      - [ ] Delete the specific note from the database.
 
+<<<<<<< HEAD
 ** [ ] Authentication
+=======
+** TODO Authentication
+>>>>>>> 3ff496c (Initial commit)
 ~Keep in mind JWT requirement~
 1. [ ] Route: =POST /signup=
    + [ ] Sign up Functionality:
@@ -113,8 +126,13 @@
    + [ ] Sign out Functionality:
      - [ ] Clear user authentication token to log out the user session.
 
+<<<<<<< HEAD
 * [ ] Database
 ** [ ] GORM and PostgreSQL
+=======
+* TODO Database
+** TODO GORM and PostgreSQL
+>>>>>>> 3ff496c (Initial commit)
 1. [ ] Install and Set Up PostgreSQL:
    - [ ] Install PostgreSQL on your local machine or set up a cloud-based PostgreSQL database.
    - [ ] Create a new PostgreSQL database for the application.
@@ -134,7 +152,11 @@
 5. [ ] Secure Database Connection:
    - [ ] Implement secure database connection best practices, such as using environment variables for sensitive information.
    - [ ] Ensure proper error handling and logging for database connections and queries.
+<<<<<<< HEAD
 ** [ ] MongoDB
+=======
+** TODO MongoDB
+>>>>>>> 3ff496c (Initial commit)
 1. [ ] Install and Configure MongoDB:
    - [ ] Install MongoDB locally or set up a cloud-based MongoDB instance.
    - [ ] Create a MongoDB database and initialize collections for the application data.
@@ -158,7 +180,11 @@
 6. [ ] Secure Database Operations:
    - [ ] Implement secure database access by configuring authentication and authorization mechanisms.
    - [ ] Ensure data encryption and secure data transmission between the Go application and MongoDB.
+<<<<<<< HEAD
 * [ ] Documentation
+=======
+* TODO Documentation
+>>>>>>> 3ff496c (Initial commit)
 1. [ ] Generate Documentation:
    - [ ] Add documentation comments (using tools like GoDoc) to functions, structs, and package-level elements in your Go code.
    - [ ] Run a documentation generator tool (e.g., =godoc=) to create documentation files from the comments.
