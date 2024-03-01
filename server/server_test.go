@@ -10,24 +10,27 @@ import (
 )
 
 type StubNotesStore struct {
-	notes []string
+	notes map[int][]string
 }
 
 func (sns *StubNotesStore) GetAllNotes() []string {
-	return sns.notes
+	var allNotes []string
+	for _, notes := range sns.notes {
+		allNotes = append(allNotes, notes...)
+	}
+	return allNotes
 }
 
 func (sns *StubNotesStore) GetNotesById(id int) []string {
-	if id == 1 {
-		return []string{"Note 1 user 1", "Note 2 user 1"}
-	} else {
-		return []string{"Note 1 user 2", "Note 2 user 2"}
-	}
+	return sns.notes[id]
 }
 
 func TestNotes(t *testing.T) {
 	notesStore := StubNotesStore{
-		notes: []string{"Note number 1", "Note number 2"},
+		notes: map[int][]string{
+			1: {"Note 1 user 1", "Note 2 user 1"},
+			2: {"Note 1 user 2", "Note 2 user 2"},
+		},
 	}
 	notesServer := &NotesServer{NotesStore: &notesStore}
 
@@ -36,8 +39,10 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 		notesServer.ServeHTTP(response, request)
 
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+
 		got := decodeJsonBody(response.Body)
-		want := []string{"Note number 1", "Note number 2"}
+		want := []string{"Note 1 user 1", "Note 2 user 1", "Note 1 user 2", "Note 2 user 2"}
 		assertStringSliceEqual(t, got, want)
 	})
 
@@ -45,6 +50,8 @@ func TestNotes(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/notes/1", nil)
 		response := httptest.NewRecorder()
 		notesServer.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 1", "Note 2 user 1"}
@@ -55,6 +62,8 @@ func TestNotes(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/notes/2", nil)
 		response := httptest.NewRecorder()
 		notesServer.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 2", "Note 2 user 2"}
@@ -74,4 +83,11 @@ func decodeJsonBody(r io.Reader) []string {
 	var res []string
 	json.NewDecoder(r).Decode(&res)
 	return res
+}
+
+func assertStatusCode(t testing.TB, got, want int) {
+	t.Helper()
+	if got != want {
+		t.Errorf(`got = %v; want %v`, got, want)
+	}
 }
