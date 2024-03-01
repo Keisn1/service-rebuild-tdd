@@ -7,7 +7,8 @@ type InMemoryNotesStore struct {
 	lock  sync.RWMutex
 }
 
-func NewInMemoryNotesStore(data map[int]Notes) InMemoryNotesStore {
+func NewInMemoryNotesStore() InMemoryNotesStore {
+	data := make(map[int]Notes)
 	return InMemoryNotesStore{notes: data, lock: sync.RWMutex{}}
 }
 
