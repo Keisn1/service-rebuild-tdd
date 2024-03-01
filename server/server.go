@@ -11,7 +11,7 @@ import (
 
 type NotesStore interface {
 	GetAllNotes() []string
-	GetNotesById(int) []string
+	GetNotesByID(int) []string
 }
 
 type NotesServer struct {
@@ -29,7 +29,7 @@ func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Println(fmt.Errorf("NotesServer.ServeHTTP: %w", err))
 			http.Error(w, "There was an Error retrieving Notes", http.StatusInternalServerError)
 		}
-		notes := ns.NotesStore.GetNotesById(id)
+		notes := ns.NotesStore.GetNotesByID(id)
 		json.NewEncoder(w).Encode(notes)
 		return
 	}

@@ -21,7 +21,7 @@ func (sns *StubNotesStore) GetAllNotes() []string {
 	return allNotes
 }
 
-func (sns *StubNotesStore) GetNotesById(id int) []string {
+func (sns *StubNotesStore) GetNotesByID(id int) []string {
 	return sns.notes[id]
 }
 

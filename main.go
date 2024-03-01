@@ -25,10 +25,20 @@ func loadEnvConfig() (config, error) {
 	return cfg, nil
 }
 
-type InMemoryPlayerStore struct{}
+type InMemoryPlayerStore struct {
+	notes map[int][]string
+}
+
+func (i *InMemoryPlayerStore) GetNotesByID(id int) []string {
+	return i.notes[id]
+}
 
 func (i *InMemoryPlayerStore) GetAllNotes() []string {
-	return []string{"Note1", "Note2"}
+	var allNotes []string
+	for _, notes := range i.notes {
+		allNotes = append(allNotes, notes...)
+	}
+	return allNotes
 }
 
 func main() {
