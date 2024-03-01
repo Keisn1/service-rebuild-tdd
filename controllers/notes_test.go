@@ -15,41 +15,45 @@ import (
 )
 
 type StubNotesStore struct {
-	notes        map[int]Notes
+	notes        Notes
 	addNoteCalls []callToAddNote
 }
 
 type callToAddNote struct {
-	userID int
-	note   string
+	note Note
 }
 
-func (sns *StubNotesStore) AddNote(userID int, note string) error {
-	sns.addNoteCalls = append(sns.addNoteCalls, callToAddNote{userID, note})
+func (sns *StubNotesStore) AddNote(note Note) error {
+	sns.addNoteCalls = append(sns.addNoteCalls, callToAddNote{note: note})
 	return nil
 }
 
-func (sns *StubNotesStore) GetAllNotes() map[int]Notes {
+func (sns *StubNotesStore) GetAllNotes() Notes {
 	return sns.notes
 }
 
-func (sns *StubNotesStore) GetNotesByID(id int) Notes {
-	return sns.notes[id]
+func (sns *StubNotesStore) GetNotesByID(userID int) (ret Notes) {
+	for _, n := range sns.notes {
+		if n.UserID == userID {
+			ret = append(ret, n)
+		}
+	}
+	return
 }
 
 func TestNotes(t *testing.T) {
 	notesStore := StubNotesStore{
-		notes: map[int]Notes{
-			1: {"Note 1 user 1", "Note 2 user 1"},
-			2: {"Note 1 user 2", "Note 2 user 2"},
+		notes: Notes{
+			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
+			{2, "Note 1 user 2"}, {1, "Note 2 user 2"},
 		},
 	}
 	notesC := &NotesCtrlr{NotesStore: &notesStore}
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
-		wantedNotes := map[int]Notes{
-			1: {"Note 1 user 1", "Note 2 user 1"},
-			2: {"Note 1 user 2", "Note 2 user 2"},
+		wantedNotes := Notes{
+			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
+			{2, "Note 1 user 2"}, {1, "Note 2 user 2"},
 		}
 
 		request := newGetAllNotesRequest(t)
@@ -67,8 +71,8 @@ func TestNotes(t *testing.T) {
 			want       Notes
 			statusCode int
 		}{
-			{1, Notes{"Note 1 user 1", "Note 2 user 1"}, http.StatusOK},
-			{2, Notes{"Note 1 user 2", "Note 2 user 2"}, http.StatusOK},
+			{1, Notes{{1, "Note 1 user 1"}, {1, "Note 2 user 1"}}, http.StatusOK},
+			{2, Notes{{2, "Note 1 user 2"}, {1, "Note 2 user 2"}}, http.StatusOK},
 			{100, Notes{}, http.StatusNotFound},
 		}
 
@@ -86,7 +90,7 @@ func TestNotes(t *testing.T) {
 
 	t.Run("adds a note with POST", func(t *testing.T) {
 		userID, note := 1, "Test note"
-		wantAddNoteCalls := callToAddNote{userID, note}
+		wantAddNoteCalls := callToAddNote{NewNote(userID, note)}
 		request := newPostAddNoteRequest(t, userID, note)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
@@ -100,7 +104,7 @@ func TestNotes(t *testing.T) {
 func newPostAddNoteRequest(t testing.TB, userID int, note string) *http.Request {
 	t.Helper()
 	url := fmt.Sprintf("/notes/%d", userID)
-	requestBody := map[string]string{"note": note}
+	requestBody := NewNote(userID, note)
 	buf := bytes.NewBuffer([]byte{})
 	err := json.NewEncoder(buf).Encode(requestBody)
 	if err != nil {
@@ -132,17 +136,10 @@ func assertLengthSlice[T any](t testing.TB, elements []T, want int) {
 
 }
 
-func assertStringSlicesAreEqual(t testing.TB, got, want []string) {
+func assertStringSlicesAreEqual(t testing.TB, got, want Notes) {
 	t.Helper()
-	sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })
-	sort.Slice(want, func(i, j int) bool { return want[i] < want[j] })
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf(`got = %v; want %v`, got, want)
-	}
-}
-
-func assertMapEqual(t testing.TB, got, want map[int][]string) {
-	t.Helper()
+	sort.Slice(got, func(i, j int) bool { return got[i].Note < got[j].Note })
+	sort.Slice(want, func(i, j int) bool { return want[i].Note < want[j].Note })
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}
@@ -180,7 +177,7 @@ func newGetAllNotesRequest(t testing.TB) *http.Request {
 	return req
 }
 
-func getAllNotesFromResponse(t testing.TB, body io.Reader) (allNotes map[int]Notes) {
+func getAllNotesFromResponse(t testing.TB, body io.Reader) (allNotes Notes) {
 	t.Helper()
 	err := json.NewDecoder(body).Decode(&allNotes)
 	if err != nil {
@@ -198,7 +195,7 @@ func getNotesByIdFromResponse(t testing.TB, body io.Reader) (notes Notes) {
 	return
 }
 
-func assertAllNotes(t testing.TB, got, wantedNotes map[int]Notes) {
+func assertAllNotes(t testing.TB, got, wantedNotes Notes) {
 	t.Helper()
 	if !reflect.DeepEqual(got, wantedNotes) {
 		t.Errorf("got %v want %v", got, wantedNotes)
