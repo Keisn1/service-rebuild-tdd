@@ -30,6 +30,9 @@ func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "There was an Error retrieving Notes", http.StatusInternalServerError)
 		}
 		notes := ns.NotesStore.GetNotesByID(id)
+		if len(notes) == 0 {
+			w.WriteHeader(http.StatusNotFound)
+		}
 		json.NewEncoder(w).Encode(notes)
 		return
 	}
