@@ -1,13 +1,17 @@
-package server
+package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"sort"
 	"testing"
+
+	"context"
+	"github.com/go-chi/chi"
 )
 
 type StubNotesStore struct {
@@ -44,12 +48,12 @@ func TestNotes(t *testing.T) {
 			2: {"Note 1 user 2", "Note 2 user 2"},
 		},
 	}
-	notesServer := &NotesServer{NotesStore: &notesStore}
+	notesC := &Notes{NotesStore: &notesStore}
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/notes", nil)
 		response := httptest.NewRecorder()
-		notesServer.ServeHTTP(response, request)
+		notesC.GetAllNotes(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
@@ -59,9 +63,9 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("Server returns all Notes for user 1", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/notes/1", nil)
 		response := httptest.NewRecorder()
-		notesServer.ServeHTTP(response, request)
+		request := requestWithUserIdParam(1)
+		notesC.GetNotesByID(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
@@ -71,9 +75,10 @@ func TestNotes(t *testing.T) {
 		assertStringSlicesAreEqual(t, got, want)
 	})
 	t.Run("Server returns all Notes for user 2", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/notes/2", nil)
 		response := httptest.NewRecorder()
-		notesServer.ServeHTTP(response, request)
+		request := requestWithUserIdParam(2)
+
+		notesC.GetNotesByID(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
@@ -83,20 +88,28 @@ func TestNotes(t *testing.T) {
 		assertStringSlicesAreEqual(t, got, want)
 	})
 	t.Run("Server returns zero Notes for user 100", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/notes/100", nil)
 		response := httptest.NewRecorder()
-		notesServer.ServeHTTP(response, request)
+		request := requestWithUserIdParam(100)
 
+		notesC.GetNotesByID(response, request)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
 	})
 	t.Run("adds a note with POST", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodPost, "/notes/1", nil)
 		response := httptest.NewRecorder()
-		notesServer.ServeHTTP(response, request)
+		notesC.ProcessAddNote(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertLengthSlice(t, notesStore.addNoteCalls, 1)
 	})
+}
+
+func requestWithUserIdParam(userID int) *http.Request {
+	request, _ := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("/api/v1/admin/users/%v", userID),
+		nil)
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
 }
 
 func assertLengthSlice[T any](t testing.TB, elements []T, want int) {
@@ -134,4 +147,13 @@ func assertSlicesHaveSameLength[T any](t testing.TB, got, want []T) {
 	if len(got) != len(want) {
 		t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
 	}
+}
+
+// WithUrlParam returns a pointer to a request object with the given URL params
+// added to a new chi.Context object.
+func WithUrlParam(r *http.Request, key, value string) *http.Request {
+	chiCtx := chi.NewRouteContext()
+	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
+	chiCtx.URLParams.Add(key, value)
+	return r
 }

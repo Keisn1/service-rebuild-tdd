@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Keisn1/note-taking-app/server"
+	"github.com/Keisn1/note-taking-app/controllers"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"log"
@@ -52,10 +52,15 @@ func main() {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
 
-	server := &server.NotesServer{NotesStore: &InMemoryPlayerStore{}}
+	notesC := &controllers.Notes{NotesStore: &InMemoryPlayerStore{}}
 
 	r := chi.NewRouter()
-	r.Get("/notes", server.ServeHTTP)
+
+	r.Route("/notes", func(r chi.Router) {
+		r.Get("/", notesC.GetAllNotes)
+		r.Get("/{id}", notesC.GetNotesByID)
+		r.Post("/{id}", notesC.ProcessAddNote)
+	})
 
 	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, r))
 }
