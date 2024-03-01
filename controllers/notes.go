@@ -8,21 +8,26 @@ import (
 	"github.com/go-chi/chi"
 )
 
+type UserNotes struct {
+	userID int
+	notes  []string
+}
+
 type NotesStore interface {
-	GetAllNotes() map[int][]string
+	GetAllNotes() map[int]UserNotes
 	GetNotesByID(int) []string
 	AddNote(userID int, note string) error
 }
 
-type Notes struct {
+type NotesCtrlr struct {
 	NotesStore NotesStore
 }
 
-func NewNotesController(store NotesStore) Notes {
-	return Notes{store}
+func NewNotesController(store NotesStore) NotesCtrlr {
+	return NotesCtrlr{store}
 }
 
-func (ns *Notes) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
+func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	var body map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&body)
@@ -32,7 +37,7 @@ func (ns *Notes) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (ns *Notes) GetNotesByID(w http.ResponseWriter, r *http.Request) {
+func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	notes := ns.NotesStore.GetNotesByID(userID)
 	if len(notes) == 0 {
@@ -44,7 +49,7 @@ func (ns *Notes) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (ns *Notes) GetAllNotes(w http.ResponseWriter, r *http.Request) {
+func (ns *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes := ns.NotesStore.GetAllNotes()
 	json.NewEncoder(w).Encode(notes)
 	return

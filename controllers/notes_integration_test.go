@@ -10,7 +10,7 @@ import (
 func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	data := make(map[int][]string)
 	store := NewInMemoryNotesStore(data)
-	notesC := Notes{&store}
+	notesC := NotesCtrlr{&store}
 	userID := 1
 
 	notesC.ProcessAddNote(httptest.NewRecorder(), newPostAddNoteRequest(userID, "Test note 1"))

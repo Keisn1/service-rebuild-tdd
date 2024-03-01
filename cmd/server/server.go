@@ -32,7 +32,7 @@ func main() {
 	}
 
 	notesStore := controllers.NewInMemoryNotesStore(map[int][]string{})
-	notesC := &controllers.Notes{NotesStore: &notesStore}
+	notesC := &controllers.NotesCtrlr{NotesStore: &notesStore}
 
 	r := chi.NewRouter()
 
