@@ -70,6 +70,13 @@ func TestNotes(t *testing.T) {
 
 		assertStringSliceEqual(t, got, want)
 	})
+	t.Run("Server returns zero Notes for user 100", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/notes/100", nil)
+		response := httptest.NewRecorder()
+		notesServer.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
+	})
 }
 
 func assertStringSliceEqual(t testing.TB, got, want []string) {
