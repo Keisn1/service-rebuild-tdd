@@ -19,6 +19,10 @@ type NotesServer struct {
 }
 
 func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		w.WriteHeader(http.StatusAccepted)
+		return
+	}
 	if r.URL.Path == "/notes" {
 		notes := ns.NotesStore.GetAllNotes()
 		json.NewEncoder(w).Encode(notes)
@@ -32,6 +36,7 @@ func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		notes := ns.NotesStore.GetNotesByID(id)
 		if len(notes) == 0 {
 			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		json.NewEncoder(w).Encode(notes)
 		return
