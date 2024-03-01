@@ -35,6 +35,9 @@ func (ns *Notes) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 
 	note := body["note"]
 	err = ns.NotesStore.AddNote(userID, note)
+	if err != nil {
+
+	}
 	w.WriteHeader(http.StatusAccepted)
 }
 

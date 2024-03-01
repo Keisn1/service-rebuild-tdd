@@ -89,23 +89,30 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("adds a note with POST", func(t *testing.T) {
-		requestBody := map[string]string{"note": "Test note"}
-		buf := bytes.NewBuffer([]byte{})
-		json.NewEncoder(buf).Encode(requestBody)
-		request, _ := http.NewRequest(http.MethodPost, "/notes/1", buf)
-
+		userID := 1
+		testNote := "Test note"
+		request := newPostNoteRequest(userID, testNote)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
+		// assertions
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertLengthSlice(t, notesStore.addNoteCalls, 1)
-		want := addNoteCall{1, "Test note"}
+		want := addNoteCall{userID, testNote}
 		got := notesStore.addNoteCalls[0]
-
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf(`got = %v; want %v`, got, want)
 		}
 	})
+}
+
+func newPostNoteRequest(userID int, note string) *http.Request {
+	requestBody := map[string]string{"note": "Test note"}
+	buf := bytes.NewBuffer([]byte{})
+	json.NewEncoder(buf).Encode(requestBody)
+	url := fmt.Sprintf("/notes/%d", userID)
+	request, _ := http.NewRequest(http.MethodPost, url, buf)
+	return request
 }
 
 func requestWithUserIdParam(userID int) *http.Request {
