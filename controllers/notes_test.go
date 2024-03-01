@@ -45,22 +45,26 @@ func TestNotes(t *testing.T) {
 	}
 	notesC := &Notes{NotesStore: &notesStore}
 
-	// t.Run("Server returns all Notes", func(t *testing.T) {
-	// 	request, _ := http.NewRequest(http.MethodGet, "/notes", nil)
-	// 	response := httptest.NewRecorder()
-	// 	notesC.GetAllNotes(response, request)
+	t.Run("Server returns all Notes", func(t *testing.T) {
+		// wantedNotes := map[int][]string{
+		// 	1: {"Note 1 user 1", "Note 2 user 1"},
+		// 	2: {"Note 1 user 2", "Note 2 user 2"},
+		// }
 
-	// 	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+		request, _ := http.NewRequest(http.MethodGet, "/notes", nil)
+		response := httptest.NewRecorder()
+		notesC.GetAllNotes(response, request)
 
-	// 	var got []UserNotes
-	// 	json.NewDecoder(response.Body).Decode(&got)
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
-	// 	want := map[int][]string{
-	// 		1: {"Note 1 user 1", "Note 2 user 1"},
-	// 		2: {"Note 1 user 2", "Note 2 user 2"},
-	// 	}
-	// 	assertMapEqual(t, got, want)
-	// })
+		var got []UserNotes
+		json.NewDecoder(response.Body).Decode(&got)
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+
+		// if !reflect.DeepEqual(got, wantedNotes) {
+		// 	t.Errorf("got %v want %v", got, wantedNotes)
+		// }
+	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
 		testCases := []struct {
