@@ -55,7 +55,6 @@ func TestNotes(t *testing.T) {
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 1", "Note 2 user 1"}
-
 		assertStringSliceEqual(t, got, want)
 	})
 	t.Run("Server returns all Notes for user 2", func(t *testing.T) {
@@ -67,7 +66,6 @@ func TestNotes(t *testing.T) {
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 2", "Note 2 user 2"}
-
 		assertStringSliceEqual(t, got, want)
 	})
 	t.Run("Server returns zero Notes for user 100", func(t *testing.T) {
@@ -76,6 +74,13 @@ func TestNotes(t *testing.T) {
 		notesServer.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
+	})
+	t.Run("returns accecpted on POST", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodPost, "/notes/1", nil)
+		response := httptest.NewRecorder()
+		notesServer.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 	})
 }
 
