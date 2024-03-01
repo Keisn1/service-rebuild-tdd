@@ -3,31 +3,35 @@ package controllers
 import "sync"
 
 type InMemoryNotesStore struct {
-	notes map[int]Notes
+	notes Notes
 	lock  sync.RWMutex
 }
 
 func NewInMemoryNotesStore() InMemoryNotesStore {
-	data := make(map[int]Notes)
-	return InMemoryNotesStore{notes: data, lock: sync.RWMutex{}}
+	return InMemoryNotesStore{notes: Notes{}, lock: sync.RWMutex{}}
 }
 
-func (i *InMemoryNotesStore) GetNotesByID(id int) Notes {
+func (i *InMemoryNotesStore) GetNotesByID(userID int) (ret Notes) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	return i.notes[id]
+	for _, n := range i.notes {
+		if n.UserID == userID {
+			ret = append(ret, n)
+		}
+	}
+	return
 }
 
-func (i *InMemoryNotesStore) GetAllNotes() map[int]Notes {
+func (i *InMemoryNotesStore) GetAllNotes() Notes {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return i.notes
 }
 
-func (i *InMemoryNotesStore) AddNote(userID int, note string) error {
+func (i *InMemoryNotesStore) AddNote(note Note) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-	i.notes[userID] = append(i.notes[userID], note)
+	i.notes = append(i.notes, note)
 	return nil
 }

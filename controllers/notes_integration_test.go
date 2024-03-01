@@ -20,17 +20,15 @@ func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	notesC.ProcessAddNote(httptest.NewRecorder(), newPostAddNoteRequest(t, userID, "Test note 5"))
 
 	// Testing notes by id
-	assertNotesByIdAsExpected(t, 1, Notes{"Test note 1", "Test note 2", "Test note 3"}, notesC)
-	assertNotesByIdAsExpected(t, 2, Notes{"Test note 4", "Test note 5"}, notesC)
+	assertNotesByIdAsExpected(t, 1, Notes{{1, "Test note 1"}, {1, "Test note 2"}, {1, "Test note 3"}}, notesC)
+	assertNotesByIdAsExpected(t, 2, Notes{{2, "Test note 4"}, {2, "Test note 5"}}, notesC)
 
-	wantAllNotes := map[int]Notes{
-		1: {"Test note 1", "Test note 2", "Test note 3"},
-		2: {"Test note 4", "Test note 5"},
-	}
+	wantAllNotes := Notes{{1, "Test note 1"}, {1, "Test note 2"}, {1, "Test note 3"}, {2, "Test note 4"}, {2, "Test note 5"}}
 	assertAllNotesAsExpected(t, wantAllNotes, notesC)
 }
 
 func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC NotesCtrlr) {
+	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetNotesByID(response, newGetNotesByUserIdRequest(t, userID))
 
@@ -39,7 +37,8 @@ func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC
 	assertNotesById(t, gotNotes, wantNotes)
 }
 
-func assertAllNotesAsExpected(t testing.TB, wantAllNotes map[int]Notes, notesC NotesCtrlr) {
+func assertAllNotesAsExpected(t testing.TB, wantAllNotes Notes, notesC NotesCtrlr) {
+	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
 
