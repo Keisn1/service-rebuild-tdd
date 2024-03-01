@@ -77,27 +77,25 @@ func TestNotes(t *testing.T) {
 
 		for _, tc := range testCases {
 			response := httptest.NewRecorder()
-			request := requestWithUserIdParam(tc.userID)
+			request := newGetNotesByUserIdRequest(tc.userID)
 			notesC.GetNotesByID(response, request)
 
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
-
-			got := decodeJsonBody(response.Body)
-			assertSlicesHaveSameLength(t, got, tc.want)
-			assertStringSlicesAreEqual(t, got, tc.want)
+			assertResponseBody(t, response.Body, tc.want)
 		}
 	})
 
 	t.Run("adds a note with POST", func(t *testing.T) {
 		userID := 1
 		testNote := "Test note"
-		request := newPostNoteRequest(userID, testNote)
+		request := newPostAddNoteRequest(userID, testNote)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
 		// assertions
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertLengthSlice(t, notesStore.addNoteCalls, 1)
+
 		want := addNoteCall{userID, testNote}
 		got := notesStore.addNoteCalls[0]
 		if !reflect.DeepEqual(got, want) {
@@ -106,19 +104,19 @@ func TestNotes(t *testing.T) {
 	})
 }
 
-func newPostNoteRequest(userID int, note string) *http.Request {
-	requestBody := map[string]string{"note": "Test note"}
+func newPostAddNoteRequest(userID int, note string) *http.Request {
+	url := fmt.Sprintf("/notes/%d", userID)
+	requestBody := map[string]string{"note": note}
 	buf := bytes.NewBuffer([]byte{})
 	json.NewEncoder(buf).Encode(requestBody)
-	url := fmt.Sprintf("/notes/%d", userID)
 	request, _ := http.NewRequest(http.MethodPost, url, buf)
-	return request
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
 }
 
-func requestWithUserIdParam(userID int) *http.Request {
+func newGetNotesByUserIdRequest(userID int) *http.Request {
 	request, _ := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("/api/v1/admin/users/%v", userID),
+		fmt.Sprintf("/notes/%v", userID),
 		nil)
 	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
 }
@@ -167,4 +165,10 @@ func WithUrlParam(r *http.Request, key, value string) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
 	chiCtx.URLParams.Add(key, value)
 	return r
+}
+
+func assertResponseBody(t testing.TB, body *bytes.Buffer, want []string) {
+	got := decodeJsonBody(body)
+	assertSlicesHaveSameLength(t, got, want)
+	assertStringSlicesAreEqual(t, got, want)
 }

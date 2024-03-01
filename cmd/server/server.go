@@ -25,15 +25,15 @@ func loadEnvConfig() (config, error) {
 	return cfg, nil
 }
 
-type InMemoryPlayerStore struct {
+type InMemoryNotesStore struct {
 	notes map[int][]string
 }
 
-func (i *InMemoryPlayerStore) GetNotesByID(id int) []string {
+func (i *InMemoryNotesStore) GetNotesByID(id int) []string {
 	return i.notes[id]
 }
 
-func (i *InMemoryPlayerStore) GetAllNotes() []string {
+func (i *InMemoryNotesStore) GetAllNotes() []string {
 	var allNotes []string
 	for _, notes := range i.notes {
 		allNotes = append(allNotes, notes...)
@@ -41,7 +41,7 @@ func (i *InMemoryPlayerStore) GetAllNotes() []string {
 	return allNotes
 }
 
-func (i *InMemoryPlayerStore) AddNote(userID int, note string) error {
+func (i *InMemoryNotesStore) AddNote(userID int, note string) error {
 	i.notes[userID] = append(i.notes[userID], note)
 	return nil
 }
@@ -52,7 +52,7 @@ func main() {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
 
-	notesC := &controllers.Notes{NotesStore: &InMemoryPlayerStore{
+	notesC := &controllers.Notes{NotesStore: &InMemoryNotesStore{
 		notes: map[int][]string{
 			1: {"Note 1 user 1", "Note 2 user 1"},
 			2: {"Note 1 user 2", "Note 2 user 2"},

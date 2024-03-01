@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/go-chi/chi"
 	"net/http"
 	"strconv"
-	"strings"
+
+	"github.com/go-chi/chi"
 )
 
 type NotesStore interface {
@@ -19,7 +19,7 @@ type Notes struct {
 }
 
 func (ns *Notes) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
-	userID, _ := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/notes/"))
+	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	var body map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&body)
 
