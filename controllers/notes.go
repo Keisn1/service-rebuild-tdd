@@ -9,7 +9,7 @@ import (
 )
 
 type NotesStore interface {
-	GetAllNotes() []string
+	GetAllNotes() map[int][]string
 	GetNotesByID(int) []string
 	AddNote(userID int, note string) error
 }

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,5 +20,10 @@ func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	response := httptest.NewRecorder()
 	notesC.GetNotesByID(response, newGetNotesByUserIdRequest(userID))
 	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-	assertResponseBody(t, response.Body, []string{"Test note 1", "Test note 2", "Test note 3"})
+
+	want := []string{"Test note 1", "Test note 2", "Test note 3"}
+	var got []string
+	json.NewDecoder(response.Body).Decode(&got)
+	assertSlicesHaveSameLength(t, got, want)
+	assertStringSlicesAreEqual(t, got, want)
 }

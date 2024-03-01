@@ -18,15 +18,10 @@ func (i *InMemoryNotesStore) GetNotesByID(id int) []string {
 	return i.notes[id]
 }
 
-func (i *InMemoryNotesStore) GetAllNotes() []string {
+func (i *InMemoryNotesStore) GetAllNotes() map[int][]string {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-
-	var allNotes []string
-	for _, notes := range i.notes {
-		allNotes = append(allNotes, notes...)
-	}
-	return allNotes
+	return i.notes
 }
 
 func (i *InMemoryNotesStore) AddNote(userID int, note string) error {
