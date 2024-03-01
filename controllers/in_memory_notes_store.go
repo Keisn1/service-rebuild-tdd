@@ -3,22 +3,22 @@ package controllers
 import "sync"
 
 type InMemoryNotesStore struct {
-	notes map[int][]string
+	notes map[int]Notes
 	lock  sync.RWMutex
 }
 
-func NewInMemoryNotesStore(data map[int][]string) InMemoryNotesStore {
+func NewInMemoryNotesStore(data map[int]Notes) InMemoryNotesStore {
 	return InMemoryNotesStore{notes: data, lock: sync.RWMutex{}}
 }
 
-func (i *InMemoryNotesStore) GetNotesByID(id int) []string {
+func (i *InMemoryNotesStore) GetNotesByID(id int) Notes {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
 	return i.notes[id]
 }
 
-func (i *InMemoryNotesStore) GetAllNotes() map[int][]string {
+func (i *InMemoryNotesStore) GetAllNotes() map[int]Notes {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return i.notes

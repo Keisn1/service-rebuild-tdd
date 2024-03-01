@@ -8,7 +8,7 @@ import (
 )
 
 func TestAddingNotesAndRetrievingThem(t *testing.T) {
-	data := make(map[int][]string)
+	data := make(map[int]Notes)
 	store := NewInMemoryNotesStore(data)
 	notesC := NotesCtrlr{&store}
 	userID := 1

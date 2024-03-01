@@ -8,14 +8,11 @@ import (
 	"github.com/go-chi/chi"
 )
 
-type UserNotes struct {
-	userID int
-	notes  []string
-}
+type Notes []string
 
 type NotesStore interface {
-	GetAllNotes() map[int]UserNotes
-	GetNotesByID(int) []string
+	GetAllNotes() map[int]Notes
+	GetNotesByID(int) Notes
 	AddNote(userID int, note string) error
 }
 
