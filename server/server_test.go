@@ -20,8 +20,9 @@ type addNoteCall struct {
 	note   string
 }
 
-func (sns *StubNotesStore) AddNote(userID int, note string) {
+func (sns *StubNotesStore) AddNote(userID int, note string) error {
 	sns.addNoteCalls = append(sns.addNoteCalls, addNoteCall{userID, note})
+	return nil
 }
 
 func (sns *StubNotesStore) GetAllNotes() []string {

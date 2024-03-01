@@ -12,14 +12,24 @@ import (
 type NotesStore interface {
 	GetAllNotes() []string
 	GetNotesByID(int) []string
+	AddNote(userID int, note string) error
 }
 
 type NotesServer struct {
 	NotesStore NotesStore
 }
 
-func (ns *NotesServer) ProcessAddNote(w http.ResponseWriter) {
+func (ns *NotesServer) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/notes/"))
+	if err != nil {
+		log.Println(fmt.Errorf("NotesServer.ServeHTTP: %w", err))
+		http.Error(w, "There was an Error retrieving Notes", http.StatusInternalServerError)
+	}
+
+	note := "sample note"
+	err = ns.NotesStore.AddNote(userID, note)
 	w.WriteHeader(http.StatusAccepted)
+
 }
 
 func (ns *NotesServer) GetNotes(w http.ResponseWriter, r *http.Request) {
@@ -28,12 +38,12 @@ func (ns *NotesServer) GetNotes(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(notes)
 		return
 	} else {
-		id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/notes/"))
+		userID, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/notes/"))
 		if err != nil {
 			log.Println(fmt.Errorf("NotesServer.ServeHTTP: %w", err))
 			http.Error(w, "There was an Error retrieving Notes", http.StatusInternalServerError)
 		}
-		notes := ns.NotesStore.GetNotesByID(id)
+		notes := ns.NotesStore.GetNotesByID(userID)
 		if len(notes) == 0 {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -46,7 +56,7 @@ func (ns *NotesServer) GetNotes(w http.ResponseWriter, r *http.Request) {
 func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		ns.ProcessAddNote(w)
+		ns.ProcessAddNote(w, r)
 	case http.MethodGet:
 		ns.GetNotes(w, r)
 	}

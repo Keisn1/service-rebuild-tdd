@@ -41,6 +41,11 @@ func (i *InMemoryPlayerStore) GetAllNotes() []string {
 	return allNotes
 }
 
+func (i *InMemoryPlayerStore) AddNote(userID int, note string) error {
+	i.notes[userID] = append(i.notes[userID], note)
+	return nil
+}
+
 func main() {
 	cfg, err := loadEnvConfig()
 	if err != nil {
