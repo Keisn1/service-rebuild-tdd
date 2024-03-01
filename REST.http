@@ -1,0 +1,15 @@
+# -*- restclient -*-
+#
+# Get all notes present
+GET http://localhost:3000/notes
+User-Agent: Emacs Restclient
+
+# Get all notes of user with userID 1
+GET http://localhost:3000/notes/1
+
+# Get all notes of user with userID 1
+POST http://localhost:3000/notes/1
+Content-type: application/json
+{
+    "note": "Test note"
+}
