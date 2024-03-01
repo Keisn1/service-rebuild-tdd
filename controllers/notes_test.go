@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"context"
+
 	"github.com/go-chi/chi"
 )
 
@@ -85,13 +87,24 @@ func TestNotes(t *testing.T) {
 			assertStringSlicesAreEqual(t, got, tc.want)
 		}
 	})
+
 	t.Run("adds a note with POST", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodPost, "/notes/1", nil)
+		requestBody := map[string]string{"note": "Test note"}
+		buf := bytes.NewBuffer([]byte{})
+		json.NewEncoder(buf).Encode(requestBody)
+		request, _ := http.NewRequest(http.MethodPost, "/notes/1", buf)
+
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertLengthSlice(t, notesStore.addNoteCalls, 1)
+		want := addNoteCall{1, "Test note"}
+		got := notesStore.addNoteCalls[0]
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf(`got = %v; want %v`, got, want)
+		}
 	})
 }
 
