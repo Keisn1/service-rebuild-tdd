@@ -24,11 +24,18 @@ func loadEnvConfig() (config, error) {
 	return cfg, nil
 }
 
+type InMemoryPlayerStore struct{}
+
+func (i *InMemoryPlayerStore) GetAllNotes() []string {
+	return []string{"Note1", "Note2"}
+}
+
 func main() {
 	cfg, err := loadEnvConfig()
 	if err != nil {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
-	handler := http.HandlerFunc(server.NotesService)
-	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, handler))
+	server := &server.NotesServer{NotesStore: &InMemoryPlayerStore{}}
+
+	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, server))
 }

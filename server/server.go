@@ -5,7 +5,15 @@ import (
 	"net/http"
 )
 
-func NotesService(w http.ResponseWriter, r *http.Request) {
-	notes := []string{"Note number 1", "Note number 2"}
+type NotesStore interface {
+	GetAllNotes() []string
+}
+
+type NotesServer struct {
+	NotesStore NotesStore
+}
+
+func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	notes := ns.NotesStore.GetAllNotes()
 	json.NewEncoder(w).Encode(notes)
 }
