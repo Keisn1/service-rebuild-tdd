@@ -39,7 +39,17 @@ func TestNotes(t *testing.T) {
 		notesServer.ServeHTTP(response, request)
 
 		got := decodeJsonBody(response.Body)
-		want := []string{"Note 1 of user 1", "Note 2 of user 1"}
+		want := []string{"Note 1 user 1", "Note 2 user 1"}
+
+		assertStringSliceEqual(t, got, want)
+	})
+	t.Run("Server returns all Notes for id", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/notes/2", nil)
+		response := httptest.NewRecorder()
+		notesServer.ServeHTTP(response, request)
+
+		got := decodeJsonBody(response.Body)
+		want := []string{"Note 1 user 2", "Note 2 user 2"}
 
 		assertStringSliceEqual(t, got, want)
 	})
