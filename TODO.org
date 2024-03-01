@@ -70,8 +70,8 @@
 ** TODO Business Logic
 1. [ ] Route: =GET /notes=
    + [ ] Retrieve All Notes Functionality:
+     - [ ] Format the response in JSON with a list of notes.
      - [ ] Retrieve all notes from the database.
-     - [ ] Format the response with a list of notes.
 
 2. [ ] Route: =GET /notes/{id}=
    + [ ] Retrieve Specific Note Functionality:
@@ -88,6 +88,8 @@
    + [ ] Update Note Functionality:
      - [ ] Extract note ID from the request parameters.
      - [ ] Parse request body to get updated note data.
+     - [ ] Validate and sanitize input data.
+     - [ ] Return NotFound if note data not found (Use POST?)
      - [ ] Update the specific note in the database.
 
 5. [ ] Route: =DELETE /notes/{id}=

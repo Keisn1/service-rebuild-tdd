@@ -62,37 +62,28 @@ func TestNotes(t *testing.T) {
 		assertStringSlicesAreEqual(t, got, want)
 	})
 
-	t.Run("Server returns all Notes for user 1", func(t *testing.T) {
-		response := httptest.NewRecorder()
-		request := requestWithUserIdParam(1)
-		notesC.GetNotesByID(response, request)
+	t.Run("Return notes for user with userID", func(t *testing.T) {
+		testCases := []struct {
+			userID     int
+			want       []string
+			statusCode int
+		}{
+			{1, []string{"Note 1 user 1", "Note 2 user 1"}, http.StatusOK},
+			{2, []string{"Note 1 user 2", "Note 2 user 2"}, http.StatusOK},
+			{100, []string{}, http.StatusNotFound},
+		}
 
-		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+		for _, tc := range testCases {
+			response := httptest.NewRecorder()
+			request := requestWithUserIdParam(tc.userID)
+			notesC.GetNotesByID(response, request)
 
-		got := decodeJsonBody(response.Body)
-		want := []string{"Note 1 user 1", "Note 2 user 1"}
-		assertSlicesHaveSameLength(t, got, want)
-		assertStringSlicesAreEqual(t, got, want)
-	})
-	t.Run("Server returns all Notes for user 2", func(t *testing.T) {
-		response := httptest.NewRecorder()
-		request := requestWithUserIdParam(2)
+			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
 
-		notesC.GetNotesByID(response, request)
-
-		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-
-		got := decodeJsonBody(response.Body)
-		want := []string{"Note 1 user 2", "Note 2 user 2"}
-		assertSlicesHaveSameLength(t, got, want)
-		assertStringSlicesAreEqual(t, got, want)
-	})
-	t.Run("Server returns zero Notes for user 100", func(t *testing.T) {
-		response := httptest.NewRecorder()
-		request := requestWithUserIdParam(100)
-
-		notesC.GetNotesByID(response, request)
-		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
+			got := decodeJsonBody(response.Body)
+			assertSlicesHaveSameLength(t, got, tc.want)
+			assertStringSlicesAreEqual(t, got, tc.want)
+		}
 	})
 	t.Run("adds a note with POST", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodPost, "/notes/1", nil)

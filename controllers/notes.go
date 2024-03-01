@@ -41,6 +41,7 @@ func (ns *Notes) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	notes := ns.NotesStore.GetNotesByID(userID)
 	if len(notes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode([]string{})
 		return
 	}
 	json.NewEncoder(w).Encode(notes)
