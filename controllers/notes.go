@@ -8,12 +8,21 @@ import (
 	"github.com/go-chi/chi"
 )
 
-type Notes []string
+type Note struct {
+	UserID int
+	Note   string
+}
+
+func NewNote(userID int, note string) Note {
+	return Note{userID, note}
+}
+
+type Notes []Note
 
 type NotesStore interface {
-	GetAllNotes() map[int]Notes
+	GetAllNotes() Notes
 	GetNotesByID(int) Notes
-	AddNote(userID int, note string) error
+	AddNote(Note) error
 }
 
 type NotesCtrlr struct {
@@ -29,8 +38,8 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	var body map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&body)
 
-	note := body["note"]
-	_ = ns.NotesStore.AddNote(userID, note)
+	note := NewNote(userID, body["note"])
+	_ = ns.NotesStore.AddNote(note)
 	w.WriteHeader(http.StatusAccepted)
 }
 
