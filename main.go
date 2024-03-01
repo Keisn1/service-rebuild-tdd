@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Keisn1/note-taking-app/server"
+	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
@@ -35,7 +36,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
+
 	server := &server.NotesServer{NotesStore: &InMemoryPlayerStore{}}
 
-	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, server))
+	r := chi.NewRouter()
+	r.Get("/notes", server.ServeHTTP)
+
+	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, r))
 }
