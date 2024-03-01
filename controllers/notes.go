@@ -18,6 +18,10 @@ type Notes struct {
 	NotesStore NotesStore
 }
 
+func NewNotesController(store NotesStore) Notes {
+	return Notes{store}
+}
+
 func (ns *Notes) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	var body map[string]string

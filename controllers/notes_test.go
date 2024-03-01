@@ -2,18 +2,16 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"sort"
 	"testing"
-
-	"context"
-
-	"github.com/go-chi/chi"
 )
 
 type StubNotesStore struct {
@@ -59,9 +57,12 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
-		got := decodeJsonBody(response.Body)
-		want := []string{"Note 1 user 1", "Note 2 user 1", "Note 1 user 2", "Note 2 user 2"}
-		assertStringSlicesAreEqual(t, got, want)
+		got := decodeJsonBodyGetAllNotes(response.Body)
+		want := map[int][]string{
+			1: {"Note 1 user 1", "Note 2 user 1"},
+			2: {"Note 1 user 2", "Note 2 user 2"},
+		}
+		assertMapEqual(t, got, want)
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -138,7 +139,20 @@ func assertStringSlicesAreEqual(t testing.TB, got, want []string) {
 	}
 }
 
-func decodeJsonBody(r io.Reader) []string {
+func assertMapEqual(t testing.TB, got, want map[int][]string) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf(`got = %v; want %v`, got, want)
+	}
+}
+
+func decodeJsonBodyGetAllNotes(r io.Reader) map[int][]string {
+	var res map[int][]string
+	json.NewDecoder(r).Decode(&res)
+	return res
+}
+
+func decodeJsonBodyGetByUserID(r io.Reader) []string {
 	var res []string
 	json.NewDecoder(r).Decode(&res)
 	return res
@@ -168,7 +182,7 @@ func WithUrlParam(r *http.Request, key, value string) *http.Request {
 }
 
 func assertResponseBody(t testing.TB, body *bytes.Buffer, want []string) {
-	got := decodeJsonBody(body)
+	got := decodeJsonBodyGetByUserID(body)
 	assertSlicesHaveSameLength(t, got, want)
 	assertStringSlicesAreEqual(t, got, want)
 }
