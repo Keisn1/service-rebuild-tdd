@@ -52,7 +52,12 @@ func main() {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
 
-	notesC := &controllers.Notes{NotesStore: &InMemoryPlayerStore{}}
+	notesC := &controllers.Notes{NotesStore: &InMemoryPlayerStore{
+		notes: map[int][]string{
+			1: {"Note 1 user 1", "Note 2 user 1"},
+			2: {"Note 1 user 2", "Note 2 user 2"},
+		},
+	}}
 
 	r := chi.NewRouter()
 
