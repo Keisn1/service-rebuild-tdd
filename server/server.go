@@ -18,11 +18,11 @@ type NotesServer struct {
 	NotesStore NotesStore
 }
 
-func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		w.WriteHeader(http.StatusAccepted)
-		return
-	}
+func (ns *NotesServer) ProcessAddNote(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (ns *NotesServer) GetNotes(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/notes" {
 		notes := ns.NotesStore.GetAllNotes()
 		json.NewEncoder(w).Encode(notes)
@@ -40,5 +40,14 @@ func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(notes)
 		return
+	}
+}
+
+func (ns *NotesServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		ns.ProcessAddNote(w)
+	case http.MethodGet:
+		ns.GetNotes(w, r)
 	}
 }

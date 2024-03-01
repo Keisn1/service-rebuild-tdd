@@ -6,11 +6,22 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"testing"
 )
 
 type StubNotesStore struct {
-	notes map[int][]string
+	notes        map[int][]string
+	addNoteCalls []addNoteCall
+}
+
+type addNoteCall struct {
+	userID int
+	note   string
+}
+
+func (sns *StubNotesStore) AddNote(userID int, note string) {
+	sns.addNoteCalls = append(sns.addNoteCalls, addNoteCall{userID, note})
 }
 
 func (sns *StubNotesStore) GetAllNotes() []string {
@@ -43,7 +54,7 @@ func TestNotes(t *testing.T) {
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 1", "Note 2 user 1", "Note 1 user 2", "Note 2 user 2"}
-		assertStringSliceEqual(t, got, want)
+		assertStringSlicesAreEqual(t, got, want)
 	})
 
 	t.Run("Server returns all Notes for user 1", func(t *testing.T) {
@@ -55,7 +66,8 @@ func TestNotes(t *testing.T) {
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 1", "Note 2 user 1"}
-		assertStringSliceEqual(t, got, want)
+		assertSlicesHaveSameLength(t, got, want)
+		assertStringSlicesAreEqual(t, got, want)
 	})
 	t.Run("Server returns all Notes for user 2", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/notes/2", nil)
@@ -66,7 +78,8 @@ func TestNotes(t *testing.T) {
 
 		got := decodeJsonBody(response.Body)
 		want := []string{"Note 1 user 2", "Note 2 user 2"}
-		assertStringSliceEqual(t, got, want)
+		assertSlicesHaveSameLength(t, got, want)
+		assertStringSlicesAreEqual(t, got, want)
 	})
 	t.Run("Server returns zero Notes for user 100", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/notes/100", nil)
@@ -75,17 +88,28 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
 	})
-	t.Run("returns accecpted on POST", func(t *testing.T) {
+	t.Run("adds a note with POST", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodPost, "/notes/1", nil)
 		response := httptest.NewRecorder()
 		notesServer.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
+		assertLengthSlice(t, notesStore.addNoteCalls, 1)
 	})
 }
 
-func assertStringSliceEqual(t testing.TB, got, want []string) {
+func assertLengthSlice[T any](t testing.TB, elements []T, want int) {
 	t.Helper()
+	if len(elements) != want {
+		t.Errorf(`got = %v; want %v`, len(elements), want)
+	}
+
+}
+
+func assertStringSlicesAreEqual(t testing.TB, got, want []string) {
+	t.Helper()
+	sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })
+	sort.Slice(want, func(i, j int) bool { return want[i] < want[j] })
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}
@@ -101,5 +125,12 @@ func assertStatusCode(t testing.TB, got, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf(`got = %v; want %v`, got, want)
+	}
+}
+
+func assertSlicesHaveSameLength[T any](t testing.TB, got, want []T) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
 	}
 }
