@@ -48,6 +48,10 @@ func (sl *StubLogger) Infoln(a ...any) {
 	}
 }
 
+func (sl *StubLogger) Reset() {
+	sl.infolnCalls = []any{}
+}
+
 func TestNotes(t *testing.T) {
 	notesStore := StubNotesStore{
 		notes: Notes{
@@ -59,6 +63,7 @@ func TestNotes(t *testing.T) {
 	notesC := &NotesCtrlr{NotesStore: &notesStore, Logger: &logger}
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
+		logger.Reset()
 		wantedNotes := Notes{
 			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
 			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
@@ -75,6 +80,7 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
+		logger.Reset()
 		testCases := []struct {
 			userID     int
 			want       Notes
@@ -95,6 +101,10 @@ func TestNotes(t *testing.T) {
 			got := getNotesByIdFromResponse(t, response.Body)
 			assertNotesById(t, got, tc.want)
 		}
+		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{
+			"GET request to /notes/1 route received",
+			"GET request to /notes/2 route received",
+		})
 	})
 
 	t.Run("adds a note with POST", func(t *testing.T) {
@@ -226,7 +236,15 @@ func assertAddNoteCalls(t testing.TB, got, want Notes) {
 
 func assertLoggerInfolnCalls(t testing.TB, got []any, want []string) {
 	t.Helper()
-	if reflect.DeepEqual(got, want) {
+	var gotStrings []string
+	for _, val := range got {
+		if s, ok := val.(string); ok {
+			gotStrings = append(gotStrings, s)
+		} else {
+			t.Fatalf("Could not convert infolnCall to string")
+		}
+	}
+	if !reflect.DeepEqual(gotStrings, want) {
 		t.Errorf(`got = %v does not contain %v`, got, want)
 	}
 }
