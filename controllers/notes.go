@@ -43,6 +43,7 @@ func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
 var (
 	UnmarshalRequestBodyError = errors.New("Error Unmarshaling request body")
 	InvalidRequestBodyError   = errors.New("Invalid request body")
+	DBResourceCreationError   = errors.New("Could not create resource")
 )
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
@@ -62,12 +63,18 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = ns.NotesStore.AddNote(note)
+	err = ns.NotesStore.AddNote(note)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		ns.Logger.Errorf("%w: %w", DBResourceCreationError, err)
+		return
+	}
 	w.WriteHeader(http.StatusAccepted)
 }
 
 func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
+
 	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	notes := ns.NotesStore.GetNotesByID(userID)
 	if len(notes) == 0 {

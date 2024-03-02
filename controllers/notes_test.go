@@ -39,6 +39,14 @@ func (sns *StubNotesStore) GetNotesByID(userID int) (ret Notes) {
 	return
 }
 
+type StubNotesStoreAddNoteErrors struct {
+	StubNotesStore
+}
+
+func (sns *StubNotesStoreAddNoteErrors) AddNote(note Note) error {
+	return DBResourceCreationError
+}
+
 type fmtCallf struct {
 	format string
 	a      []any
@@ -124,7 +132,6 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		note := NewNote(1, "Test note")
 		url := fmt.Sprintf("/notes/%d", note.UserID)
-
 		request := newPostRequestWithNote(t, note, url)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
@@ -156,6 +163,19 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", InvalidRequestBodyError)
+	})
+	t.Run("test invalid request body", func(t *testing.T) {
+		logger.Reset()
+		notesC := &NotesCtrlr{NotesStore: &StubNotesStoreAddNoteErrors{}, Logger: &logger}
+
+		note := NewNote(1, "Test note")
+		url := fmt.Sprintf("/notes/%d", note.UserID)
+		request := newPostRequestWithNote(t, note, url)
+		response := httptest.NewRecorder()
+
+		notesC.ProcessAddNote(response, request)
+		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", DBResourceCreationError)
 	})
 }
 
