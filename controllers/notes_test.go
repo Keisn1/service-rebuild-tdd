@@ -12,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
@@ -54,7 +55,6 @@ func TestNotes(t *testing.T) {
 			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
 			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		}
-
 		var buf bytes.Buffer
 		log.SetOutput(&buf)
 		defer func() {
@@ -223,7 +223,7 @@ func assertAddNoteCalls(t testing.TB, got, want Notes) {
 
 func assertLogMessage(t testing.TB, got, want string) {
 	t.Helper()
-	if got != want {
-		t.Errorf(`got = %v; want %v`, got, want)
+	if !strings.Contains(got, want) {
+		t.Errorf(`got = %v does not contain %v`, got, want)
 	}
 }

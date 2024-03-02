@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -55,6 +56,7 @@ func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ns *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GET request to /notes route received")
 	notes := ns.NotesStore.GetAllNotes()
 	json.NewEncoder(w).Encode(notes)
 	return
