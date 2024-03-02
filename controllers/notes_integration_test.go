@@ -13,13 +13,13 @@ func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	notesC := NotesCtrlr{NotesStore: &store, Logger: &logger}
 
 	userID := 1
-	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 1")))
-	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 2")))
-	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 3")))
+	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 1"), "/notes/1"))
+	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 2"), "/notes/1"))
+	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 3"), "/notes/1"))
 
 	userID = 2
-	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 4")))
-	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 5")))
+	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 4"), "/notes/2"))
+	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 5"), "/notes/2"))
 
 	// Testing notes by id
 	assertNotesByIdAsExpected(t, 1, Notes{{1, "Test note 1"}, {1, "Test note 2"}, {1, "Test note 3"}}, notesC)

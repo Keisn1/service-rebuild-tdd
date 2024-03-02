@@ -122,11 +122,13 @@ func TestNotes(t *testing.T) {
 	t.Run("adds a note with POST", func(t *testing.T) {
 		logger.Reset()
 		note := NewNote(1, "Test note")
-		wantAddNoteCalls := Notes{note}
-		request := newPostRequestWithNote(t, note)
+		url := fmt.Sprintf("/notes/%d", note.UserID)
+
+		request := newPostRequestWithNote(t, note, url)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
+		wantAddNoteCalls := Notes{note}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
 		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
@@ -136,7 +138,7 @@ func TestNotes(t *testing.T) {
 
 	t.Run("test invalid json body", func(t *testing.T) {
 		logger.Reset()
-		badRequest := newPostRequestFromBody(t, "{}}")
+		badRequest := newPostRequestFromBody(t, "{}}", "/notes/1")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
@@ -145,16 +147,16 @@ func TestNotes(t *testing.T) {
 			{format: "Error Unmarshaling request body"},
 		})
 	})
+
 	t.Run("test invalid request body", func(t *testing.T) {
 		logger.Reset()
+
 		note := Note{UserID: 1, Note: "hello"}
-		url := fmt.Sprintf("/notes/%d", note.UserID)
-		requestBody := map[string]Note{"wrongKey": note}
-		buf := bytes.NewBuffer([]byte{})
-		err := json.NewEncoder(buf).Encode(requestBody)
+		requestBody := map[string]Note{"wrong_key": note}
+		buf := encodeRequestBodyAddNote(t, requestBody)
+		badRequest, err := http.NewRequest(http.MethodPost, "some_url", buf)
 		assertNoError(t, err)
-		badRequest, err := http.NewRequest(http.MethodPost, url, buf)
-		assertNoError(t, err)
+
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
@@ -165,21 +167,25 @@ func TestNotes(t *testing.T) {
 	})
 }
 
-func newPostRequestFromBody(t testing.TB, requestBody string) *http.Request {
+func newPostRequestFromBody(t testing.TB, requestBody string, url string) *http.Request {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(requestBody)
 	assertNoError(t, err)
-	req, err := http.NewRequest(http.MethodPost, "/notes/1", &buf)
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
 	assertNoError(t, err)
 	return req
 }
 
-func newPostRequestWithNote(t testing.TB, note Note) *http.Request {
-	url := fmt.Sprintf("/notes/%d", note.UserID)
-	requestBody := map[string]Note{"note": note}
+func encodeRequestBodyAddNote(t testing.TB, rb map[string]Note) *bytes.Buffer {
 	buf := bytes.NewBuffer([]byte{})
-	err := json.NewEncoder(buf).Encode(requestBody)
+	err := json.NewEncoder(buf).Encode(rb)
 	assertNoError(t, err)
+	return buf
+}
+
+func newPostRequestWithNote(t testing.TB, note Note, url string) *http.Request {
+	requestBody := map[string]Note{"note": note}
+	buf := encodeRequestBodyAddNote(t, requestBody)
 	request, err := http.NewRequest(http.MethodPost, url, buf)
 	assertNoError(t, err)
 	return request
