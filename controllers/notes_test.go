@@ -150,7 +150,7 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", UnmarshalRequestBodyError)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrUnmarshalRequestBody)
 	})
 
 	t.Run("test invalid request body", func(t *testing.T) {
@@ -161,7 +161,7 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", InvalidRequestBodyError)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrInvalidRequestBody)
 	})
 
 	t.Run("test AddNote returns error", func(t *testing.T) {
@@ -173,7 +173,7 @@ func TestNotes(t *testing.T) {
 
 		notesC.ProcessAddNote(response, request)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", DBResourceCreationError)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrDBResourceCreation)
 	})
 
 	t.Run("test false url parameters throws error", func(t *testing.T) {
@@ -188,7 +188,7 @@ func TestNotes(t *testing.T) {
 		notesC.GetNotesByID(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", InvalidUserIDError)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrInvalidUserID)
 	})
 }
 

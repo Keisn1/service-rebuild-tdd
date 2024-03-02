@@ -41,10 +41,10 @@ func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
 }
 
 var (
-	UnmarshalRequestBodyError = errors.New("Error Unmarshaling request body")
-	DBResourceCreationError   = errors.New("Could not create resource")
-	InvalidRequestBodyError   = errors.New("Invalid request body")
-	InvalidUserIDError        = errors.New("Invalid user ID")
+	ErrUnmarshalRequestBody = errors.New("Error Unmarshaling request body")
+	ErrDBResourceCreation   = errors.New("Could not create resource")
+	ErrInvalidRequestBody   = errors.New("Invalid request body")
+	ErrInvalidUserID        = errors.New("Invalid user ID")
 )
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
@@ -53,21 +53,21 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		ns.Logger.Errorf("%w: %w", UnmarshalRequestBodyError, err)
+		ns.Logger.Errorf("%w: %w", ErrUnmarshalRequestBody, err)
 		return
 	}
 
 	note, ok := body["note"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		ns.Logger.Errorf("%w: %w", InvalidRequestBodyError, err)
+		ns.Logger.Errorf("%w: %w", ErrInvalidRequestBody, err)
 		return
 	}
 
 	err = ns.NotesStore.AddNote(note)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		ns.Logger.Errorf("%w: %w", DBResourceCreationError, err)
+		ns.Logger.Errorf("%w: %w", ErrDBResourceCreation, err)
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)
@@ -79,7 +79,7 @@ func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		ns.Logger.Errorf("%w: %w", InvalidUserIDError, err)
+		ns.Logger.Errorf("%w: %w", ErrInvalidUserID, err)
 		return
 	}
 
