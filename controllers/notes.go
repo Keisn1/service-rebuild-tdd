@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -46,9 +45,7 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		if jErr := new(*json.UnmarshalTypeError); errors.As(err, jErr) {
-			ns.Logger.Errorf("Error Decoding request body: %v", json.UnmarshalTypeError{})
-		}
+		ns.Logger.Errorf("Error Unmarshaling request body")
 		return
 	}
 
@@ -58,6 +55,7 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 		ns.Logger.Errorf("Invalid body")
 		return
 	}
+
 	_ = ns.NotesStore.AddNote(note)
 	w.WriteHeader(http.StatusAccepted)
 }

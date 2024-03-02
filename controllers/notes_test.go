@@ -142,7 +142,7 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
-			{format: "Error Decoding request body: %v", a: []any{json.UnmarshalTypeError{}}},
+			{format: "Error Unmarshaling request body"},
 		})
 	})
 	t.Run("test invalid request body", func(t *testing.T) {
