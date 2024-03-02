@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -27,7 +26,7 @@ type NotesStore interface {
 }
 
 type Logger interface {
-	Infoln(v ...any)
+	Infof(format string, args ...any)
 }
 
 type NotesCtrlr struct {
@@ -40,7 +39,7 @@ func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
 }
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
-	ns.Logger.Infoln(fmt.Sprintf("%s request to %s received", r.Method, r.URL.Path))
+	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	var body map[string]Note
 	_ = json.NewDecoder(r.Body).Decode(&body)
 
@@ -50,7 +49,7 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
-	ns.Logger.Infoln(fmt.Sprintf("%s request to %s received", r.Method, r.URL.Path))
+	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	notes := ns.NotesStore.GetNotesByID(userID)
 	if len(notes) == 0 {
@@ -63,7 +62,7 @@ func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ns *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
-	ns.Logger.Infoln(fmt.Sprintf("%s request to %s received", r.Method, r.URL.Path))
+	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	notes := ns.NotesStore.GetAllNotes()
 	json.NewEncoder(w).Encode(notes)
 	return

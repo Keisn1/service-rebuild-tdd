@@ -38,18 +38,21 @@ func (sns *StubNotesStore) GetNotesByID(userID int) (ret Notes) {
 	return
 }
 
-type StubLogger struct {
-	infolnCalls []any
+type infofCall struct {
+	format string
+	a      []any
 }
 
-func (sl *StubLogger) Infoln(a ...any) {
-	for _, val := range a {
-		sl.infolnCalls = append(sl.infolnCalls, val)
-	}
+type StubLogger struct {
+	infofCalls []infofCall
+}
+
+func (sl *StubLogger) Infof(format string, a ...any) {
+	sl.infofCalls = append(sl.infofCalls, infofCall{format: format, a: a})
 }
 
 func (sl *StubLogger) Reset() {
-	sl.infolnCalls = []any{}
+	sl.infofCalls = []infofCall{}
 }
 
 func TestNotes(t *testing.T) {
@@ -76,7 +79,9 @@ func TestNotes(t *testing.T) {
 		got := getAllNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
-		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{"GET request to /notes received"})
+		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
+			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
+		})
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -101,10 +106,10 @@ func TestNotes(t *testing.T) {
 			got := getNotesByIdFromResponse(t, response.Body)
 			assertNotesById(t, got, tc.want)
 		}
-		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{
-			"GET request to /notes/1 received",
-			"GET request to /notes/2 received",
-			"GET request to /notes/100 received",
+		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
+			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
+			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
+			{format: "%s request to %s received", a: []any{"GET", "/notes/100"}},
 		})
 	})
 
@@ -119,7 +124,9 @@ func TestNotes(t *testing.T) {
 		// assertions
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
-		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{"POST request to /notes/1 received"})
+		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
+			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
+		})
 	})
 }
 
@@ -237,17 +244,9 @@ func assertAddNoteCalls(t testing.TB, got, want Notes) {
 	}
 }
 
-func assertLoggerInfolnCalls(t testing.TB, got []any, want []string) {
+func assertLoggerInfolnCalls(t testing.TB, got, want []infofCall) {
 	t.Helper()
-	var gotStrings []string
-	for _, val := range got {
-		if s, ok := val.(string); ok {
-			gotStrings = append(gotStrings, s)
-		} else {
-			t.Fatalf("Could not convert infolnCall to string")
-		}
-	}
-	if !reflect.DeepEqual(gotStrings, want) {
+	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}
 }

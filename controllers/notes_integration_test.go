@@ -11,8 +11,8 @@ type SimpleLogger struct {
 	logger *log.Logger
 }
 
-func (l *SimpleLogger) Infoln(a ...any) {
-	l.logger.Println(a...)
+func (l *SimpleLogger) Infof(format string, a ...any) {
+	l.logger.Printf(format, a...)
 }
 
 func TestAddingNotesAndRetrievingThem(t *testing.T) {
