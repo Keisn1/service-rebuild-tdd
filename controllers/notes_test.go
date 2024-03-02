@@ -6,13 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
@@ -137,23 +134,11 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("test invalid request body", func(t *testing.T) {
-		var logBuf bytes.Buffer
-		log.SetOutput(&logBuf)
-		defer func() {
-			log.SetOutput(os.Stderr)
-		}()
-
 		badRequest := newPostRequestFromBody(t, "{}}")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
-		want := "Error Decoding request body"
-		got := logBuf.String()
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		if !strings.Contains(got, want) {
-			t.Errorf(`got:(%v) does not contain want: (%v)`, got, want)
-		}
-
 		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
 			{format: "Error Decoding request body: %v", a: []any{json.UnmarshalTypeError{}}},
 		})
