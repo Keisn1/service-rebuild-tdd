@@ -5,13 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/go-chi/chi"
 )
 
 type StubNotesStore struct {
@@ -52,6 +55,12 @@ func TestNotes(t *testing.T) {
 			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		}
 
+		var buf bytes.Buffer
+		log.SetOutput(&buf)
+		defer func() {
+			log.SetOutput(os.Stderr)
+		}()
+
 		request := newGetAllNotesRequest(t)
 		response := httptest.NewRecorder()
 		notesC.GetAllNotes(response, request)
@@ -59,6 +68,7 @@ func TestNotes(t *testing.T) {
 		got := getAllNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
+		assertLogMessage(t, buf.String(), "GET request to /notes route received")
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -207,6 +217,13 @@ func assertNotesById(t testing.TB, got, want Notes) {
 func assertAddNoteCalls(t testing.TB, got, want Notes) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
+		t.Errorf(`got = %v; want %v`, got, want)
+	}
+}
+
+func assertLogMessage(t testing.TB, got, want string) {
+	t.Helper()
+	if got != want {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}
 }
