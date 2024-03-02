@@ -41,21 +41,26 @@ func (sns *StubNotesStore) GetNotesByID(userID int) (ret Notes) {
 	return
 }
 
-type infofCall struct {
+type fmtCallf struct {
 	format string
 	a      []any
 }
 
 type StubLogger struct {
-	infofCalls []infofCall
+	infofCalls  []fmtCallf
+	errorfCalls []fmtCallf
 }
 
 func (sl *StubLogger) Infof(format string, a ...any) {
-	sl.infofCalls = append(sl.infofCalls, infofCall{format: format, a: a})
+	sl.infofCalls = append(sl.infofCalls, fmtCallf{format: format, a: a})
+}
+
+func (sl *StubLogger) Errorf(format string, a ...any) {
+	sl.errorfCalls = append(sl.errorfCalls, fmtCallf{format: format, a: a})
 }
 
 func (sl *StubLogger) Reset() {
-	sl.infofCalls = []infofCall{}
+	sl.infofCalls = []fmtCallf{}
 }
 
 func TestNotes(t *testing.T) {
@@ -82,7 +87,7 @@ func TestNotes(t *testing.T) {
 		got := getAllNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
-		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
+		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
 		})
 	})
@@ -109,7 +114,7 @@ func TestNotes(t *testing.T) {
 			got := getNotesByIdFromResponse(t, response.Body)
 			assertNotesById(t, got, tc.want)
 		}
-		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
+		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/100"}},
@@ -126,7 +131,7 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
-		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
+		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
 		})
 	})
@@ -138,7 +143,7 @@ func TestNotes(t *testing.T) {
 			log.SetOutput(os.Stderr)
 		}()
 
-		badRequest := newPostRequestFromBody(t, "gibberish")
+		badRequest := newPostRequestFromBody(t, "{}}")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
@@ -148,6 +153,10 @@ func TestNotes(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf(`got:(%v) does not contain want: (%v)`, got, want)
 		}
+
+		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
+			{format: "Error Decoding request body: %v", a: []any{json.UnmarshalTypeError{}}},
+		})
 	})
 }
 
@@ -270,7 +279,7 @@ func assertAddNoteCalls(t testing.TB, got, want Notes) {
 	}
 }
 
-func assertLoggerInfolnCalls(t testing.TB, got, want []infofCall) {
+func assertLoggerCallsF(t testing.TB, got, want []fmtCallf) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)

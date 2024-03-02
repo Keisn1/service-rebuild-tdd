@@ -2,9 +2,12 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
+
+	"fmt"
 
 	"github.com/go-chi/chi"
 )
@@ -28,6 +31,7 @@ type NotesStore interface {
 
 type Logger interface {
 	Infof(format string, args ...any)
+	Errorf(format string, args ...any)
 }
 
 type NotesCtrlr struct {
@@ -46,6 +50,13 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("Error Decoding request body: %v", err)
+
+		fmt.Println(err.Error())
+		var jErr *json.UnmarshalTypeError
+		if errors.As(err, &jErr) {
+			ns.Logger.Errorf("Error Decoding request body: %v", json.UnmarshalTypeError{})
+		}
+
 		return
 	}
 
