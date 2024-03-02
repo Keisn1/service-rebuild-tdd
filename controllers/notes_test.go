@@ -16,15 +16,11 @@ import (
 
 type StubNotesStore struct {
 	notes        Notes
-	addNoteCalls []callToAddNote
-}
-
-type callToAddNote struct {
-	note Note
+	addNoteCalls Notes
 }
 
 func (sns *StubNotesStore) AddNote(note Note) error {
-	sns.addNoteCalls = append(sns.addNoteCalls, callToAddNote{note: note})
+	sns.addNoteCalls = append(sns.addNoteCalls, note)
 	return nil
 }
 
@@ -45,7 +41,7 @@ func TestNotes(t *testing.T) {
 	notesStore := StubNotesStore{
 		notes: Notes{
 			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
-			{2, "Note 1 user 2"}, {1, "Note 2 user 2"},
+			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		},
 	}
 	notesC := &NotesCtrlr{NotesStore: &notesStore}
@@ -53,7 +49,7 @@ func TestNotes(t *testing.T) {
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		wantedNotes := Notes{
 			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
-			{2, "Note 1 user 2"}, {1, "Note 2 user 2"},
+			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		}
 
 		request := newGetAllNotesRequest(t)
@@ -72,7 +68,7 @@ func TestNotes(t *testing.T) {
 			statusCode int
 		}{
 			{1, Notes{{1, "Note 1 user 1"}, {1, "Note 2 user 1"}}, http.StatusOK},
-			{2, Notes{{2, "Note 1 user 2"}, {1, "Note 2 user 2"}}, http.StatusOK},
+			{2, Notes{{2, "Note 1 user 2"}, {2, "Note 2 user 2"}}, http.StatusOK},
 			{100, Notes{}, http.StatusNotFound},
 		}
 
@@ -89,22 +85,22 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("adds a note with POST", func(t *testing.T) {
-		userID, note := 1, "Test note"
-		wantAddNoteCalls := callToAddNote{NewNote(userID, note)}
-		request := newPostAddNoteRequest(t, userID, note)
+		note := NewNote(1, "Test note")
+		wantAddNoteCalls := Notes{note}
+		request := newPostAddNoteRequest(t, note)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
 		// assertions
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
-		assertAddNoteCall(t, notesStore.addNoteCalls, wantAddNoteCalls)
+		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
 	})
 }
 
-func newPostAddNoteRequest(t testing.TB, userID int, note string) *http.Request {
+func newPostAddNoteRequest(t testing.TB, note Note) *http.Request {
 	t.Helper()
-	url := fmt.Sprintf("/notes/%d", userID)
-	requestBody := NewNote(userID, note)
+	url := fmt.Sprintf("/notes/%d", note.UserID)
+	requestBody := map[string]Note{"note": note}
 	buf := bytes.NewBuffer([]byte{})
 	err := json.NewEncoder(buf).Encode(requestBody)
 	if err != nil {
@@ -114,7 +110,7 @@ func newPostAddNoteRequest(t testing.TB, userID int, note string) *http.Request 
 	if err != nil {
 		t.Fatalf("Could not build request newPostAddNoteRequest: %q", err)
 	}
-	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", note.UserID))
 }
 
 func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
@@ -208,9 +204,8 @@ func assertNotesById(t testing.TB, got, want Notes) {
 	assertStringSlicesAreEqual(t, got, want)
 }
 
-func assertAddNoteCall(t testing.TB, addNoteCalls []callToAddNote, want callToAddNote) {
-	assertLengthSlice(t, addNoteCalls, 1)
-	got := addNoteCalls[0]
+func assertAddNoteCalls(t testing.TB, got, want Notes) {
+	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}

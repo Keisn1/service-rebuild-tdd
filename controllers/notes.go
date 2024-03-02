@@ -34,11 +34,10 @@ func NewNotesController(store NotesStore) NotesCtrlr {
 }
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
-	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
-	var body map[string]string
+	var body map[string]Note
 	_ = json.NewDecoder(r.Body).Decode(&body)
 
-	note := NewNote(userID, body["note"])
+	note, _ := body["note"]
 	_ = ns.NotesStore.AddNote(note)
 	w.WriteHeader(http.StatusAccepted)
 }
