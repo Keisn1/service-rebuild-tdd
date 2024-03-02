@@ -177,7 +177,7 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("test false url parameters throws error", func(t *testing.T) {
-
+		logger.Reset()
 		response := httptest.NewRecorder()
 
 		badUrlParam := "notAnInt"
@@ -188,7 +188,7 @@ func TestNotes(t *testing.T) {
 		notesC.GetNotesByID(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		// assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", DBResourceCreationError)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", InvalidUserIDError)
 	})
 }
 

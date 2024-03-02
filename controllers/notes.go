@@ -42,8 +42,9 @@ func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
 
 var (
 	UnmarshalRequestBodyError = errors.New("Error Unmarshaling request body")
-	InvalidRequestBodyError   = errors.New("Invalid request body")
 	DBResourceCreationError   = errors.New("Could not create resource")
+	InvalidRequestBodyError   = errors.New("Invalid request body")
+	InvalidUserIDError        = errors.New("Invalid user ID")
 )
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
@@ -78,8 +79,10 @@ func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		ns.Logger.Errorf("%w: %w", InvalidUserIDError, err)
 		return
 	}
+
 	notes := ns.NotesStore.GetNotesByID(userID)
 	if len(notes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
