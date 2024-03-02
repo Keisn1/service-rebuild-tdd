@@ -131,8 +131,7 @@ func TestNotes(t *testing.T) {
 	t.Run("adds a note with POST", func(t *testing.T) {
 		logger.Reset()
 		note := NewNote(1, "Test note")
-		url := fmt.Sprintf("/notes/%d", note.UserID)
-		request := newPostRequestWithNote(t, note, url)
+		request := newPostRequestWithNote(t, note, "/notes/1")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
@@ -168,9 +167,7 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		notesC := &NotesCtrlr{NotesStore: &StubNotesStoreAddNoteErrors{}, Logger: &logger}
 
-		note := NewNote(1, "Test note")
-		url := fmt.Sprintf("/notes/%d", note.UserID)
-		request := newPostRequestWithNote(t, note, url)
+		request := newPostRequestWithNote(t, NewNote(1, "Test note"), "/notes/1")
 		response := httptest.NewRecorder()
 
 		notesC.ProcessAddNote(response, request)
