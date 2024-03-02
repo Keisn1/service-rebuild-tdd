@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"errors"
 	"github.com/go-chi/chi"
 )
 
@@ -27,7 +28,7 @@ type NotesStore interface {
 
 type Logger interface {
 	Infof(format string, args ...any)
-	Errorf(format string, args ...any)
+	Errorf(format string, a ...any)
 }
 
 type NotesCtrlr struct {
@@ -39,20 +40,25 @@ func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
 	return NotesCtrlr{NotesStore: store, Logger: logger}
 }
 
+var (
+	UnmarshalRequestBodyError = errors.New("Error Unmarshaling request body")
+	InvalidRequestBodyError   = errors.New("Invalid request body")
+)
+
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	var body map[string]Note
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		ns.Logger.Errorf("Error Unmarshaling request body")
+		ns.Logger.Errorf("%w: %w", UnmarshalRequestBodyError, err)
 		return
 	}
 
 	note, ok := body["note"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		ns.Logger.Errorf("Invalid body")
+		ns.Logger.Errorf("%w: %w", InvalidRequestBodyError, err)
 		return
 	}
 

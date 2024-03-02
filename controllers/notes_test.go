@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -44,8 +45,8 @@ type fmtCallf struct {
 }
 
 type StubLogger struct {
-	infofCalls  []fmtCallf
-	errorfCalls []fmtCallf
+	infofCalls []fmtCallf
+	errorfCall []fmtCallf
 }
 
 func (sl *StubLogger) Infof(format string, a ...any) {
@@ -53,12 +54,12 @@ func (sl *StubLogger) Infof(format string, a ...any) {
 }
 
 func (sl *StubLogger) Errorf(format string, a ...any) {
-	sl.errorfCalls = append(sl.errorfCalls, fmtCallf{format: format, a: a})
+	sl.errorfCall = append(sl.errorfCall, fmtCallf{format: format, a: a})
 }
 
 func (sl *StubLogger) Reset() {
 	sl.infofCalls = []fmtCallf{}
-	sl.errorfCalls = []fmtCallf{}
+	sl.errorfCall = []fmtCallf{}
 }
 
 func TestNotes(t *testing.T) {
@@ -85,7 +86,7 @@ func TestNotes(t *testing.T) {
 		got := getAllNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
-		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
+		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
 		})
 	})
@@ -112,7 +113,7 @@ func TestNotes(t *testing.T) {
 			got := getNotesByIdFromResponse(t, response.Body)
 			assertNotesById(t, got, tc.want)
 		}
-		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
+		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/100"}},
@@ -131,7 +132,7 @@ func TestNotes(t *testing.T) {
 		wantAddNoteCalls := Notes{note}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
-		assertLoggerCallsF(t, logger.infofCalls, []fmtCallf{
+		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
 		})
 	})
@@ -143,28 +144,29 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
-			{format: "Error Unmarshaling request body"},
-		})
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", UnmarshalRequestBodyError)
 	})
 
 	t.Run("test invalid request body", func(t *testing.T) {
 		logger.Reset()
 
-		note := Note{UserID: 1, Note: "hello"}
-		requestBody := map[string]Note{"wrong_key": note}
-		buf := encodeRequestBodyAddNote(t, requestBody)
-		badRequest, err := http.NewRequest(http.MethodPost, "some_url", buf)
-		assertNoError(t, err)
-
+		badRequest := newInvalidBodyPostRequest(t)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
-			{format: "Invalid body"},
-		})
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", InvalidRequestBodyError)
 	})
+}
+
+func newInvalidBodyPostRequest(t testing.TB) *http.Request {
+	note := Note{UserID: 1, Note: "hello"}
+	requestBody := map[string]Note{"wrong_key": note}
+	buf := encodeRequestBodyAddNote(t, requestBody)
+	badRequest, err := http.NewRequest(http.MethodPost, "some_url", buf)
+	assertNoError(t, err)
+	return badRequest
+
 }
 
 func newPostRequestFromBody(t testing.TB, requestBody string, url string) *http.Request {
@@ -289,7 +291,7 @@ func assertAddNoteCalls(t testing.TB, got, want Notes) {
 	}
 }
 
-func assertLoggerCallsF(t testing.TB, got, want []fmtCallf) {
+func assertGotCallsEqualsWantCalls(t testing.TB, got, want []fmtCallf) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
@@ -300,5 +302,20 @@ func assertNoError(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func assertRightErrorCall(t testing.TB, errorCall fmtCallf, wantFormat string, wantErr error) {
+	t.Helper()
+	gotFormat := errorCall.format
+	if gotFormat != wantFormat {
+		t.Errorf(`got = %v; want %v`, gotFormat, wantFormat)
+	}
+	if gotErr, ok := errorCall.a[0].(error); ok {
+		if !errors.Is(gotErr, wantErr) {
+			t.Errorf(`got = %v; want %v`, gotErr, wantErr)
+		}
+	} else {
+		t.Errorf("Could not convert to error")
 	}
 }
