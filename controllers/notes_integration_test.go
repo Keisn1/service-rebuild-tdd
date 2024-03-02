@@ -1,23 +1,14 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-type SimpleLogger struct {
-	logger *log.Logger
-}
-
-func (l *SimpleLogger) Infof(format string, a ...any) {
-	l.logger.Printf(format, a...)
-}
-
 func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	store := NewInMemoryNotesStore()
-	logger := SimpleLogger{logger: &log.Logger{}}
+	logger := NewSimpleLogger()
 
 	notesC := NotesCtrlr{NotesStore: &store, Logger: &logger}
 
