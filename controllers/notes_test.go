@@ -6,13 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
@@ -41,6 +38,16 @@ func (sns *StubNotesStore) GetNotesByID(userID int) (ret Notes) {
 	return
 }
 
+type StubLogger struct {
+	infolnCalls []any
+}
+
+func (sl *StubLogger) Infoln(a ...any) {
+	for _, val := range a {
+		sl.infolnCalls = append(sl.infolnCalls, val)
+	}
+}
+
 func TestNotes(t *testing.T) {
 	notesStore := StubNotesStore{
 		notes: Notes{
@@ -48,18 +55,14 @@ func TestNotes(t *testing.T) {
 			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		},
 	}
-	notesC := &NotesCtrlr{NotesStore: &notesStore}
+	logger := StubLogger{}
+	notesC := &NotesCtrlr{NotesStore: &notesStore, Logger: &logger}
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		wantedNotes := Notes{
 			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
 			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		}
-		var buf bytes.Buffer
-		log.SetOutput(&buf)
-		defer func() {
-			log.SetOutput(os.Stderr)
-		}()
 
 		request := newGetAllNotesRequest(t)
 		response := httptest.NewRecorder()
@@ -68,7 +71,7 @@ func TestNotes(t *testing.T) {
 		got := getAllNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
-		assertLogMessage(t, buf.String(), "GET request to /notes route received")
+		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{"GET request to /notes route received"})
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -221,9 +224,9 @@ func assertAddNoteCalls(t testing.TB, got, want Notes) {
 	}
 }
 
-func assertLogMessage(t testing.TB, got, want string) {
+func assertLoggerInfolnCalls(t testing.TB, got []any, want []string) {
 	t.Helper()
-	if !strings.Contains(got, want) {
+	if reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v does not contain %v`, got, want)
 	}
 }

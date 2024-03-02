@@ -1,14 +1,25 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
+type SimpleLogger struct {
+	logger *log.Logger
+}
+
+func (l *SimpleLogger) Infoln(a ...any) {
+	l.logger.Println(a...)
+}
+
 func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	store := NewInMemoryNotesStore()
-	notesC := NotesCtrlr{&store}
+	logger := SimpleLogger{logger: &log.Logger{}}
+
+	notesC := NotesCtrlr{NotesStore: &store, Logger: &logger}
 
 	userID := 1
 	notesC.ProcessAddNote(httptest.NewRecorder(), newPostAddNoteRequest(t, NewNote(userID, "Test note 1")))

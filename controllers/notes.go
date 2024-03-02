@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -26,12 +25,17 @@ type NotesStore interface {
 	AddNote(Note) error
 }
 
-type NotesCtrlr struct {
-	NotesStore NotesStore
+type Logger interface {
+	Infoln(v ...any)
 }
 
-func NewNotesController(store NotesStore) NotesCtrlr {
-	return NotesCtrlr{store}
+type NotesCtrlr struct {
+	NotesStore NotesStore
+	Logger     Logger
+}
+
+func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
+	return NotesCtrlr{NotesStore: store, Logger: logger}
 }
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +60,7 @@ func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ns *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
-	log.Printf("GET request to /notes route received")
+	ns.Logger.Infoln("GET request to /notes route received")
 	notes := ns.NotesStore.GetAllNotes()
 	json.NewEncoder(w).Encode(notes)
 	return
