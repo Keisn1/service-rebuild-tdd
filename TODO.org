@@ -2,7 +2,12 @@
 
 * Technical Requirements
 [[file:PRD.org::*Technical Requirements for MVP (Backend):][Technical Requirements for MVP (Backend)]]
-
+* Daily Plan
+- [ ] logging
+- [ ] error handling in controllers
+- [ ] put and delete are missing
+- [ ] authentication service
+- [ ] database integration
 * TODO Setup
 ** DONE Local setup
 1. [X] *Setup Go Development Environment:**
