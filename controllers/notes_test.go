@@ -76,7 +76,7 @@ func TestNotes(t *testing.T) {
 		got := getAllNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
-		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{"GET request to /notes route received"})
+		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{"GET request to /notes received"})
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -102,12 +102,14 @@ func TestNotes(t *testing.T) {
 			assertNotesById(t, got, tc.want)
 		}
 		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{
-			"GET request to /notes/1 route received",
-			"GET request to /notes/2 route received",
+			"GET request to /notes/1 received",
+			"GET request to /notes/2 received",
+			"GET request to /notes/100 received",
 		})
 	})
 
 	t.Run("adds a note with POST", func(t *testing.T) {
+		logger.Reset()
 		note := NewNote(1, "Test note")
 		wantAddNoteCalls := Notes{note}
 		request := newPostAddNoteRequest(t, note)
@@ -117,6 +119,7 @@ func TestNotes(t *testing.T) {
 		// assertions
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
+		assertLoggerInfolnCalls(t, logger.infolnCalls, []string{"POST request to /notes/1 received"})
 	})
 }
 
@@ -245,6 +248,6 @@ func assertLoggerInfolnCalls(t testing.TB, got []any, want []string) {
 		}
 	}
 	if !reflect.DeepEqual(gotStrings, want) {
-		t.Errorf(`got = %v does not contain %v`, got, want)
+		t.Errorf(`got = %v; want %v`, got, want)
 	}
 }
