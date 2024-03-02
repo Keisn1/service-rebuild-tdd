@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -128,6 +130,27 @@ func TestNotes(t *testing.T) {
 			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
 		})
 	})
+
+	t.Run("test invalid request body", func(t *testing.T) {
+		var logBuf bytes.Buffer
+		log.SetOutput(&logBuf)
+		defer func() {
+			log.SetOutput(os.Stderr)
+		}()
+
+		var buf bytes.Buffer
+		requestBody := "gibberish"
+		err := json.NewEncoder(&buf).Encode(requestBody)
+		assertNoError(t, err)
+		req, err := http.NewRequest(http.MethodPost, "/notes/1", &buf)
+		assertNoError(t, err)
+		badRequest := WithUrlParam(req, "id", fmt.Sprintf("%v", 1))
+
+		response := httptest.NewRecorder()
+		notesC.ProcessAddNote(response, badRequest)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
+	})
 }
 
 func newPostAddNoteRequest(t testing.TB, note Note) *http.Request {
@@ -136,13 +159,9 @@ func newPostAddNoteRequest(t testing.TB, note Note) *http.Request {
 	requestBody := map[string]Note{"note": note}
 	buf := bytes.NewBuffer([]byte{})
 	err := json.NewEncoder(buf).Encode(requestBody)
-	if err != nil {
-		t.Fatalf("Error encoding requestBody when build addNote post request %q", err)
-	}
+	assertNoError(t, err)
 	request, err := http.NewRequest(http.MethodPost, url, buf)
-	if err != nil {
-		t.Fatalf("Could not build request newPostAddNoteRequest: %q", err)
-	}
+	assertNoError(t, err)
 	return WithUrlParam(request, "id", fmt.Sprintf("%v", note.UserID))
 }
 
@@ -248,5 +267,12 @@ func assertLoggerInfolnCalls(t testing.TB, got, want []infofCall) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
+	}
+}
+
+func assertNoError(t testing.TB, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
 	}
 }
