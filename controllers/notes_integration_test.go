@@ -32,9 +32,9 @@ func TestAddingNotesAndRetrievingThem(t *testing.T) {
 func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC NotesCtrlr) {
 	t.Helper()
 	response := httptest.NewRecorder()
-	notesC.GetNotesByID(response, newGetNotesByUserIdRequest(t, userID))
+	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
 
-	gotNotes := getNotesByIdFromResponse(t, response.Body)
+	gotNotes := getNotesFromResponse(t, response.Body)
 	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 	assertNotesById(t, gotNotes, wantNotes)
 }
@@ -44,6 +44,6 @@ func assertAllNotesAsExpected(t testing.TB, wantAllNotes Notes, notesC NotesCtrl
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
 
-	gotAllNotes := getAllNotesFromResponse(t, response.Body)
+	gotAllNotes := getNotesFromResponse(t, response.Body)
 	assertAllNotes(t, gotAllNotes, wantAllNotes)
 }

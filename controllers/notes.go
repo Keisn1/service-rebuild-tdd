@@ -22,8 +22,9 @@ type Notes []Note
 
 type NotesStore interface {
 	GetAllNotes() Notes
-	GetNotesByID(int) Notes
+	GetNotesByUserID(int) Notes
 	AddNote(Note) error
+	Delete(int) error
 }
 
 type Logger interface {
@@ -73,7 +74,7 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
+func (ns *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 
 	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
@@ -83,7 +84,7 @@ func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notes := ns.NotesStore.GetNotesByID(userID)
+	notes := ns.NotesStore.GetNotesByUserID(userID)
 	if len(notes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode([]string{})

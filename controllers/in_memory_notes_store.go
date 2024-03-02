@@ -11,7 +11,11 @@ func NewInMemoryNotesStore() InMemoryNotesStore {
 	return InMemoryNotesStore{notes: Notes{}, lock: sync.RWMutex{}}
 }
 
-func (i *InMemoryNotesStore) GetNotesByID(userID int) (ret Notes) {
+func (i *InMemoryNotesStore) Delete(id int) error {
+	return nil
+}
+
+func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

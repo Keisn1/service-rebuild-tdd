@@ -38,7 +38,7 @@ func main() {
 
 	r.Route("/notes", func(r chi.Router) {
 		r.Get("/", notesC.GetAllNotes)
-		r.Get("/{id}", notesC.GetNotesByID)
+		r.Get("/{id}", notesC.GetNotesByUserID)
 		r.Post("/{id}", notesC.ProcessAddNote)
 	})
 

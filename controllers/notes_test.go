@@ -21,6 +21,10 @@ type StubNotesStore struct {
 	addNoteCalls Notes
 }
 
+func (sns *StubNotesStore) Delete(id int) error {
+	return nil
+}
+
 func (sns *StubNotesStore) AddNote(note Note) error {
 	sns.addNoteCalls = append(sns.addNoteCalls, note)
 	return nil
@@ -30,7 +34,7 @@ func (sns *StubNotesStore) GetAllNotes() Notes {
 	return sns.notes
 }
 
-func (sns *StubNotesStore) GetNotesByID(userID int) (ret Notes) {
+func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 	for _, n := range sns.notes {
 		if n.UserID == userID {
 			ret = append(ret, n)
@@ -91,7 +95,7 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 		notesC.GetAllNotes(response, request)
 
-		got := getAllNotesFromResponse(t, response.Body)
+		got := getNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotes(t, got, wantedNotes)
 		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
@@ -114,11 +118,11 @@ func TestNotes(t *testing.T) {
 		for _, tc := range testCases {
 			response := httptest.NewRecorder()
 			request := newGetNotesByUserIdRequest(t, tc.userID)
-			notesC.GetNotesByID(response, request)
+			notesC.GetNotesByUserID(response, request)
 
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
 
-			got := getNotesByIdFromResponse(t, response.Body)
+			got := getNotesFromResponse(t, response.Body)
 			assertNotesById(t, got, tc.want)
 		}
 		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
@@ -128,7 +132,7 @@ func TestNotes(t *testing.T) {
 		})
 	})
 
-	t.Run("adds a note with POST", func(t *testing.T) {
+	t.Run("POST a Note", func(t *testing.T) {
 		logger.Reset()
 		note := NewNote(1, "Test note")
 		request := newPostRequestWithNote(t, note, "/notes/1")
@@ -141,6 +145,16 @@ func TestNotes(t *testing.T) {
 		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
 		})
+	})
+
+	t.Run("Delete a Note", func(t *testing.T) {
+		logger.Reset()
+		request, err := http.NewRequest(http.MethodDelete, "/notes/{id}", nil)
+		assertNoError(t, err)
+		response := httptest.NewRecorder()
+		notesC.Delete(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
 	})
 
 	t.Run("test invalid json body", func(t *testing.T) {
@@ -185,7 +199,7 @@ func TestNotes(t *testing.T) {
 		assertNoError(t, err)
 
 		badRequest := WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
-		notesC.GetNotesByID(response, badRequest)
+		notesC.GetNotesByUserID(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrInvalidUserID)
@@ -284,16 +298,7 @@ func newGetAllNotesRequest(t testing.TB) *http.Request {
 	return req
 }
 
-func getAllNotesFromResponse(t testing.TB, body io.Reader) (allNotes Notes) {
-	t.Helper()
-	err := json.NewDecoder(body).Decode(&allNotes)
-	if err != nil {
-		t.Fatalf("Unable to parse response from server %q into map[int]Notes", err)
-	}
-	return
-}
-
-func getNotesByIdFromResponse(t testing.TB, body io.Reader) (notes Notes) {
+func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
 	t.Helper()
 	err := json.NewDecoder(body).Decode(&notes)
 	if err != nil {
