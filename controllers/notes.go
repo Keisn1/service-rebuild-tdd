@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -43,9 +43,9 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	var body map[string]Note
 	err := json.NewDecoder(r.Body).Decode(&body)
-	fmt.Println(body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error Decoding request body: %v", err)
 		return
 	}
 

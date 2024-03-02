@@ -12,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
@@ -141,7 +142,12 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
+		want := "Error Decoding request body"
+		got := logBuf.String()
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
+		if !strings.Contains(got, want) {
+			t.Errorf(`got:(%v) does not contain want: (%v)`, got, want)
+		}
 	})
 }
 
