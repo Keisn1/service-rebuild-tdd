@@ -119,11 +119,10 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		note := NewNote(1, "Test note")
 		wantAddNoteCalls := Notes{note}
-		request := newPostAddNoteRequest(t, note)
+		request := newPostRequestWithNote(t, note)
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
-		// assertions
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
 		assertLoggerInfolnCalls(t, logger.infofCalls, []infofCall{
@@ -138,14 +137,7 @@ func TestNotes(t *testing.T) {
 			log.SetOutput(os.Stderr)
 		}()
 
-		var buf bytes.Buffer
-		requestBody := "gibberish"
-		err := json.NewEncoder(&buf).Encode(requestBody)
-		assertNoError(t, err)
-		req, err := http.NewRequest(http.MethodPost, "/notes/1", &buf)
-		assertNoError(t, err)
-		badRequest := WithUrlParam(req, "id", fmt.Sprintf("%v", 1))
-
+		badRequest := newPostRequestFromBody(t, "gibberish")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
@@ -153,8 +145,16 @@ func TestNotes(t *testing.T) {
 	})
 }
 
-func newPostAddNoteRequest(t testing.TB, note Note) *http.Request {
-	t.Helper()
+func newPostRequestFromBody(t testing.TB, requestBody string) *http.Request {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(requestBody)
+	assertNoError(t, err)
+	req, err := http.NewRequest(http.MethodPost, "/notes/1", &buf)
+	assertNoError(t, err)
+	return req
+}
+
+func newPostRequestWithNote(t testing.TB, note Note) *http.Request {
 	url := fmt.Sprintf("/notes/%d", note.UserID)
 	requestBody := map[string]Note{"note": note}
 	buf := bytes.NewBuffer([]byte{})
@@ -162,7 +162,8 @@ func newPostAddNoteRequest(t testing.TB, note Note) *http.Request {
 	assertNoError(t, err)
 	request, err := http.NewRequest(http.MethodPost, url, buf)
 	assertNoError(t, err)
-	return WithUrlParam(request, "id", fmt.Sprintf("%v", note.UserID))
+	return request
+
 }
 
 func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
