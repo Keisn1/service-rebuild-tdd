@@ -48,6 +48,10 @@ var (
 	ErrInvalidUserID        = errors.New("Invalid user ID")
 )
 
+func (ns *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	var body map[string]Note
