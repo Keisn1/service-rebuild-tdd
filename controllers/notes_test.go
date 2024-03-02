@@ -44,7 +44,7 @@ type StubNotesStoreAddNoteErrors struct {
 }
 
 func (sns *StubNotesStoreAddNoteErrors) AddNote(note Note) error {
-	return DBResourceCreationError
+	return errors.New("Error stub")
 }
 
 type fmtCallf struct {
@@ -163,7 +163,8 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", InvalidRequestBodyError)
 	})
-	t.Run("test invalid request body", func(t *testing.T) {
+
+	t.Run("test AddNote returns error", func(t *testing.T) {
 		logger.Reset()
 		notesC := &NotesCtrlr{NotesStore: &StubNotesStoreAddNoteErrors{}, Logger: &logger}
 
@@ -174,13 +175,28 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", DBResourceCreationError)
 	})
+
+	t.Run("test false url parameters throws error", func(t *testing.T) {
+
+		response := httptest.NewRecorder()
+
+		badUrlParam := "notAnInt"
+		request, err := http.NewRequest(http.MethodGet, "", nil)
+		assertNoError(t, err)
+
+		badRequest := WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
+		notesC.GetNotesByID(response, badRequest)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
+		// assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", DBResourceCreationError)
+	})
 }
 
 func newInvalidBodyPostRequest(t testing.TB) *http.Request {
 	note := Note{UserID: 1, Note: "hello"}
 	requestBody := map[string]Note{"wrong_key": note}
 	buf := encodeRequestBodyAddNote(t, requestBody)
-	badRequest, err := http.NewRequest(http.MethodPost, "some_url", buf)
+	badRequest, err := http.NewRequest(http.MethodPost, "", buf)
 	assertNoError(t, err)
 	return badRequest
 
@@ -211,10 +227,8 @@ func newPostRequestWithNote(t testing.TB, note Note, url string) *http.Request {
 }
 
 func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
-	request, err := http.NewRequest(
-		http.MethodGet,
-		fmt.Sprintf("/notes/%v", userID),
-		nil)
+	url := fmt.Sprintf("/notes/%v", userID)
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		t.Fatalf("Could not build request newPostAddNoteRequest: %q", err)
 	}

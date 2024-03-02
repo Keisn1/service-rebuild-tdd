@@ -75,7 +75,11 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 func (ns *NotesCtrlr) GetNotesByID(w http.ResponseWriter, r *http.Request) {
 	ns.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 
-	userID, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	notes := ns.NotesStore.GetNotesByID(userID)
 	if len(notes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
