@@ -58,6 +58,7 @@ func (sl *StubLogger) Errorf(format string, a ...any) {
 
 func (sl *StubLogger) Reset() {
 	sl.infofCalls = []fmtCallf{}
+	sl.errorfCalls = []fmtCallf{}
 }
 
 func TestNotes(t *testing.T) {
@@ -133,7 +134,8 @@ func TestNotes(t *testing.T) {
 		})
 	})
 
-	t.Run("test invalid request body", func(t *testing.T) {
+	t.Run("test invalid json body", func(t *testing.T) {
+		logger.Reset()
 		badRequest := newPostRequestFromBody(t, "{}}")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
@@ -141,6 +143,24 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
 			{format: "Error Decoding request body: %v", a: []any{json.UnmarshalTypeError{}}},
+		})
+	})
+	t.Run("test invalid request body", func(t *testing.T) {
+		logger.Reset()
+		note := Note{UserID: 1, Note: "hello"}
+		url := fmt.Sprintf("/notes/%d", note.UserID)
+		requestBody := map[string]Note{"wrongKey": note}
+		buf := bytes.NewBuffer([]byte{})
+		err := json.NewEncoder(buf).Encode(requestBody)
+		assertNoError(t, err)
+		badRequest, err := http.NewRequest(http.MethodPost, url, buf)
+		assertNoError(t, err)
+		response := httptest.NewRecorder()
+		notesC.ProcessAddNote(response, badRequest)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
+		assertLoggerCallsF(t, logger.errorfCalls, []fmtCallf{
+			{format: "Invalid body"},
 		})
 	})
 }
@@ -163,7 +183,6 @@ func newPostRequestWithNote(t testing.TB, note Note) *http.Request {
 	request, err := http.NewRequest(http.MethodPost, url, buf)
 	assertNoError(t, err)
 	return request
-
 }
 
 func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {

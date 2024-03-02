@@ -49,9 +49,15 @@ func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 		if jErr := new(*json.UnmarshalTypeError); errors.As(err, jErr) {
 			ns.Logger.Errorf("Error Decoding request body: %v", json.UnmarshalTypeError{})
 		}
+		return
 	}
 
-	note, _ := body["note"]
+	note, ok := body["note"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		ns.Logger.Errorf("Invalid body")
+		return
+	}
 	_ = ns.NotesStore.AddNote(note)
 	w.WriteHeader(http.StatusAccepted)
 }
