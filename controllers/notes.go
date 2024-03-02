@@ -50,6 +50,8 @@ var (
 
 func (ns *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	ns.NotesStore.Delete(id)
 }
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {

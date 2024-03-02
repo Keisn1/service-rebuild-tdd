@@ -17,11 +17,13 @@ import (
 )
 
 type StubNotesStore struct {
-	notes        Notes
+	notes        map[int]Note
 	addNoteCalls Notes
 }
 
 func (sns *StubNotesStore) Delete(id int) error {
+	delete(sns.notes, id)
+	fmt.Printf("hello %d", id)
 	return nil
 }
 
@@ -31,7 +33,11 @@ func (sns *StubNotesStore) AddNote(note Note) error {
 }
 
 func (sns *StubNotesStore) GetAllNotes() Notes {
-	return sns.notes
+	var allNotes Notes
+	for _, note := range sns.notes {
+		allNotes = append(allNotes, note)
+	}
+	return allNotes
 }
 
 func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
@@ -76,9 +82,11 @@ func (sl *StubLogger) Reset() {
 
 func TestNotes(t *testing.T) {
 	notesStore := StubNotesStore{
-		notes: Notes{
-			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
-			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
+		notes: map[int]Note{
+			1: {UserID: 1, Note: "Note 1 user 1"},
+			2: {UserID: 1, Note: "Note 2 user 1"},
+			3: {UserID: 2, Note: "Note 1 user 2"},
+			4: {UserID: 2, Note: "Note 2 user 2"},
 		},
 	}
 	logger := StubLogger{}
@@ -95,9 +103,9 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 		notesC.GetAllNotes(response, request)
 
-		got := getNotesFromResponse(t, response.Body)
+		gotNotes := getNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-		assertAllNotes(t, got, wantedNotes)
+		assertAllNotes(t, gotNotes, wantedNotes)
 		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
 		})
@@ -147,16 +155,6 @@ func TestNotes(t *testing.T) {
 		})
 	})
 
-	t.Run("Delete a Note", func(t *testing.T) {
-		logger.Reset()
-		request, err := http.NewRequest(http.MethodDelete, "/notes/{id}", nil)
-		assertNoError(t, err)
-		response := httptest.NewRecorder()
-		notesC.Delete(response, request)
-
-		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
-	})
-
 	t.Run("test invalid json body", func(t *testing.T) {
 		logger.Reset()
 		badRequest := newPostRequestFromBody(t, "{}}", "/notes/1")
@@ -203,6 +201,26 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrInvalidUserID)
+	})
+
+	t.Run("Delete a Note", func(t *testing.T) {
+		logger.Reset()
+		id := 1
+		url := fmt.Sprintf("/notes/%v", id)
+		request, err := http.NewRequest(http.MethodDelete, url, nil)
+		assertNoError(t, err)
+		request = WithUrlParam(request, "id", "1")
+
+		response := httptest.NewRecorder()
+		notesC.Delete(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
+
+		wantedNotes := Notes{
+			{1, "Note 2 user 1"}, {2, "Note 1 user 2"}, {2, "Note 2 user 2"},
+		}
+		gotNotes := notesC.NotesStore.GetAllNotes()
+		assertAllNotes(t, gotNotes, wantedNotes)
 	})
 }
 
@@ -307,10 +325,19 @@ func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
 	return
 }
 
-func assertAllNotes(t testing.TB, got, wantedNotes Notes) {
+func assertAllNotes(t testing.TB, gotNotes, wantedNotes Notes) {
 	t.Helper()
-	if !reflect.DeepEqual(got, wantedNotes) {
-		t.Errorf("got %v want %v", got, wantedNotes)
+	assertLengthSlice(t, gotNotes, len(wantedNotes))
+	for _, want := range wantedNotes {
+		found := false
+		for _, got := range gotNotes {
+			if reflect.DeepEqual(got, want) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("want %v not found in gotNotes %v", want, gotNotes)
+		}
 	}
 }
 
