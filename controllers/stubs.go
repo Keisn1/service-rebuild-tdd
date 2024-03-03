@@ -35,6 +35,9 @@ func (sns *StubNotesStore) Delete(id int) error {
 
 func (sns *StubNotesStore) AddNote(note Note) error {
 	sns.addNoteCalls = append(sns.addNoteCalls, note)
+	if note.UserID == 1 && note.Note == "Note 1 user 1" {
+		return errors.New("Resource already exists")
+	}
 	return nil
 }
 
@@ -55,14 +58,6 @@ func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 		}
 	}
 	return
-}
-
-type StubNotesStoreAddNoteErrors struct {
-	StubNotesStore
-}
-
-func (sns *StubNotesStoreAddNoteErrors) AddNote(note Note) error {
-	return errors.New("Error stub")
 }
 
 type fmtCallf struct {

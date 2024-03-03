@@ -52,10 +52,10 @@ func TestNotes(t *testing.T) {
 			notesC.GetNotesByUserID(response, request)
 
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
-
 			got := getNotesFromResponse(t, response.Body)
 			assertNotesEqual(t, got, tc.want)
 		}
+		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, 3})
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
@@ -101,9 +101,9 @@ func TestNotes(t *testing.T) {
 
 	t.Run("test AddNote returns error", func(t *testing.T) {
 		logger.Reset()
-		notesC := &NotesCtrlr{NotesStore: &StubNotesStoreAddNoteErrors{}, Logger: logger}
 
-		request := newPostRequestWithNote(t, NewNote(1, "Test note"), "/notes/1")
+		// note already present
+		request := newPostRequestWithNote(t, NewNote(1, "Note 1 user 1"), "/notes/1")
 		response := httptest.NewRecorder()
 
 		notesC.ProcessAddNote(response, request)
