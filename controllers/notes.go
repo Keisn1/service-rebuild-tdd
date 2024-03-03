@@ -64,6 +64,7 @@ func (ns *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	err = ns.NotesStore.Delete(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
+		ns.Logger.Errorf("%w: %w", ErrDBResourceDeletion, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
