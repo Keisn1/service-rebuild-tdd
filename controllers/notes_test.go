@@ -216,6 +216,7 @@ func TestNotes(t *testing.T) {
 		gotNotes := notesC.NotesStore.GetAllNotes()
 		assertNotesEqual(t, gotNotes, wantedNotes)
 	})
+
 	t.Run("Deletion fail", func(t *testing.T) {
 		logger.Reset()
 
@@ -225,6 +226,18 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrDBResourceDeletion)
+	})
+
+	t.Run("Edit a Note", func(t *testing.T) {
+		logger.Reset()
+
+		note := NewNote(1, "Edited note")
+		putRequest := newPostRequestWithNote(t, note, "notes/1")
+		response := httptest.NewRecorder()
+		notesC.Edit(response, putRequest)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+
 	})
 }
 
@@ -274,6 +287,14 @@ func newPostRequestWithNote(t testing.TB, note Note, url string) *http.Request {
 	requestBody := map[string]Note{"note": note}
 	buf := encodeRequestBodyAddNote(t, requestBody)
 	request, err := http.NewRequest(http.MethodPost, url, buf)
+	assertNoError(t, err)
+	return request
+}
+
+func newPutRequestWithNote(t testing.TB, note Note, url string) *http.Request {
+	requestBody := map[string]Note{"note": note}
+	buf := encodeRequestBodyAddNote(t, requestBody)
+	request, err := http.NewRequest(http.MethodPut, url, buf)
 	assertNoError(t, err)
 	return request
 }
