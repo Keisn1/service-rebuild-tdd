@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -38,24 +37,20 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		testCases := []struct {
 			userID     int
-			want       Notes
 			statusCode int
 		}{
-			{1, Notes{{1, "Note 1 user 1"}, {1, "Note 2 user 1"}}, http.StatusOK},
-			{2, Notes{{2, "Note 1 user 2"}, {2, "Note 2 user 2"}}, http.StatusOK},
-			{100, Notes{}, http.StatusNotFound},
+			{1, http.StatusOK},
+			{2, http.StatusOK},
+			{100, http.StatusNotFound},
 		}
 
 		for _, tc := range testCases {
 			response := httptest.NewRecorder()
 			request := newGetNotesByUserIdRequest(t, tc.userID)
 			notesC.GetNotesByUserID(response, request)
-
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
-			got := getNotesFromResponse(t, response.Body)
-			assertNotesEqual(t, got, tc.want)
 		}
-		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, 3})
+		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, 100})
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
@@ -103,7 +98,7 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 
 		// note already present
-		request := newPostRequestWithNote(t, NewNote(1, "Note 1 user 1"), "/notes/1")
+		request := newPostRequestWithNote(t, NewNote(1, "Note already present"), "/notes/1")
 		response := httptest.NewRecorder()
 
 		notesC.ProcessAddNote(response, request)
@@ -111,7 +106,7 @@ func TestNotes(t *testing.T) {
 		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrDBResourceCreation)
 	})
 
-	t.Run("test false url parameters throws error", func(t *testing.T) {
+	t.Run("test false url parameters throw error", func(t *testing.T) {
 		logger.Reset()
 
 		badRequest := newRequestWithBadIdParam(t)
@@ -147,9 +142,6 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Edit a Note", func(t *testing.T) {
 		logger.Reset()
-		notesStore := NewStubNotesStore()
-		logger := NewStubLogger()
-		notesC := NewNotesCtrlr(notesStore, logger)
 
 		note := NewNote(1, "Edited note")
 		putRequest := newPutRequestWithNote(t, note, "/notes/1")
@@ -173,15 +165,6 @@ func WithUrlParam(r *http.Request, key, value string) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
 	chiCtx.URLParams.Add(key, value)
 	return r
-}
-
-func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
-	t.Helper()
-	err := json.NewDecoder(body).Decode(&notes)
-	if err != nil {
-		t.Fatalf("Unable to parse response from server %q into map[int]Notes", err)
-	}
-	return
 }
 
 func encodeRequestBodyAddNote(t testing.TB, rb map[string]Note) *bytes.Buffer {

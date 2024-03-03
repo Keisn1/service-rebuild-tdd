@@ -35,7 +35,7 @@ func (sns *StubNotesStore) Delete(id int) error {
 
 func (sns *StubNotesStore) AddNote(note Note) error {
 	sns.addNoteCalls = append(sns.addNoteCalls, note)
-	if note.UserID == 1 && note.Note == "Note 1 user 1" {
+	if note.UserID == 1 && note.Note == "Note already present" {
 		return errors.New("Resource already exists")
 	}
 	return nil
@@ -52,6 +52,7 @@ func (sns *StubNotesStore) GetAllNotes() Notes {
 }
 
 func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
+	sns.getNotesByUserIDCalls = append(sns.getNotesByUserIDCalls, userID)
 	for _, n := range sns.notes {
 		if n.UserID == userID {
 			ret = append(ret, n)
