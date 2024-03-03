@@ -29,7 +29,7 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotesGotCalled(t, notesStore.allNotesGotCalled)
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
-			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
+			{format: "Successfully retrieved all notes."},
 		})
 	})
 

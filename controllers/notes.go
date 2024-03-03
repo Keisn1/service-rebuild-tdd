@@ -142,8 +142,8 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
-	nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	notes := nc.NotesStore.GetAllNotes()
 	_ = json.NewEncoder(w).Encode(notes)
+	nc.Logger.Infof("Successfully retrieved all notes.")
 	return
 }
