@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"errors"
+
 	"github.com/go-chi/chi"
 )
 
@@ -50,7 +52,6 @@ var (
 )
 
 func (ns *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNoContent)
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -58,7 +59,13 @@ func (ns *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = ns.NotesStore.Delete(id)
+	fmt.Println(id)
+	err = ns.NotesStore.Delete(id)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {

@@ -22,9 +22,11 @@ type StubNotesStore struct {
 }
 
 func (sns *StubNotesStore) Delete(id int) error {
-	delete(sns.notes, id)
-	fmt.Printf("hello %d", id)
-	return nil
+	if _, ok := sns.notes[id]; ok {
+		delete(sns.notes, id)
+		return nil
+	}
+	return errors.New(fmt.Sprintf("Note with id %v not found", id))
 }
 
 func (sns *StubNotesStore) AddNote(note Note) error {
@@ -217,11 +219,12 @@ func TestNotes(t *testing.T) {
 	t.Run("Deletion fail", func(t *testing.T) {
 		logger.Reset()
 
-		deleteRequest := newDeleteRequest(t, 3) // not present
+		deleteRequest := newDeleteRequest(t, 50) // id not present
 		response := httptest.NewRecorder()
 		notesC.Delete(response, deleteRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
+		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrDBResourceDeletion)
 	})
 }
 
@@ -236,7 +239,7 @@ func newDeleteRequest(t testing.TB, id int) *http.Request {
 	url := fmt.Sprintf("/notes/%v", id)
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	assertNoError(t, err)
-	request = WithUrlParam(request, "id", "1")
+	request = WithUrlParam(request, "id", fmt.Sprintf("%d", id))
 	return request
 
 }
