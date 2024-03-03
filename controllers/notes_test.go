@@ -77,12 +77,14 @@ func TestNotes(t *testing.T) {
 
 	t.Run("POST a Note", func(t *testing.T) {
 		logger.Reset()
-		note := NewNote(1, "Test note")
-		request := newPostRequestWithNote(t, note, "/notes/1")
+		userID, note := 1, "Test note"
+
+		request := newPostRequestWithNote(t, note)
+		request = WithUrlParam(request, "userID", fmt.Sprintf("%d", userID))
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
-		wantAddNoteCalls := Notes{note}
+		wantAddNoteCalls := []AddNoteCall{userID: userID, note: note}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertNotesEqual(t, notesStore.addNoteCalls, wantAddNoteCalls)
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
@@ -178,7 +180,7 @@ func WithUrlParam(r *http.Request, key, value string) *http.Request {
 	return r
 }
 
-func encodeRequestBodyAddNote(t testing.TB, rb map[string]Note) *bytes.Buffer {
+func encodeRequestBodyAddNote(t testing.TB, rb map[string]string) *bytes.Buffer {
 	buf := bytes.NewBuffer([]byte{})
 	err := json.NewEncoder(buf).Encode(rb)
 	assertNoError(t, err)
@@ -211,10 +213,10 @@ func newDeleteRequest(t testing.TB, id int) *http.Request {
 	return request
 }
 
-func newPostRequestWithNote(t testing.TB, note Note, url string) *http.Request {
-	requestBody := map[string]Note{"note": note}
+func newPostRequestWithNote(t testing.TB, note string) *http.Request {
+	requestBody := map[string]string{"note": note}
 	buf := encodeRequestBodyAddNote(t, requestBody)
-	request, err := http.NewRequest(http.MethodPost, url, buf)
+	request, err := http.NewRequest(http.MethodPost, "", buf)
 	assertNoError(t, err)
 	return request
 }
