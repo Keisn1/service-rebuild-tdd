@@ -46,6 +46,7 @@ func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
 var (
 	ErrUnmarshalRequestBody = errors.New("Error Unmarshaling request body")
 	ErrDBResourceCreation   = errors.New("Could not create resource")
+	ErrDBResourceDeletion   = errors.New("Could not delete resource")
 	ErrInvalidRequestBody   = errors.New("Invalid request body")
 	ErrInvalidUserID        = errors.New("Invalid user ID")
 	ErrInvalidNoteId        = errors.New("Invalid note ID")
