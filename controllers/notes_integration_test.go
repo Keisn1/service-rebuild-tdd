@@ -45,5 +45,5 @@ func assertAllNotesAsExpected(t testing.TB, wantAllNotes Notes, notesC NotesCtrl
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
 
 	gotAllNotes := getNotesFromResponse(t, response.Body)
-	assertAllNotes(t, gotAllNotes, wantAllNotes)
+	assertNotesEqual(t, gotAllNotes, wantAllNotes)
 }

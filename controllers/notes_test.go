@@ -105,7 +105,7 @@ func TestNotes(t *testing.T) {
 
 		gotNotes := getNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-		assertAllNotes(t, gotNotes, wantedNotes)
+		assertNotesEqual(t, gotNotes, wantedNotes)
 		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
 		})
@@ -190,13 +190,9 @@ func TestNotes(t *testing.T) {
 
 	t.Run("test false url parameters throws error", func(t *testing.T) {
 		logger.Reset()
+
+		badRequest := newRequestWithBadIdParam(t)
 		response := httptest.NewRecorder()
-
-		badUrlParam := "notAnInt"
-		request, err := http.NewRequest(http.MethodGet, "", nil)
-		assertNoError(t, err)
-
-		badRequest := WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
 		notesC.GetNotesByUserID(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
@@ -205,14 +201,10 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Delete a Note", func(t *testing.T) {
 		logger.Reset()
-		id := 1
-		url := fmt.Sprintf("/notes/%v", id)
-		request, err := http.NewRequest(http.MethodDelete, url, nil)
-		assertNoError(t, err)
-		request = WithUrlParam(request, "id", "1")
 
+		deleteRequest := newDeleteRequest(t, 1)
 		response := httptest.NewRecorder()
-		notesC.Delete(response, request)
+		notesC.Delete(response, deleteRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
 
@@ -220,8 +212,24 @@ func TestNotes(t *testing.T) {
 			{1, "Note 2 user 1"}, {2, "Note 1 user 2"}, {2, "Note 2 user 2"},
 		}
 		gotNotes := notesC.NotesStore.GetAllNotes()
-		assertAllNotes(t, gotNotes, wantedNotes)
+		assertNotesEqual(t, gotNotes, wantedNotes)
 	})
+}
+
+func newRequestWithBadIdParam(t testing.TB) *http.Request {
+	badUrlParam := "notAnInt"
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	assertNoError(t, err)
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
+}
+
+func newDeleteRequest(t testing.TB, id int) *http.Request {
+	url := fmt.Sprintf("/notes/%v", id)
+	request, err := http.NewRequest(http.MethodDelete, url, nil)
+	assertNoError(t, err)
+	request = WithUrlParam(request, "id", "1")
+	return request
+
 }
 
 func newInvalidBodyPostRequest(t testing.TB) *http.Request {
@@ -325,7 +333,7 @@ func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
 	return
 }
 
-func assertAllNotes(t testing.TB, gotNotes, wantedNotes Notes) {
+func assertNotesEqual(t testing.TB, gotNotes, wantedNotes Notes) {
 	t.Helper()
 	assertLengthSlice(t, gotNotes, len(wantedNotes))
 	for _, want := range wantedNotes {
