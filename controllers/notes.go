@@ -24,7 +24,7 @@ type Notes []Note
 type NotesStore interface {
 	GetAllNotes() Notes
 	GetNotesByUserID(int) Notes
-	AddNote(Note) error
+	AddNote(userID int, note string) error
 	EditNote(Note) error
 	Delete(int) error
 }
@@ -97,8 +97,15 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
-	var body map[string]Note
-	err := json.NewDecoder(r.Body).Decode(&body)
+	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrInvalidUserID, chi.URLParam(r, "id"))
+		return
+	}
+
+	var body map[string]string
+	err = json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrUnmarshalRequestBody, r.Body)
@@ -112,14 +119,14 @@ func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = nc.NotesStore.AddNote(note)
+	err = nc.NotesStore.AddNote(userID, note)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		nc.Logger.Errorf("Failure: ProcessAddNote: %w", ErrDBResourceCreation)
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)
-	nc.Logger.Infof("Success: ProcessAddNote with userID %d and note %v", note.UserID, note.Note)
+	nc.Logger.Infof("Success: ProcessAddNote with userID %d and note %v", userID, note)
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {

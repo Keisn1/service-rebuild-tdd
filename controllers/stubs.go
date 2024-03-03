@@ -2,14 +2,20 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 )
+
+type AddNoteCall struct {
+	userID int
+	note   string
+}
 
 type StubNotesStore struct {
 	notes map[int]Note
 
 	getNotesByUserIDCalls []int
 	allNotesGotCalled     bool
-	addNoteCalls          Notes
+	addNoteCalls          []AddNoteCall
 	editNoteCalls         Notes
 	deleteNoteCalls       []int
 }
@@ -33,9 +39,10 @@ func (sns *StubNotesStore) Delete(id int) error {
 	return nil
 }
 
-func (sns *StubNotesStore) AddNote(note Note) error {
-	sns.addNoteCalls = append(sns.addNoteCalls, note)
-	if note.UserID == 1 && note.Note == "Note already present" {
+func (sns *StubNotesStore) AddNote(userID int, note string) error {
+	call := AddNoteCall{userID: userID, note: note}
+	sns.addNoteCalls = append(sns.addNoteCalls, call)
+	if call.userID == 1 && call.note == "Note already present" {
 		return errors.New("Resource already exists")
 	}
 	return nil
@@ -64,6 +71,10 @@ func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 type fmtCallf struct {
 	format string
 	a      []any
+}
+
+func (f *fmtCallf) String() string {
+	return fmt.Sprintf("format: %v, a: %v", f.format, f.a)
 }
 
 type StubLogger struct {

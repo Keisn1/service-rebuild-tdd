@@ -1,0 +1,77 @@
+:PROPERTIES:
+:GPTEL_MODEL: gpt-4
+:GPTEL_BACKEND: ChatGPT
+:GPTEL_BOUNDS: ((300 . 382) (438 . 572) (632 . 751) (1023 . 1399) (1461 . 1640) (1663 . 1830) (1929 . 2304) (2357 . 2472) (2567 . 2893) (2961 . 3110) (3377 . 4024))
+:END:
+
+*** what is the right status code if a resource could not be deleted
+
+The right status code to use when a resource could not be deleted is 409 Conflict.
+
+*** what if the resource wasn't there to begin with?
+
+If the resource wasn't there to begin with, you should use the status code 404 Not Found to indicate that the resource does not exist.
+
+*** Status code for editing a resource (via a put method
+
+The status code to use for editing a resource via a PUT method is 200 OK if the resource has been successfully updated.
+
+*** In a REST api, where I have notes that belong to users via a userID, and the notes itself have an id. How would call my routes? For example, my route to add a new note for the time being is "/notes/{userID}". Is that ok? What would be the route for editing a note?
+
+For a REST API where notes belong to users and each note has an ID, a common approach would be to define your routes in a nested manner. For example:
+- To add a new note for a user: POST /users/{userID}/notes
+- To edit a specific note: PUT /users/{userID}/notes/{noteID}
+This nested structure helps maintain a clear hierarchy and makes the API endpoints more self-descriptive.
+
+*** I also want to have a route where I can have all notes
+
+To retrieve all notes for a user in your REST API, you can define a route like:
+- GET /users/{userID}/notes
+This endpoint would retrieve all notes belonging to the specified user.
+
+*** from every user
+
+To retrieve all notes from every user in your REST API, you can define a route like:
+- GET /notes
+This endpoint would retrieve all notes from every user in the system.
+
+*** I have a controller with the function GetAllNotes. What should i log inside that controller
+
+Inside the GetAllNotes controller function, you should log relevant information such as:
+- Request details (e.g., method, endpoint, parameters)
+- User authentication details (if applicable)
+- Actions taken during note retrieval process
+- Success or failure status of the operation
+Logging these details can help with monitoring, debugging, and auditing the API functionality.
+
+*** Do you have a good success log message for me
+
+A good success log message for retrieving all notes could be:
+"Successfully retrieved all notes for user {userID}."
+
+*** The request details, can they also be logged by a middleware in front of the controller
+
+Yes, request details can also be logged by a middleware in front of the controller. Middleware can capture details such as request method, endpoint, parameters, headers, and more before passing the request to the controller. This helps with centralizing logging logic and ensuring consistent logging across multiple endpoints.
+
+*** I need a non-success message for note retrieval for one user
+
+A non-success message for note retrieval for one user could be:
+"Failed to retrieve notes for user {userID}. Please check the user ID and try again."
+
+*** I want to build a RESTful note taking application. Notes specific to Users may be retreived by their userID. Notes can be deleted and edited by their noteID. Posting new notes by a user is done via a middleware, authenticating the user. Propose a route schema
+
+Based on your requirements, here's a proposed route schema for your RESTful note taking application:
+
+1. =GET /users/{userID}/notes= - Retrieve all notes for a specific user.
+
+2. =POST /users/{userID}/notes= - Add a new note for a specific user. The user data is authenticated through middleware.
+
+3. =PUT /users/{userID}/notes/{noteID}= - Edit an existing note for a specific user. 
+
+4. =DELETE /users/{userID}/notes/{noteID}= - Delete a specific note for a specific user. 
+
+5. =GET /notes= - Retrieve all notes from every user in the system.
+
+Ensure to replace {userID} and {noteID} with the actual user and note identifiers in your application.
+
+***  
