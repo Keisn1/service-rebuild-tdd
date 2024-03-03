@@ -97,37 +97,36 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
-	nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	var body map[string]Note
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("%w: %w", ErrUnmarshalRequestBody, err)
+		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrUnmarshalRequestBody, r.Body)
 		return
 	}
 
 	note, ok := body["note"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("%w: %w", ErrInvalidRequestBody, err)
+		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrInvalidRequestBody, r.Body)
 		return
 	}
 
 	err = nc.NotesStore.AddNote(note)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("%w: %w", ErrDBResourceCreation, err)
+		nc.Logger.Errorf("Failure: ProcessAddNote: %w", ErrDBResourceCreation)
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)
+	nc.Logger.Infof("Success: ProcessAddNote with userID %d and note %v", note.UserID, note.Note)
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
-
 	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("%w: %w", ErrInvalidUserID, err)
+		nc.Logger.Errorf("Failure: GetNotesByUserID: %w: %v", ErrInvalidUserID, chi.URLParam(r, "id"))
 		return
 	}
 

@@ -61,6 +61,20 @@ func TestNotes(t *testing.T) {
 
 	})
 
+	t.Run("test false url parameters throw error", func(t *testing.T) {
+		logger.Reset()
+
+		badID := "notAnInt"
+		badRequest := newRequestWithBadIdParam(t, badID)
+		response := httptest.NewRecorder()
+		notesC.GetNotesByUserID(response, badRequest)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
+		assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
+			{format: "Failure: GetNotesByUserID: %w: %v", a: []any{ErrInvalidUserID, badID}},
+		})
+	})
+
 	t.Run("POST a Note", func(t *testing.T) {
 		logger.Reset()
 		note := NewNote(1, "Test note")
@@ -72,7 +86,7 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertNotesEqual(t, notesStore.addNoteCalls, wantAddNoteCalls)
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
-			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
+			{format: "Success: ProcessAddNote with userID %d and note %v", a: []any{note.UserID, note.Note}},
 		})
 	})
 
@@ -83,7 +97,9 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrUnmarshalRequestBody)
+		assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
+			{format: "Failure: ProcessAddNote: %w: %v", a: []any{ErrUnmarshalRequestBody, badRequest.Body}},
+		})
 	})
 
 	t.Run("test invalid request body", func(t *testing.T) {
@@ -94,30 +110,22 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrInvalidRequestBody)
+		assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
+			{format: "Failure: ProcessAddNote: %w: %v", a: []any{ErrInvalidRequestBody, badRequest.Body}},
+		})
 	})
 
-	t.Run("test AddNote returns error", func(t *testing.T) {
+	t.Run("test AddNote and Note already present", func(t *testing.T) {
 		logger.Reset()
 
-		// note already present
 		request := newPostRequestWithNote(t, NewNote(1, "Note already present"), "/notes/1")
 		response := httptest.NewRecorder()
 
 		notesC.ProcessAddNote(response, request)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrDBResourceCreation)
-	})
-
-	t.Run("test false url parameters throw error", func(t *testing.T) {
-		logger.Reset()
-
-		badRequest := newRequestWithBadIdParam(t)
-		response := httptest.NewRecorder()
-		notesC.GetNotesByUserID(response, badRequest)
-
-		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertRightErrorCall(t, logger.errorfCall[0], "%w: %w", ErrInvalidUserID)
+		assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
+			{format: "Failure: ProcessAddNote: %w", a: []any{ErrDBResourceCreation}},
+		})
 	})
 
 	t.Run("Delete a Note", func(t *testing.T) {
@@ -228,11 +236,10 @@ func newPutRequestWithNote(t testing.TB, note Note, url string) *http.Request {
 	return request
 }
 
-func newRequestWithBadIdParam(t testing.TB) *http.Request {
-	badUrlParam := "notAnInt"
+func newRequestWithBadIdParam(t testing.TB, badID string) *http.Request {
 	request, err := http.NewRequest(http.MethodGet, "", nil)
 	assertNoError(t, err)
-	return WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", badID))
 }
 
 func newInvalidBodyPostRequest(t testing.TB) *http.Request {
