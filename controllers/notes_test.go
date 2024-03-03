@@ -10,98 +10,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"sort"
 	"testing"
 
 	"github.com/go-chi/chi"
 )
-
-type StubNotesStore struct {
-	notes         map[int]Note
-	addNoteCalls  Notes
-	editNoteCalls Notes
-}
-
-func (sns *StubNotesStore) Delete(id int) error {
-	if _, ok := sns.notes[id]; ok {
-		delete(sns.notes, id)
-		return nil
-	}
-	return errors.New(fmt.Sprintf("Note with id %v not found", id))
-}
-
-func (sns *StubNotesStore) AddNote(note Note) error {
-	sns.addNoteCalls = append(sns.addNoteCalls, note)
-	return nil
-}
-
-func (sns *StubNotesStore) EditNote(note Note) error {
-	sns.editNoteCalls = append(sns.editNoteCalls, note)
-	return nil
-}
-
-func (sns *StubNotesStore) GetAllNotes() Notes {
-	var allNotes Notes
-	for _, note := range sns.notes {
-		allNotes = append(allNotes, note)
-	}
-	return allNotes
-}
-
-func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
-	for _, n := range sns.notes {
-		if n.UserID == userID {
-			ret = append(ret, n)
-		}
-	}
-	return
-}
-
-type StubNotesStoreAddNoteErrors struct {
-	StubNotesStore
-}
-
-func (sns *StubNotesStoreAddNoteErrors) AddNote(note Note) error {
-	return errors.New("Error stub")
-}
-
-type fmtCallf struct {
-	format string
-	a      []any
-}
-
-type StubLogger struct {
-	infofCalls []fmtCallf
-	errorfCall []fmtCallf
-}
-
-func (sl *StubLogger) Infof(format string, a ...any) {
-	sl.infofCalls = append(sl.infofCalls, fmtCallf{format: format, a: a})
-}
-
-func (sl *StubLogger) Errorf(format string, a ...any) {
-	sl.errorfCall = append(sl.errorfCall, fmtCallf{format: format, a: a})
-}
-
-func (sl *StubLogger) Reset() {
-	sl.infofCalls = []fmtCallf{}
-	sl.errorfCall = []fmtCallf{}
-}
-
-func NewStubNotesStore() *StubNotesStore {
-	return &StubNotesStore{
-		notes: map[int]Note{
-			1: {UserID: 1, Note: "Note 1 user 1"},
-			2: {UserID: 1, Note: "Note 2 user 1"},
-			3: {UserID: 2, Note: "Note 1 user 2"},
-			4: {UserID: 2, Note: "Note 2 user 2"},
-		},
-	}
-}
-
-func NewStubLogger() *StubLogger {
-	return &StubLogger{}
-}
 
 func TestNotes(t *testing.T) {
 	notesStore := NewStubNotesStore()
@@ -122,7 +34,7 @@ func TestNotes(t *testing.T) {
 		gotNotes := getNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertNotesEqual(t, gotNotes, wantedNotes)
-		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
+		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
 		})
 	})
@@ -147,9 +59,9 @@ func TestNotes(t *testing.T) {
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
 
 			got := getNotesFromResponse(t, response.Body)
-			assertNotesById(t, got, tc.want)
+			assertNotesEqual(t, got, tc.want)
 		}
-		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
+		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
 			{format: "%s request to %s received", a: []any{"GET", "/notes/100"}},
@@ -165,8 +77,8 @@ func TestNotes(t *testing.T) {
 
 		wantAddNoteCalls := Notes{note}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
-		assertNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
-		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
+		assertNotesEqual(t, notesStore.addNoteCalls, wantAddNoteCalls)
+		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
 		})
 	})
@@ -259,18 +171,54 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
 		wantEditNoteCalls := Notes{note}
-		assertNoteCalls(t, notesStore.editNoteCalls, wantEditNoteCalls)
-		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
+		assertNotesEqual(t, notesStore.editNoteCalls, wantEditNoteCalls)
+		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"PUT", "/notes/1"}},
 		})
 	})
 }
 
-func newRequestWithBadIdParam(t testing.TB) *http.Request {
-	badUrlParam := "notAnInt"
-	request, err := http.NewRequest(http.MethodGet, "", nil)
+// WithUrlParam returns a pointer to a request object with the given URL params
+// added to a new chi.Context object.
+func WithUrlParam(r *http.Request, key, value string) *http.Request {
+	chiCtx := chi.NewRouteContext()
+	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
+	chiCtx.URLParams.Add(key, value)
+	return r
+}
+
+func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
+	t.Helper()
+	err := json.NewDecoder(body).Decode(&notes)
+	if err != nil {
+		t.Fatalf("Unable to parse response from server %q into map[int]Notes", err)
+	}
+	return
+}
+
+func encodeRequestBodyAddNote(t testing.TB, rb map[string]Note) *bytes.Buffer {
+	buf := bytes.NewBuffer([]byte{})
+	err := json.NewEncoder(buf).Encode(rb)
 	assertNoError(t, err)
-	return WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
+	return buf
+}
+
+func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
+	url := fmt.Sprintf("/notes/%v", userID)
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatalf("Could not build request newPostAddNoteRequest: %q", err)
+	}
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
+}
+
+func newGetAllNotesRequest(t testing.TB) *http.Request {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, "/notes", nil)
+	if err != nil {
+		t.Fatalf("Unable to build request newGetAllNotesRequest %q", err)
+	}
+	return req
 }
 
 func newDeleteRequest(t testing.TB, id int) *http.Request {
@@ -279,7 +227,38 @@ func newDeleteRequest(t testing.TB, id int) *http.Request {
 	assertNoError(t, err)
 	request = WithUrlParam(request, "id", fmt.Sprintf("%d", id))
 	return request
+}
 
+func newPostRequestWithNote(t testing.TB, note Note, url string) *http.Request {
+	requestBody := map[string]Note{"note": note}
+	buf := encodeRequestBodyAddNote(t, requestBody)
+	request, err := http.NewRequest(http.MethodPost, url, buf)
+	assertNoError(t, err)
+	return request
+}
+
+func newPostRequestFromBody(t testing.TB, requestBody string, url string) *http.Request {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(requestBody)
+	assertNoError(t, err)
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
+	assertNoError(t, err)
+	return req
+}
+
+func newPutRequestWithNote(t testing.TB, note Note, url string) *http.Request {
+	requestBody := map[string]Note{"note": note}
+	buf := encodeRequestBodyAddNote(t, requestBody)
+	request, err := http.NewRequest(http.MethodPut, url, buf)
+	assertNoError(t, err)
+	return request
+}
+
+func newRequestWithBadIdParam(t testing.TB) *http.Request {
+	badUrlParam := "notAnInt"
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	assertNoError(t, err)
+	return WithUrlParam(request, "id", fmt.Sprintf("%v", badUrlParam))
 }
 
 func newInvalidBodyPostRequest(t testing.TB) *http.Request {
@@ -292,62 +271,12 @@ func newInvalidBodyPostRequest(t testing.TB) *http.Request {
 
 }
 
-func newPostRequestFromBody(t testing.TB, requestBody string, url string) *http.Request {
-	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(requestBody)
-	assertNoError(t, err)
-	req, err := http.NewRequest(http.MethodPost, url, &buf)
-	assertNoError(t, err)
-	return req
-}
-
-func encodeRequestBodyAddNote(t testing.TB, rb map[string]Note) *bytes.Buffer {
-	buf := bytes.NewBuffer([]byte{})
-	err := json.NewEncoder(buf).Encode(rb)
-	assertNoError(t, err)
-	return buf
-}
-
-func newPostRequestWithNote(t testing.TB, note Note, url string) *http.Request {
-	requestBody := map[string]Note{"note": note}
-	buf := encodeRequestBodyAddNote(t, requestBody)
-	request, err := http.NewRequest(http.MethodPost, url, buf)
-	assertNoError(t, err)
-	return request
-}
-
-func newPutRequestWithNote(t testing.TB, note Note, url string) *http.Request {
-	requestBody := map[string]Note{"note": note}
-	buf := encodeRequestBodyAddNote(t, requestBody)
-	request, err := http.NewRequest(http.MethodPut, url, buf)
-	assertNoError(t, err)
-	return request
-}
-
-func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
-	url := fmt.Sprintf("/notes/%v", userID)
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		t.Fatalf("Could not build request newPostAddNoteRequest: %q", err)
-	}
-	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
-}
-
 func assertLengthSlice[T any](t testing.TB, elements []T, want int) {
 	t.Helper()
 	if len(elements) != want {
 		t.Errorf(`got = %v; want %v`, len(elements), want)
 	}
 
-}
-
-func assertStringSlicesAreEqual(t testing.TB, got, want Notes) {
-	t.Helper()
-	sort.Slice(got, func(i, j int) bool { return got[i].Note < got[j].Note })
-	sort.Slice(want, func(i, j int) bool { return want[i].Note < want[j].Note })
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf(`got = %v; want %v`, got, want)
-	}
 }
 
 func assertStatusCode(t testing.TB, got, want int) {
@@ -362,33 +291,6 @@ func assertSlicesHaveSameLength[T any](t testing.TB, got, want []T) {
 	if len(got) != len(want) {
 		t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
 	}
-}
-
-// WithUrlParam returns a pointer to a request object with the given URL params
-// added to a new chi.Context object.
-func WithUrlParam(r *http.Request, key, value string) *http.Request {
-	chiCtx := chi.NewRouteContext()
-	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
-	chiCtx.URLParams.Add(key, value)
-	return r
-}
-
-func newGetAllNotesRequest(t testing.TB) *http.Request {
-	t.Helper()
-	req, err := http.NewRequest(http.MethodGet, "/notes", nil)
-	if err != nil {
-		t.Fatalf("Unable to build request newGetAllNotesRequest %q", err)
-	}
-	return req
-}
-
-func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
-	t.Helper()
-	err := json.NewDecoder(body).Decode(&notes)
-	if err != nil {
-		t.Fatalf("Unable to parse response from server %q into map[int]Notes", err)
-	}
-	return
 }
 
 func assertNotesEqual(t testing.TB, gotNotes, wantedNotes Notes) {
@@ -407,20 +309,7 @@ func assertNotesEqual(t testing.TB, gotNotes, wantedNotes Notes) {
 	}
 }
 
-func assertNotesById(t testing.TB, got, want Notes) {
-	t.Helper()
-	assertSlicesHaveSameLength(t, got, want)
-	assertStringSlicesAreEqual(t, got, want)
-}
-
-func assertNoteCalls(t testing.TB, got, want Notes) {
-	t.Helper()
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf(`got = %v; want %v`, got, want)
-	}
-}
-
-func assertGotCallsEqualsWantCalls(t testing.TB, got, want []fmtCallf) {
+func assertLoggingCalls(t testing.TB, got, want []fmtCallf) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)

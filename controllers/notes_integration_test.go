@@ -36,7 +36,7 @@ func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC
 
 	gotNotes := getNotesFromResponse(t, response.Body)
 	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-	assertNotesById(t, gotNotes, wantNotes)
+	assertNotesEqual(t, gotNotes, wantNotes)
 }
 
 func assertAllNotesAsExpected(t testing.TB, wantAllNotes Notes, notesC NotesCtrlr) {

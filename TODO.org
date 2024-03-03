@@ -6,7 +6,7 @@
 - [X] logging
 - [X] error handling in controllers
 - [X] put and delete are missing
-- [ ] need to refactor Delete and Put (resetting)
+- [X] need to refactor Delete and Put (resetting)
 - [ ] update server.go (integration test)
 - [ ] rename AssertionFunctions (assertNoteCalls, GotCallsEqualsWantCalls)
 - [ ] authentication service
