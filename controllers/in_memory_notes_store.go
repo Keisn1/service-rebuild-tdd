@@ -15,6 +15,9 @@ func (i *InMemoryNotesStore) Delete(id int) error {
 	return nil
 }
 
+func (i *InMemoryNotesStore) EditNote(note Note) error {
+	return nil
+}
 func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 	i.lock.Lock()
 	defer i.lock.Unlock()

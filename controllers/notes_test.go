@@ -17,8 +17,9 @@ import (
 )
 
 type StubNotesStore struct {
-	notes        map[int]Note
-	addNoteCalls Notes
+	notes         map[int]Note
+	addNoteCalls  Notes
+	editNoteCalls Notes
 }
 
 func (sns *StubNotesStore) Delete(id int) error {
@@ -31,6 +32,11 @@ func (sns *StubNotesStore) Delete(id int) error {
 
 func (sns *StubNotesStore) AddNote(note Note) error {
 	sns.addNoteCalls = append(sns.addNoteCalls, note)
+	return nil
+}
+
+func (sns *StubNotesStore) EditNote(note Note) error {
+	sns.editNoteCalls = append(sns.editNoteCalls, note)
 	return nil
 }
 
@@ -151,7 +157,7 @@ func TestNotes(t *testing.T) {
 
 		wantAddNoteCalls := Notes{note}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
-		assertAddNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
+		assertNoteCalls(t, notesStore.addNoteCalls, wantAddNoteCalls)
 		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"POST", "/notes/1"}},
 		})
@@ -239,7 +245,7 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
 		wantEditNoteCalls := Notes{note}
-		assertEditNoteCalls(t, notesStore.editNoteCalls, wantEditNoteCalls)
+		assertNoteCalls(t, notesStore.editNoteCalls, wantEditNoteCalls)
 
 	})
 }
@@ -391,7 +397,7 @@ func assertNotesById(t testing.TB, got, want Notes) {
 	assertStringSlicesAreEqual(t, got, want)
 }
 
-func assertAddNoteCalls(t testing.TB, got, want Notes) {
+func assertNoteCalls(t testing.TB, got, want Notes) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)

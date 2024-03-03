@@ -25,6 +25,7 @@ type NotesStore interface {
 	GetAllNotes() Notes
 	GetNotesByUserID(int) Notes
 	AddNote(Note) error
+	EditNote(Note) error
 	Delete(int) error
 }
 
