@@ -214,6 +214,15 @@ func TestNotes(t *testing.T) {
 		gotNotes := notesC.NotesStore.GetAllNotes()
 		assertNotesEqual(t, gotNotes, wantedNotes)
 	})
+	t.Run("Deletion fail", func(t *testing.T) {
+		logger.Reset()
+
+		deleteRequest := newDeleteRequest(t, 3) // not present
+		response := httptest.NewRecorder()
+		notesC.Delete(response, deleteRequest)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
+	})
 }
 
 func newRequestWithBadIdParam(t testing.TB) *http.Request {
