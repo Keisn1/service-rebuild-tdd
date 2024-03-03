@@ -46,12 +46,19 @@ var (
 	ErrDBResourceCreation   = errors.New("Could not create resource")
 	ErrInvalidRequestBody   = errors.New("Invalid request body")
 	ErrInvalidUserID        = errors.New("Invalid user ID")
+	ErrInvalidNoteId        = errors.New("Invalid note ID")
 )
 
 func (ns *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
-	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-	ns.NotesStore.Delete(id)
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		ns.Logger.Errorf("%w: %w", ErrInvalidNoteId, err)
+		return
+	}
+
+	_ = ns.NotesStore.Delete(id)
 }
 
 func (ns *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
