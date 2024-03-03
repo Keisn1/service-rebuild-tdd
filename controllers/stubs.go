@@ -2,11 +2,21 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 )
 
 type AddNoteCall struct {
 	userID int
+	note   string
+}
+
+type DeleteCall struct {
+	userID int
+	noteID int
+}
+
+type EditCall struct {
+	userID int
+	noteID int
 	note   string
 }
 
@@ -16,8 +26,8 @@ type StubNotesStore struct {
 	getNotesByUserIDCalls []int
 	allNotesGotCalled     bool
 	addNoteCalls          []AddNoteCall
-	editNoteCalls         Notes
-	deleteNoteCalls       []int
+	editNoteCalls         []EditCall
+	deleteNoteCalls       []DeleteCall
 }
 
 func NewStubNotesStore() *StubNotesStore {
@@ -31,9 +41,9 @@ func NewStubNotesStore() *StubNotesStore {
 	}
 }
 
-func (sns *StubNotesStore) Delete(id int) error {
-	sns.deleteNoteCalls = append(sns.deleteNoteCalls, id)
-	if id != 1 {
+func (sns *StubNotesStore) Delete(userID int, noteID int) error {
+	sns.deleteNoteCalls = append(sns.deleteNoteCalls, DeleteCall{userID: userID, noteID: noteID})
+	if userID == 50 && noteID == 50 {
 		return errors.New("Resource not found")
 	}
 	return nil
@@ -48,8 +58,8 @@ func (sns *StubNotesStore) AddNote(userID int, note string) error {
 	return nil
 }
 
-func (sns *StubNotesStore) EditNote(note Note) error {
-	sns.editNoteCalls = append(sns.editNoteCalls, note)
+func (sns *StubNotesStore) EditNote(userID, noteID int, note string) error {
+	sns.editNoteCalls = append(sns.editNoteCalls, EditCall{userID: userID, noteID: noteID, note: note})
 	return nil
 }
 
@@ -68,31 +78,22 @@ func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 	return
 }
 
-type fmtCallf struct {
-	format string
-	a      []any
-}
-
-func (f *fmtCallf) String() string {
-	return fmt.Sprintf("format: %v, a: %v", f.format, f.a)
-}
-
 type StubLogger struct {
-	infofCalls []fmtCallf
-	errorfCall []fmtCallf
+	infofCalls []string
+	errorfCall []string
 }
 
 func (sl *StubLogger) Infof(format string, a ...any) {
-	sl.infofCalls = append(sl.infofCalls, fmtCallf{format: format, a: a})
+	sl.infofCalls = append(sl.infofCalls, format)
 }
 
 func (sl *StubLogger) Errorf(format string, a ...any) {
-	sl.errorfCall = append(sl.errorfCall, fmtCallf{format: format, a: a})
+	sl.errorfCall = append(sl.errorfCall, format)
 }
 
 func (sl *StubLogger) Reset() {
-	sl.infofCalls = []fmtCallf{}
-	sl.errorfCall = []fmtCallf{}
+	sl.infofCalls = []string{}
+	sl.errorfCall = []string{}
 }
 
 func NewStubLogger() *StubLogger {

@@ -25,8 +25,8 @@ type NotesStore interface {
 	GetAllNotes() Notes
 	GetNotesByUserID(int) Notes
 	AddNote(userID int, note string) error
-	EditNote(Note) error
-	Delete(int) error
+	EditNote(userID, noteID int, note string) error
+	Delete(userID int, noteID int) error
 }
 
 type Logger interface {
@@ -50,57 +50,65 @@ var (
 	ErrDBResourceDeletion   = errors.New("Could not delete resource")
 	ErrInvalidRequestBody   = errors.New("Invalid request body")
 	ErrInvalidUserID        = errors.New("Invalid user ID")
-	ErrInvalidNoteId        = errors.New("Invalid note ID")
+	ErrInvalidNoteID        = errors.New("Invalid note ID")
 )
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
-	nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
-	var body map[string]Note
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("%w: %w", ErrUnmarshalRequestBody, err)
-		return
-	}
+	// var body map[string]Note
+	// _ = json.NewDecoder(r.Body).Decode(&body)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	nc.Logger.Errorf("%w: %w", ErrUnmarshalRequestBody, err)
+	// 	return
+	// }
 
-	note, ok := body["note"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("%w: %w", ErrInvalidRequestBody, err)
-		return
-	}
+	// note, _ := body["note"]
+	// if !ok {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	nc.Logger.Errorf("%w: %w", ErrInvalidRequestBody, err)
+	// 	return
+	// }
 
-	err = nc.NotesStore.EditNote(note)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("%w: %w", ErrDBResourceCreation, err)
-		return
-	}
+	// _ = nc.NotesStore.EditNote(userID, noteID, note)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	nc.Logger.Errorf("%w: %w", ErrDBResourceCreation, err)
+	// 	return
+	// }
 	w.WriteHeader(http.StatusOK)
 }
 
 func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("%w: %w", ErrInvalidNoteId, err)
+		nc.Logger.Errorf("%w: %w", ErrInvalidUserID, err)
 		return
 	}
 
-	err = nc.NotesStore.Delete(id)
+	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		nc.Logger.Errorf("%w: %w", ErrDBResourceDeletion, err)
+		w.WriteHeader(http.StatusBadRequest)
+		nc.Logger.Errorf("%w: %w", ErrInvalidNoteID, err)
 		return
 	}
+
+	err = nc.NotesStore.Delete(userID, noteID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		nc.Logger.Errorf("Delete DBError: %w", err)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
+	nc.Logger.Errorf("Success: Delete noteID %v userID %v")
 }
 
 func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrInvalidUserID, chi.URLParam(r, "id"))
+		nc.Logger.Errorf("ProcessAddNote invalid userID: %w", err)
 		return
 	}
 
@@ -108,21 +116,21 @@ func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrUnmarshalRequestBody, r.Body)
+		nc.Logger.Errorf("ProcessAddNote invalid json: %w", err)
 		return
 	}
 
 	note, ok := body["note"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("Failure: ProcessAddNote: %w: %v", ErrInvalidRequestBody, r.Body)
+		nc.Logger.Errorf("ProcessAddNote invalid body: %w", err)
 		return
 	}
 
 	err = nc.NotesStore.AddNote(userID, note)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("Failure: ProcessAddNote: %w", ErrDBResourceCreation)
+		nc.Logger.Errorf("ProcessAddNote DBerror: %w", err)
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)
@@ -133,24 +141,20 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("Failure: GetNotesByUserID: %w: %v", ErrInvalidUserID, chi.URLParam(r, "id"))
+		nc.Logger.Errorf("GetNotesByUserID invalid userID: %w", err)
 		return
 	}
 
 	notes := nc.NotesStore.GetNotesByUserID(userID)
 	if len(notes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		err := json.NewEncoder(w).Encode([]string{})
-		if err != nil {
-			logEncodingError(err, nc.Logger)
-		}
-		nc.Logger.Errorf("Failure: GetNotesByUserID with userID %d", userID)
+		nc.Logger.Errorf("GetNotesByUserID user not Found: %w", userID)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(notes)
 	if err != nil {
-		logEncodingError(err, nc.Logger)
+		nc.Logger.Errorf("GetAllNotes invalid json: %w", err)
 		return
 	}
 
@@ -162,13 +166,9 @@ func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes := nc.NotesStore.GetAllNotes()
 	err := json.NewEncoder(w).Encode(notes)
 	if err != nil {
-		nc.Logger.Errorf("%w: %w", ErrEncodingJson, err)
-		nc.Logger.Errorf("Failure: GetAllNotes")
+		nc.Logger.Errorf("GetAllNotes invalid json: %w", err)
 		return
 	}
 	nc.Logger.Infof("Success: GetAllNotes")
 	return
-}
-
-func logEncodingError(err error, logger Logger) {
 }
