@@ -238,7 +238,7 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 
 		note := NewNote(1, "Edited note")
-		putRequest := newPostRequestWithNote(t, note, "notes/1")
+		putRequest := newPutRequestWithNote(t, note, "/notes/1")
 		response := httptest.NewRecorder()
 		notesC.Edit(response, putRequest)
 
@@ -246,7 +246,9 @@ func TestNotes(t *testing.T) {
 
 		wantEditNoteCalls := Notes{note}
 		assertNoteCalls(t, notesStore.editNoteCalls, wantEditNoteCalls)
-
+		assertGotCallsEqualsWantCalls(t, logger.infofCalls, []fmtCallf{
+			{format: "%s request to %s received", a: []any{"PUT", "/notes/1"}},
+		})
 	})
 }
 

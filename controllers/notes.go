@@ -53,30 +53,29 @@ var (
 )
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
+	nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
+	var body map[string]Note
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		nc.Logger.Errorf("%w: %w", ErrUnmarshalRequestBody, err)
+		return
+	}
+
+	note, ok := body["note"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		nc.Logger.Errorf("%w: %w", ErrInvalidRequestBody, err)
+		return
+	}
+
+	err = nc.NotesStore.EditNote(note)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		nc.Logger.Errorf("%w: %w", ErrDBResourceCreation, err)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	// nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
-	// var body map[string]Note
-	// err := json.NewDecoder(r.Body).Decode(&body)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	nc.Logger.Errorf("%w: %w", ErrUnmarshalRequestBody, err)
-	// 	return
-	// }
-
-	// note, ok := body["note"]
-	// if !ok {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	nc.Logger.Errorf("%w: %w", ErrInvalidRequestBody, err)
-	// 	return
-	// }
-
-	// err = nc.NotesStore.AddNote(note)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	nc.Logger.Errorf("%w: %w", ErrDBResourceCreation, err)
-	// 	return
-	// }
-	// w.WriteHeader(http.StatusAccepted)
 }
 
 func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
