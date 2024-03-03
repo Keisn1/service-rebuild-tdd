@@ -119,30 +119,38 @@ func TestNotes(t *testing.T) {
 		})
 	})
 
-	// t.Run("test AddNote and Note already present", func(t *testing.T) {
-	// 	logger.Reset()
+	t.Run("test AddNote and Note already present", func(t *testing.T) {
+		logger.Reset()
 
-	// 	request := newPostRequestWithNote(t, NewNote(1, "Note already present"), "/notes/1")
-	// 	response := httptest.NewRecorder()
+		request := newPostRequestWithNote(t, "Note already present")
+		request = WithUrlParam(request, "userID", fmt.Sprintf("%d", 1))
+		response := httptest.NewRecorder()
 
-	// 	notesC.ProcessAddNote(response, request)
-	// 	assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
-	// 	assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
-	// 		{format: "Failure: ProcessAddNote: %w", a: []any{ErrDBResourceCreation}},
-	// 	})
-	// })
+		notesC.ProcessAddNote(response, request)
+		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
+		assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
+			{format: "Failure: ProcessAddNote: %w", a: []any{ErrDBResourceCreation}},
+		})
+	})
 
-	// t.Run("Delete a Note", func(t *testing.T) {
-	// 	logger.Reset()
+	t.Run("Delete a Note", func(t *testing.T) {
+		logger.Reset()
 
-	// 	deleteRequest := newDeleteRequest(t, 1)
-	// 	response := httptest.NewRecorder()
-	// 	notesC.Delete(response, deleteRequest)
+		userID, noteID := 1, 2
+		request, err := http.NewRequest(http.MethodDelete, "", nil)
+		assertNoError(t, err)
+		request = WithUrlParam(
+			WithUrlParam(request, "userID", fmt.Sprintf("%d", userID)),
+			"noteID", fmt.Sprintf("%d", noteID),
+		)
 
-	// 	wantDeleteNoteCalls := []int{1}
-	// 	assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
-	// 	assertEqualIntSlice(t, notesStore.deleteNoteCalls, wantDeleteNoteCalls)
-	// })
+		response := httptest.NewRecorder()
+		notesC.Delete(response, request)
+
+		wantDeleteNoteCalls := []DeleteCall{userID: userID, noteID: noteID}
+		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
+		assertEqualIntSlice(t, notesStore.deleteNoteCalls, wantDeleteNoteCalls)
+	})
 
 	// t.Run("Deletion fail", func(t *testing.T) {
 	// 	logger.Reset()
@@ -207,9 +215,8 @@ func newGetAllNotesRequest(t testing.TB) *http.Request {
 	return req
 }
 
-func newDeleteRequest(t testing.TB, id int) *http.Request {
-	url := fmt.Sprintf("/notes/%v", id)
-	request, err := http.NewRequest(http.MethodDelete, url, nil)
+func newDeleteRequest(t testing.TB, userID, noteID int) *http.Request {
+	request, err := http.NewRequest(http.MethodDelete, "", nil)
 	assertNoError(t, err)
 	request = WithUrlParam(request, "id", fmt.Sprintf("%d", id))
 	return request
