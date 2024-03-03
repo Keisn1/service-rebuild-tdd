@@ -45,6 +45,7 @@ func NewNotesCtrlr(store NotesStore, logger Logger) NotesCtrlr {
 
 var (
 	ErrUnmarshalRequestBody = errors.New("Error Unmarshaling request body")
+	ErrEncodingJson         = errors.New("Error encoding json")
 	ErrDBResourceCreation   = errors.New("Could not create resource")
 	ErrDBResourceDeletion   = errors.New("Could not delete resource")
 	ErrInvalidRequestBody   = errors.New("Invalid request body")
@@ -134,16 +135,33 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	notes := nc.NotesStore.GetNotesByUserID(userID)
 	if len(notes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode([]string{})
+		err := json.NewEncoder(w).Encode([]string{})
+		if err != nil {
+			logEncodingError(err, nc.Logger)
+		}
 		return
 	}
-	_ = json.NewEncoder(w).Encode(notes)
+
+	err = json.NewEncoder(w).Encode(notes)
+	if err != nil {
+		logEncodingError(err, nc.Logger)
+		return
+	}
+
 	return
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes := nc.NotesStore.GetAllNotes()
-	_ = json.NewEncoder(w).Encode(notes)
+	err := json.NewEncoder(w).Encode(notes)
+	if err != nil {
+		logEncodingError(err, nc.Logger)
+		return
+	}
 	nc.Logger.Infof("Successfully retrieved all notes.")
 	return
+}
+
+func logEncodingError(err error, logger Logger) {
+	logger.Errorf("%w: %w", ErrEncodingJson, err)
 }
