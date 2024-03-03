@@ -3,9 +3,11 @@
 * Technical Requirements
 [[file:PRD.org::*Technical Requirements for MVP (Backend):][Technical Requirements for MVP (Backend)]]
 * Daily Plan
-- [ ] logging
-- [ ] error handling in controllers
+- [X] logging
+- [X] error handling in controllers
 - [ ] put and delete are missing
+  - [ ] need to refactor Delete and Put (resetting)
+  - [ ] update server.go (integration test)
 - [ ] authentication service
 - [ ] database integration
 * TODO Setup

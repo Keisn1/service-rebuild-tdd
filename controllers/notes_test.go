@@ -238,6 +238,9 @@ func TestNotes(t *testing.T) {
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 
+		wantEditNoteCalls := Notes{note}
+		assertEditNoteCalls(t, notesStore.editNoteCalls, wantEditNoteCalls)
+
 	})
 }
 
