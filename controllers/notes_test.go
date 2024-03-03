@@ -186,12 +186,12 @@ func encodeRequestBodyAddNote(t testing.TB, rb map[string]Note) *bytes.Buffer {
 }
 
 func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
-	url := fmt.Sprintf("/notes/%v", userID)
+	url := fmt.Sprintf("/users/%v/notes", userID)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		t.Fatalf("Could not build request newPostAddNoteRequest: %q", err)
 	}
-	return WithUrlParam(request, "id", fmt.Sprintf("%v", userID))
+	return WithUrlParam(request, "userID", fmt.Sprintf("%v", userID))
 }
 
 func newGetAllNotesRequest(t testing.TB) *http.Request {
