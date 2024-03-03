@@ -39,7 +39,7 @@ type NotesCtrlr struct {
 	Logger     Logger
 }
 
-func NewNotesController(store NotesStore, logger Logger) NotesCtrlr {
+func NewNotesCtrlr(store NotesStore, logger Logger) NotesCtrlr {
 	return NotesCtrlr{NotesStore: store, Logger: logger}
 }
 

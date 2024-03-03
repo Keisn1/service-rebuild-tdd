@@ -88,8 +88,8 @@ func (sl *StubLogger) Reset() {
 	sl.errorfCall = []fmtCallf{}
 }
 
-func TestNotes(t *testing.T) {
-	notesStore := StubNotesStore{
+func NewStubNotesStore() *StubNotesStore {
+	return &StubNotesStore{
 		notes: map[int]Note{
 			1: {UserID: 1, Note: "Note 1 user 1"},
 			2: {UserID: 1, Note: "Note 2 user 1"},
@@ -97,8 +97,16 @@ func TestNotes(t *testing.T) {
 			4: {UserID: 2, Note: "Note 2 user 2"},
 		},
 	}
-	logger := StubLogger{}
-	notesC := &NotesCtrlr{NotesStore: &notesStore, Logger: &logger}
+}
+
+func NewStubLogger() *StubLogger {
+	return &StubLogger{}
+}
+
+func TestNotes(t *testing.T) {
+	notesStore := NewStubNotesStore()
+	logger := NewStubLogger()
+	notesC := NewNotesCtrlr(notesStore, logger)
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		logger.Reset()
@@ -186,7 +194,7 @@ func TestNotes(t *testing.T) {
 
 	t.Run("test AddNote returns error", func(t *testing.T) {
 		logger.Reset()
-		notesC := &NotesCtrlr{NotesStore: &StubNotesStoreAddNoteErrors{}, Logger: &logger}
+		notesC := &NotesCtrlr{NotesStore: &StubNotesStoreAddNoteErrors{}, Logger: logger}
 
 		request := newPostRequestWithNote(t, NewNote(1, "Test note"), "/notes/1")
 		response := httptest.NewRecorder()
@@ -209,6 +217,9 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Delete a Note", func(t *testing.T) {
 		logger.Reset()
+		notesStore := NewStubNotesStore()
+		logger := NewStubLogger()
+		notesC := NewNotesCtrlr(notesStore, logger)
 
 		deleteRequest := newDeleteRequest(t, 1)
 		response := httptest.NewRecorder()
@@ -236,6 +247,9 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Edit a Note", func(t *testing.T) {
 		logger.Reset()
+		notesStore := NewStubNotesStore()
+		logger := NewStubLogger()
+		notesC := NewNotesCtrlr(notesStore, logger)
 
 		note := NewNote(1, "Edited note")
 		putRequest := newPutRequestWithNote(t, note, "/notes/1")

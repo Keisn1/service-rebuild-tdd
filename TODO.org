@@ -5,10 +5,10 @@
 * Daily Plan
 - [X] logging
 - [X] error handling in controllers
-- [ ] put and delete are missing
-  - [ ] need to refactor Delete and Put (resetting)
-  - [ ] update server.go (integration test)
-  - [ ] rename AssertionFunctions (assertNoteCalls, GotCallsEqualsWantCalls)
+- [X] put and delete are missing
+- [ ] need to refactor Delete and Put (resetting)
+- [ ] update server.go (integration test)
+- [ ] rename AssertionFunctions (assertNoteCalls, GotCallsEqualsWantCalls)
 - [ ] authentication service
 - [ ] database integration
 * TODO Setup
