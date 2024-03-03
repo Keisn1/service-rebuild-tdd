@@ -137,13 +137,13 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode([]string{})
 		return
 	}
-	json.NewEncoder(w).Encode(notes)
+	_ = json.NewEncoder(w).Encode(notes)
 	return
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 	notes := nc.NotesStore.GetAllNotes()
-	json.NewEncoder(w).Encode(notes)
+	_ = json.NewEncoder(w).Encode(notes)
 	return
 }

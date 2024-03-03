@@ -7,6 +7,7 @@
 - [X] error handling in controllers
 - [X] put and delete are missing
 - [X] need to refactor Delete and Put (resetting)
+- [ ] make controller independent of the routes
 - [ ] update server.go (integration test)
 - [ ] rename AssertionFunctions (assertNoteCalls, GotCallsEqualsWantCalls)
 - [ ] authentication service

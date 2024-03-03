@@ -3,12 +3,12 @@ package controllers
 import "sync"
 
 type InMemoryNotesStore struct {
-	notes Notes
+	notes map[int]Note
 	lock  sync.RWMutex
 }
 
 func NewInMemoryNotesStore() InMemoryNotesStore {
-	return InMemoryNotesStore{notes: Notes{}, lock: sync.RWMutex{}}
+	return InMemoryNotesStore{notes: make(map[int]Note), lock: sync.RWMutex{}}
 }
 
 func (i *InMemoryNotesStore) Delete(id int) error {
@@ -33,12 +33,17 @@ func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (ret Notes) {
 func (i *InMemoryNotesStore) GetAllNotes() Notes {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-	return i.notes
+	var allNotes Notes
+	for _, note := range i.notes {
+		allNotes = append(allNotes, note)
+	}
+	return allNotes
 }
 
 func (i *InMemoryNotesStore) AddNote(note Note) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-	i.notes = append(i.notes, note)
+	id := len(i.notes) + 1
+	i.notes[id] = note
 	return nil
 }

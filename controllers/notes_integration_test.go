@@ -8,12 +8,13 @@ import (
 	"testing"
 )
 
-func TestAddingNotesAndRetrievingThem(t *testing.T) {
+func TestIntegrationInMemoryStore(t *testing.T) {
 	store := NewInMemoryNotesStore()
 	logger := NewSimpleLogger()
 
 	notesC := NotesCtrlr{NotesStore: &store, Logger: &logger}
 
+	// add notes
 	userID := 1
 	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 1"), "/notes/1"))
 	notesC.ProcessAddNote(httptest.NewRecorder(), newPostRequestWithNote(t, NewNote(userID, "Test note 2"), "/notes/1"))
@@ -30,6 +31,12 @@ func TestAddingNotesAndRetrievingThem(t *testing.T) {
 	// Testing all notes
 	wantAllNotes := Notes{{1, "Test note 1"}, {1, "Test note 2"}, {1, "Test note 3"}, {2, "Test note 4"}, {2, "Test note 5"}}
 	assertAllNotesAsExpected(t, wantAllNotes, notesC)
+
+	// Edit a note
+	// userID = 1
+	// notesC.NotesStore.AddNote(httptest.NewRecorder(), newPutRequestWithNote(t, NewNote(userID, "Edited Note")), "/notes/1")
+
+	// Delete a Note
 }
 
 func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC NotesCtrlr) {
