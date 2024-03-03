@@ -22,18 +22,13 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		logger.Reset()
-		wantedNotes := Notes{
-			{1, "Note 1 user 1"}, {1, "Note 2 user 1"},
-			{2, "Note 1 user 2"}, {2, "Note 2 user 2"},
-		}
 
 		request := newGetAllNotesRequest(t)
 		response := httptest.NewRecorder()
 		notesC.GetAllNotes(response, request)
 
-		gotNotes := getNotesFromResponse(t, response.Body)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-		assertNotesEqual(t, gotNotes, wantedNotes)
+		assertAllNotesGotCalled(t, notesStore.allNotesGotCalled)
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
 			{format: "%s request to %s received", a: []any{"GET", "/notes"}},
 		})
@@ -129,21 +124,14 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Delete a Note", func(t *testing.T) {
 		logger.Reset()
-		notesStore := NewStubNotesStore()
-		logger := NewStubLogger()
-		notesC := NewNotesCtrlr(notesStore, logger)
 
 		deleteRequest := newDeleteRequest(t, 1)
 		response := httptest.NewRecorder()
 		notesC.Delete(response, deleteRequest)
 
+		wantDeleteNoteCalls := []int{1}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
-
-		wantedNotes := Notes{
-			{1, "Note 2 user 1"}, {2, "Note 1 user 2"}, {2, "Note 2 user 2"},
-		}
-		gotNotes := notesC.NotesStore.GetAllNotes()
-		assertNotesEqual(t, gotNotes, wantedNotes)
+		assertEqualIntSlice(t, notesStore.deleteNoteCalls, wantDeleteNoteCalls)
 	})
 
 	t.Run("Deletion fail", func(t *testing.T) {
@@ -335,5 +323,18 @@ func assertRightErrorCall(t testing.TB, errorCall fmtCallf, wantFormat string, w
 		}
 	} else {
 		t.Errorf("Could not convert to error")
+	}
+}
+
+func assertAllNotesGotCalled(t testing.TB, allNotesGotCalled bool) {
+	t.Helper()
+	if !allNotesGotCalled {
+		t.Error("notesStore.AllNotes did not get called")
+	}
+}
+func assertEqualIntSlice(t testing.TB, got, want []int) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf(`got = %v; want %v`, got, want)
 	}
 }

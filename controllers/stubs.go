@@ -2,13 +2,16 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 )
 
 type StubNotesStore struct {
-	notes         map[int]Note
-	addNoteCalls  Notes
-	editNoteCalls Notes
+	notes map[int]Note
+
+	getNotesByUserIDCalls []int
+	allNotesGotCalled     bool
+	addNoteCalls          Notes
+	editNoteCalls         Notes
+	deleteNoteCalls       []int
 }
 
 func NewStubNotesStore() *StubNotesStore {
@@ -23,11 +26,11 @@ func NewStubNotesStore() *StubNotesStore {
 }
 
 func (sns *StubNotesStore) Delete(id int) error {
-	if _, ok := sns.notes[id]; ok {
-		delete(sns.notes, id)
-		return nil
+	sns.deleteNoteCalls = append(sns.deleteNoteCalls, id)
+	if id != 1 {
+		return errors.New("Resource not found")
 	}
-	return errors.New(fmt.Sprintf("Note with id %v not found", id))
+	return nil
 }
 
 func (sns *StubNotesStore) AddNote(note Note) error {
@@ -41,11 +44,8 @@ func (sns *StubNotesStore) EditNote(note Note) error {
 }
 
 func (sns *StubNotesStore) GetAllNotes() Notes {
-	var allNotes Notes
-	for _, note := range sns.notes {
-		allNotes = append(allNotes, note)
-	}
-	return allNotes
+	sns.allNotesGotCalled = true
+	return nil
 }
 
 func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
