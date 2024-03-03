@@ -123,7 +123,6 @@ func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
-	nc.Logger.Infof("%s request to %s received", r.Method, r.URL.Path)
 
 	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -139,6 +138,7 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logEncodingError(err, nc.Logger)
 		}
+		nc.Logger.Errorf("Failure: GetNotesByUserID with userID %d", userID)
 		return
 	}
 
@@ -148,6 +148,7 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	nc.Logger.Infof("Success: GetNotesByUserID with userID %d", userID)
 	return
 }
 
@@ -155,13 +156,13 @@ func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes := nc.NotesStore.GetAllNotes()
 	err := json.NewEncoder(w).Encode(notes)
 	if err != nil {
-		logEncodingError(err, nc.Logger)
+		nc.Logger.Errorf("%w: %w", ErrEncodingJson, err)
+		nc.Logger.Errorf("Failure: GetAllNotes")
 		return
 	}
-	nc.Logger.Infof("Successfully retrieved all notes.")
+	nc.Logger.Infof("Success: GetAllNotes")
 	return
 }
 
 func logEncodingError(err error, logger Logger) {
-	logger.Errorf("%w: %w", ErrEncodingJson, err)
 }

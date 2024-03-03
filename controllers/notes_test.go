@@ -29,7 +29,7 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertAllNotesGotCalled(t, notesStore.allNotesGotCalled)
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
-			{format: "Successfully retrieved all notes."},
+			{format: "Success: GetAllNotes"},
 		})
 	})
 
@@ -52,10 +52,13 @@ func TestNotes(t *testing.T) {
 		}
 		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, 100})
 		assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
-			{format: "%s request to %s received", a: []any{"GET", "/notes/1"}},
-			{format: "%s request to %s received", a: []any{"GET", "/notes/2"}},
-			{format: "%s request to %s received", a: []any{"GET", "/notes/100"}},
+			{format: "Success: GetNotesByUserID with userID %d", a: []any{1}},
+			{format: "Success: GetNotesByUserID with userID %d", a: []any{2}},
 		})
+		assertLoggingCalls(t, logger.errorfCall, []fmtCallf{
+			{format: "Failure: GetNotesByUserID with userID %d", a: []any{100}},
+		})
+
 	})
 
 	t.Run("POST a Note", func(t *testing.T) {
