@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 )
 
 type AddNoteCall struct {
@@ -84,11 +85,11 @@ type StubLogger struct {
 }
 
 func (sl *StubLogger) Infof(format string, a ...any) {
-	sl.infofCalls = append(sl.infofCalls, format)
+	sl.infofCalls = append(sl.infofCalls, fmt.Sprintf(format, a...))
 }
 
 func (sl *StubLogger) Errorf(format string, a ...any) {
-	sl.errorfCall = append(sl.errorfCall, format)
+	sl.errorfCall = append(sl.errorfCall, fmt.Sprintf(format, a...))
 }
 
 func (sl *StubLogger) Reset() {

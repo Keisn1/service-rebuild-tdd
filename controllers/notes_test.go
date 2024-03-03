@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"fmt"
+
 	"github.com/go-chi/chi"
 )
 
@@ -49,10 +51,10 @@ func TestNotes(t *testing.T) {
 		}
 		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, 100})
 		assertLoggingCalls(t, logger.infofCalls, []string{
-			"Success: GetNotesByUserID with userID %d",
-			"Success: GetNotesByUserID with userID %d",
+			"Success: GetNotesByUserID with userID 1",
+			"Success: GetNotesByUserID with userID 2",
 		})
-		assertLoggingCalls(t, logger.errorfCall, []string{"GetNotesByUserID user not Found: %w"})
+		assertLoggingCalls(t, logger.errorfCall, []string{"GetNotesByUserID user not Found:"})
 	})
 
 	t.Run("test false url parameters throw error", func(t *testing.T) {
@@ -64,7 +66,7 @@ func TestNotes(t *testing.T) {
 		notesC.GetNotesByUserID(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertLoggingCalls(t, logger.errorfCall, []string{"GetNotesByUserID invalid userID: %w"})
+		assertLoggingCalls(t, logger.errorfCall, []string{"GetNotesByUserID invalid userID:"})
 	})
 
 	t.Run("POST a Note", func(t *testing.T) {
@@ -79,7 +81,7 @@ func TestNotes(t *testing.T) {
 		wantAddNoteCalls := []AddNoteCall{{userID: userID, note: note}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
 		assertSlicesAnyAreEqual(t, notesStore.addNoteCalls, wantAddNoteCalls)
-		assertLoggingCalls(t, logger.infofCalls, []string{"Success: ProcessAddNote with userID %d and note %v"})
+		assertLoggingCalls(t, logger.infofCalls, []string{"Success: ProcessAddNote with userID 1 and note Test note"})
 	})
 
 	t.Run("test invalid json body", func(t *testing.T) {
@@ -90,7 +92,7 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid json: %w"})
+		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid json:"})
 	})
 
 	t.Run("test invalid request body", func(t *testing.T) {
@@ -102,7 +104,7 @@ func TestNotes(t *testing.T) {
 		notesC.ProcessAddNote(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
-		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid body: %w"})
+		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid body:"})
 	})
 
 	t.Run("test AddNote and Note already present", func(t *testing.T) {
@@ -113,8 +115,8 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		notesC.ProcessAddNote(response, request)
-		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
-		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote DBerror: %w"})
+		assertStatusCode(t, response.Result().StatusCode, http.StatusConflict)
+		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote DBerror:"})
 	})
 
 	t.Run("Delete a Note", func(t *testing.T) {
@@ -133,7 +135,7 @@ func TestNotes(t *testing.T) {
 		wantDeleteNoteCalls := []DeleteCall{{userID: userID, noteID: noteID}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
 		assertSlicesAnyAreEqual(t, notesStore.deleteNoteCalls, wantDeleteNoteCalls)
-		assertLoggingCalls(t, logger.errorfCall, []string{"Success: Delete noteID %v userID %v"})
+		assertLoggingCalls(t, logger.infofCalls, []string{"Success: Delete noteID 2 userID 1"})
 	})
 
 	t.Run("Deletion fail", func(t *testing.T) {
@@ -150,8 +152,8 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 		notesC.Delete(response, request)
 
-		assertStatusCode(t, response.Result().StatusCode, http.StatusNotFound)
-		assertLoggingCalls(t, logger.errorfCall, []string{"Delete DBError: %w"})
+		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
+		assertLoggingCalls(t, logger.errorfCall, []string{"Delete DBerror:"})
 	})
 
 	t.Run("Edit a Note", func(t *testing.T) {
@@ -159,7 +161,7 @@ func TestNotes(t *testing.T) {
 
 		userID, noteID, note := 1, 1, "New note text"
 		putRequest := newPutRequestWithNote(t, "New note text")
-		WithUrlParams(putRequest, map[string]string{
+		putRequest = WithUrlParams(putRequest, map[string]string{
 			"userID": fmt.Sprintf("%d", userID),
 			"noteID": fmt.Sprintf("%d", noteID),
 		})
@@ -169,12 +171,9 @@ func TestNotes(t *testing.T) {
 		wantEditCalls := []EditCall{{userID: userID, noteID: noteID, note: note}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertSlicesAnyAreEqual(t, notesStore.editNoteCalls, wantEditCalls)
-
-		// wantEditNoteCalls := Notes{note}
-		// assertAddNoteCallsEqual(t, notesStore.editNoteCalls, wantEditNoteCalls)
-		// assertLoggingCalls(t, logger.infofCalls, []fmtCallf{
-		// 	{format: "%s request to %s received", a: []any{"PUT", "/notes/1"}},
-		// })
+		assertLoggingCalls(t, logger.infofCalls, []string{
+			"Success: Edit: userID 1 noteID 1 note New note text",
+		})
 	})
 }
 
@@ -321,9 +320,19 @@ func assertDeleteNoteCallsEqual(t testing.TB, gotCalls, wantCalls []DeleteCall) 
 	}
 }
 
-func assertLoggingCalls(t testing.TB, got, want []string) {
+func assertLoggingCalls(t testing.TB, gotCalls, wantCalls []string) {
 	t.Helper()
-	assertSlicesAnyAreEqual(t, got, want)
+	for _, want := range wantCalls {
+		found := false
+		for _, got := range gotCalls {
+			if strings.HasPrefix(got, want) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("want %v - wasn't found in gotCalls %v", want, gotCalls)
+		}
+	}
 }
 
 func assertNoError(t testing.TB, err error) {
