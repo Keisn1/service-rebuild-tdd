@@ -39,8 +39,8 @@ func TestNotes(t *testing.T) {
 			statusCode int
 		}{
 			{1, http.StatusOK},
-			{2, http.StatusOK},
-			{100, http.StatusNotFound},
+			{2, http.StatusOK},                   // no notes for user with userID 100
+			{-1, http.StatusInternalServerError}, // simulating DBError
 		}
 
 		for _, tc := range testCases {
@@ -49,12 +49,15 @@ func TestNotes(t *testing.T) {
 			notesC.GetNotesByUserID(response, request)
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
 		}
-		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, 100})
+		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, -1})
 		assertLoggingCalls(t, logger.infofCalls, []string{
 			"Success: GetNotesByUserID with userID 1",
 			"Success: GetNotesByUserID with userID 2",
 		})
-		assertLoggingCalls(t, logger.errorfCall, []string{"GetNotesByUserID user not Found:"})
+
+		assertLoggingCalls(t, logger.errorfCall, []string{
+			fmt.Sprintf("GetNotesByUserID userID -1 %v:", DBError),
+		})
 	})
 
 	t.Run("test false url parameters throw error", func(t *testing.T) {

@@ -22,7 +22,7 @@ type EditCall struct {
 }
 
 type StubNotesStore struct {
-	notes map[int]Note
+	notes Notes
 
 	getNotesByUserIDCalls []int
 	allNotesGotCalled     bool
@@ -33,11 +33,11 @@ type StubNotesStore struct {
 
 func NewStubNotesStore() *StubNotesStore {
 	return &StubNotesStore{
-		notes: map[int]Note{
-			1: {UserID: 1, Note: "Note 1 user 1"},
-			2: {UserID: 1, Note: "Note 2 user 1"},
-			3: {UserID: 2, Note: "Note 1 user 2"},
-			4: {UserID: 2, Note: "Note 2 user 2"},
+		notes: Notes{
+			{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
+			{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
+			{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
+			{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
 		},
 	}
 }
@@ -69,8 +69,11 @@ func (sns *StubNotesStore) GetAllNotes() Notes {
 	return nil
 }
 
-func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes) {
+func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes, err error) {
 	sns.getNotesByUserIDCalls = append(sns.getNotesByUserIDCalls, userID)
+	if userID == -1 {
+		err = DBError
+	}
 	for _, n := range sns.notes {
 		if n.UserID == userID {
 			ret = append(ret, n)

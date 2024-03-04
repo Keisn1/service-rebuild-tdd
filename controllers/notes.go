@@ -11,19 +11,16 @@ import (
 )
 
 type Note struct {
+	NoteID int
 	UserID int
 	Note   string
-}
-
-func NewNote(userID int, note string) Note {
-	return Note{userID, note}
 }
 
 type Notes []Note
 
 type NotesStore interface {
 	GetAllNotes() Notes
-	GetNotesByUserID(int) Notes
+	GetNotesByUserID(int) (Notes, error)
 	AddNote(userID int, note string) error
 	EditNote(userID, noteID int, note string) error
 	Delete(userID int, noteID int) error
@@ -44,13 +41,7 @@ func NewNotesCtrlr(store NotesStore, logger Logger) NotesCtrlr {
 }
 
 var (
-	ErrUnmarshalRequestBody = errors.New("Error Unmarshaling request body")
-	ErrEncodingJson         = errors.New("Error encoding json")
-	ErrDBResourceCreation   = errors.New("Could not create resource")
-	ErrDBResourceDeletion   = errors.New("Could not delete resource")
-	ErrInvalidRequestBody   = errors.New("Invalid request body")
-	ErrInvalidUserID        = errors.New("Invalid user ID")
-	ErrInvalidNoteID        = errors.New("Invalid note ID")
+	DBError = errors.New("DBError")
 )
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
@@ -139,10 +130,10 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notes := nc.NotesStore.GetNotesByUserID(userID)
-	if len(notes) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		nc.Logger.Errorf("GetNotesByUserID user not Found: %w", userID)
+	notes, err := nc.NotesStore.GetNotesByUserID(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", userID, DBError.Error(), err)
 		return
 	}
 
