@@ -62,9 +62,6 @@ func TestIntegrationInMemoryStore(t *testing.T) {
 	assertSlicesAnyAreEqual(t, gotAllNotes, wantAllNotes)
 }
 
-// 	// Delete a Note
-// }
-
 func assertNoteWasEdited(t testing.TB, pNote Note, text string, notesC NotesCtrlr) {
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
