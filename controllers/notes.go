@@ -19,7 +19,7 @@ type Note struct {
 type Notes []Note
 
 type NotesStore interface {
-	GetAllNotes() Notes
+	GetAllNotes() (Notes, error)
 	GetNotesByUserID(int) (Notes, error)
 	AddNote(userID int, note string) error
 	EditNote(userID, noteID int, note string) error
@@ -69,7 +69,7 @@ func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = nc.NotesStore.EditNote(userID, noteID, note)
-	if handleError(w, err, http.StatusInternalServerError, "Edit", "DBerror", nc.Logger) {
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "Edit", "DBerror") {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -88,7 +88,7 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = nc.NotesStore.Delete(userID, noteID)
-	if handleError(w, err, http.StatusInternalServerError, "Delete", "DBerror", nc.Logger) {
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "Delete", "DBerror") {
 		return
 	}
 
@@ -116,7 +116,7 @@ func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = nc.NotesStore.AddNote(userID, note)
-	if handleError(w, err, http.StatusConflict, "ProcessAddNote", "DBerror", nc.Logger) {
+	if handleError(w, err, http.StatusConflict, nc.Logger, "ProcessAddNote", "DBerror") {
 		return
 	}
 
@@ -147,7 +147,8 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
-	notes := nc.NotesStore.GetAllNotes()
+	notes, _ := nc.NotesStore.GetAllNotes()
+
 	if err := json.NewEncoder(w).Encode(notes); err != nil {
 		nc.Logger.Errorf("GetAllNotes invalid json: %w", err)
 		return
@@ -165,7 +166,7 @@ func handleBadRequest(w http.ResponseWriter, err error, logger Logger, action, p
 	return false
 }
 
-func handleError(w http.ResponseWriter, err error, httpErr uint, action, msg string, logger Logger) bool {
+func handleError(w http.ResponseWriter, err error, httpErr uint, logger Logger, action, msg string) bool {
 	if err != nil {
 		w.WriteHeader(int(httpErr))
 		logger.Errorf("%s %s: %w", action, msg, err)

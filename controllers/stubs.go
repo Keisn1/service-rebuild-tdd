@@ -31,6 +31,14 @@ type StubNotesStore struct {
 	deleteNoteCalls       []DeleteCall
 }
 
+type StubNotesStoreFailureGetAllNotes struct {
+	StubNotesStore
+}
+
+func (snsF *StubNotesStoreFailureGetAllNotes) GetAllNotes() (Notes, error) {
+	return nil, DBError
+}
+
 func NewStubNotesStore() *StubNotesStore {
 	return &StubNotesStore{
 		notes: Notes{
@@ -64,9 +72,9 @@ func (sns *StubNotesStore) EditNote(userID, noteID int, note string) error {
 	return nil
 }
 
-func (sns *StubNotesStore) GetAllNotes() Notes {
+func (sns *StubNotesStore) GetAllNotes() (Notes, error) {
 	sns.allNotesGotCalled = true
-	return nil
+	return nil, nil
 }
 
 func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes, err error) {

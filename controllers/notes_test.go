@@ -32,6 +32,21 @@ func TestNotes(t *testing.T) {
 		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
 	})
 
+	t.Run("Failure DB on GetAllNotes", func(t *testing.T) {
+		logger.Reset()
+		notesStore := StubNotesStoreFailureGetAllNotes{}
+		logger := NewStubLogger()
+		notesC := NewNotesCtrlr(&notesStore, logger)
+
+		request := newGetAllNotesRequest(t)
+		response := httptest.NewRecorder()
+		notesC.GetAllNotes(response, request)
+
+		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+		assertAllNotesGotCalled(t, notesStore.allNotesGotCalled)
+		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
+	})
+
 	t.Run("Return notes for user with userID", func(t *testing.T) {
 		logger.Reset()
 		testCases := []struct {
