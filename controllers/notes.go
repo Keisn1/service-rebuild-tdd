@@ -2,13 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/go-chi/chi"
 	"net/http"
 	"strconv"
-
-	"errors"
-
-	"github.com/go-chi/chi"
 )
 
 type Note struct {
@@ -21,10 +19,10 @@ type Notes []Note
 
 type NotesStore interface {
 	GetAllNotes() (Notes, error)
-	GetNotesByUserID(int) (Notes, error)
+	GetNotesByUserID(userID int) (Notes, error)
 	AddNote(userID int, note string) error
 	EditNote(userID, noteID int, note string) error
-	Delete(userID int, noteID int) error
+	Delete(userID, noteID int) error
 }
 
 type Logger interface {

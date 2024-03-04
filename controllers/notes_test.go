@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -93,8 +94,7 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		userID, note := 1, "Test note"
 
-		request := newPostRequestWithNote(t, note)
-		request = WithUrlParam(request, "userID", fmt.Sprintf("%d", userID))
+		request := newPostRequestWithNoteAndUrlParam(t, note, "userID", fmt.Sprintf("%d", userID))
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, request)
 
@@ -180,10 +180,9 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 
 		userID, noteID, note := 1, 1, "New note text"
-		putRequest := newPutRequestWithNote(t, "New note text")
-		putRequest = WithUrlParams(putRequest, map[string]string{
-			"userID": fmt.Sprintf("%d", userID),
-			"noteID": fmt.Sprintf("%d", noteID),
+		putRequest := newPutRequestWithNoteAndUrlParams(t, "New note text", Params{
+			"userID": strconv.Itoa(userID),
+			"noteID": strconv.Itoa(noteID),
 		})
 		response := httptest.NewRecorder()
 		notesC.Edit(response, putRequest)
@@ -206,7 +205,9 @@ func WithUrlParam(r *http.Request, key, value string) *http.Request {
 	return r
 }
 
-func WithUrlParams(r *http.Request, params map[string]string) *http.Request {
+type Params map[string]string
+
+func WithUrlParams(r *http.Request, params Params) *http.Request {
 	chiCtx := chi.NewRouteContext()
 	req := r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
 	for key, value := range params {
@@ -233,11 +234,17 @@ func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
 
 func newGetAllNotesRequest(t testing.TB) *http.Request {
 	t.Helper()
-	req, err := http.NewRequest(http.MethodGet, "/notes", nil)
+	req, err := http.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
 		t.Fatalf("Unable to build request newGetAllNotesRequest %q", err)
 	}
 	return req
+}
+
+func newPostRequestWithNoteAndUrlParam(t testing.TB, note string, key, value string) *http.Request {
+	request := newPostRequestWithNote(t, note)
+	request = WithUrlParam(request, key, value)
+	return request
 }
 
 func newPostRequestWithNote(t testing.TB, note string) *http.Request {
@@ -245,6 +252,12 @@ func newPostRequestWithNote(t testing.TB, note string) *http.Request {
 	buf := encodeRequestBodyAddNote(t, requestBody)
 	request, err := http.NewRequest(http.MethodPost, "", buf)
 	assertNoError(t, err)
+	return request
+}
+
+func newPutRequestWithNoteAndUrlParams(t testing.TB, note string, params Params) *http.Request {
+	request := newPutRequestWithNote(t, note)
+	request = WithUrlParams(request, params)
 	return request
 }
 
@@ -279,10 +292,10 @@ func newInvalidBodyPostRequest(t testing.TB) *http.Request {
 	return badRequest
 }
 
-func assertLengthSlice[T any](t testing.TB, elements []T, want int) {
+func assertSlicesSameLength[T any](t testing.TB, got, want []T) {
 	t.Helper()
-	if len(elements) != want {
-		t.Errorf(`got = %v; want %v`, len(elements), want)
+	if len(got) != len(want) {
+		t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
 	}
 }
 
@@ -295,7 +308,7 @@ func assertStatusCode(t testing.TB, got, want int) {
 
 func assertSlicesAnyAreEqual[T any](t testing.TB, gotSlice, wantSlice []T) {
 	t.Helper()
-	assertLengthSlice(t, gotSlice, len(wantSlice))
+	assertSlicesSameLength(t, gotSlice, wantSlice)
 	for _, want := range wantSlice {
 		found := false
 		for _, got := range gotSlice {
