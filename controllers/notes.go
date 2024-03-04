@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -137,8 +138,8 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(notes); err != nil {
-		nc.Logger.Errorf("GetAllNotes invalid json: %w", err)
+	err = json.NewEncoder(w).Encode(notes)
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetNotesByUserID", "invalid json") {
 		return
 	}
 
@@ -147,12 +148,16 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
-	notes, _ := nc.NotesStore.GetAllNotes()
-
-	if err := json.NewEncoder(w).Encode(notes); err != nil {
-		nc.Logger.Errorf("GetAllNotes invalid json: %w", err)
+	notes, err := nc.NotesStore.GetAllNotes()
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes", fmt.Sprintf("%v", DBError.Error())) {
 		return
 	}
+
+	err = json.NewEncoder(w).Encode(notes)
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes", "invalid json") {
+		return
+	}
+
 	nc.Logger.Infof("Success: GetAllNotes")
 	return
 }

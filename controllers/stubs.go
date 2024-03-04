@@ -25,7 +25,7 @@ type StubNotesStore struct {
 	notes Notes
 
 	getNotesByUserIDCalls []int
-	allNotesGotCalled     bool
+	getAllNotesGotCalled  bool
 	addNoteCalls          []AddNoteCall
 	editNoteCalls         []EditCall
 	deleteNoteCalls       []DeleteCall
@@ -36,6 +36,7 @@ type StubNotesStoreFailureGetAllNotes struct {
 }
 
 func (snsF *StubNotesStoreFailureGetAllNotes) GetAllNotes() (Notes, error) {
+	snsF.getAllNotesGotCalled = true
 	return nil, DBError
 }
 
@@ -73,7 +74,7 @@ func (sns *StubNotesStore) EditNote(userID, noteID int, note string) error {
 }
 
 func (sns *StubNotesStore) GetAllNotes() (Notes, error) {
-	sns.allNotesGotCalled = true
+	sns.getAllNotesGotCalled = true
 	return nil, nil
 }
 

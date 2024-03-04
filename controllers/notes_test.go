@@ -28,7 +28,7 @@ func TestNotes(t *testing.T) {
 		notesC.GetAllNotes(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-		assertAllNotesGotCalled(t, notesStore.allNotesGotCalled)
+		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
 		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
 	})
 
@@ -42,9 +42,11 @@ func TestNotes(t *testing.T) {
 		response := httptest.NewRecorder()
 		notesC.GetAllNotes(response, request)
 
-		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-		assertAllNotesGotCalled(t, notesStore.allNotesGotCalled)
-		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
+		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
+		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
+		assertLoggingCalls(t, logger.errorfCall, []string{
+			fmt.Sprintf("GetAllNotes %v", DBError.Error()),
+		})
 	})
 
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -71,7 +73,7 @@ func TestNotes(t *testing.T) {
 		})
 
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetNotesByUserID userID -1 %v:", DBError),
+			fmt.Sprintf("GetNotesByUserID userID -1 %v", DBError.Error()),
 		})
 	})
 
@@ -105,7 +107,7 @@ func TestNotes(t *testing.T) {
 	t.Run("test invalid json body", func(t *testing.T) {
 		logger.Reset()
 		badRequest := newPostRequestFromBody(t, "{}}")
-		badRequest = WithUrlParam(badRequest, "userID", fmt.Sprintf("%d", 1))
+		badRequest = WithUrlParam(badRequest, "userID", "1")
 		response := httptest.NewRecorder()
 		notesC.ProcessAddNote(response, badRequest)
 
@@ -238,13 +240,6 @@ func newGetAllNotesRequest(t testing.TB) *http.Request {
 	return req
 }
 
-func newDeleteRequest(t testing.TB, userID, noteID int) *http.Request {
-	request, err := http.NewRequest(http.MethodDelete, "", nil)
-	assertNoError(t, err)
-	request = WithUrlParam(request, "id", fmt.Sprintf("%d", noteID))
-	return request
-}
-
 func newPostRequestWithNote(t testing.TB, note string) *http.Request {
 	requestBody := map[string]string{"note": note}
 	buf := encodeRequestBodyAddNote(t, requestBody)
@@ -289,20 +284,12 @@ func assertLengthSlice[T any](t testing.TB, elements []T, want int) {
 	if len(elements) != want {
 		t.Errorf(`got = %v; want %v`, len(elements), want)
 	}
-
 }
 
 func assertStatusCode(t testing.TB, got, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf(`got = %v; want %v`, got, want)
-	}
-}
-
-func assertSlicesHaveSameLength[T any](t testing.TB, got, want []T) {
-	t.Helper()
-	if len(got) != len(want) {
-		t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
 	}
 }
 
@@ -322,22 +309,6 @@ func assertSlicesAnyAreEqual[T any](t testing.TB, gotSlice, wantSlice []T) {
 	}
 }
 
-func assertDeleteNoteCallsEqual(t testing.TB, gotCalls, wantCalls []DeleteCall) {
-	t.Helper()
-	assertLengthSlice(t, gotCalls, len(wantCalls))
-	for _, want := range wantCalls {
-		found := false
-		for _, got := range gotCalls {
-			if reflect.DeepEqual(got, want) {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("want %v not found in gotCalls %v", want, gotCalls)
-		}
-	}
-}
-
 func assertLoggingCalls(t testing.TB, gotCalls, wantCalls []string) {
 	t.Helper()
 	for _, want := range wantCalls {
@@ -353,22 +324,23 @@ func assertLoggingCalls(t testing.TB, gotCalls, wantCalls []string) {
 	}
 }
 
-func assertNoError(t testing.TB, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func assertAllNotesGotCalled(t testing.TB, allNotesGotCalled bool) {
+func assertGetAllNotesGotCalled(t testing.TB, allNotesGotCalled bool) {
 	t.Helper()
 	if !allNotesGotCalled {
 		t.Error("notesStore.AllNotes did not get called")
 	}
 }
+
 func assertEqualIntSlice(t testing.TB, got, want []int) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf(`got = %v; want %v`, got, want)
+	}
+}
+
+func assertNoError(t testing.TB, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
 	}
 }
