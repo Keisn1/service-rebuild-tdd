@@ -3,14 +3,16 @@
 * Technical Requirements
 [[file:PRD.org::*Technical Requirements for MVP (Backend):][Technical Requirements for MVP (Backend)]]
 * Daily Plan
+:LOGBOOK:
+CLOCK: [2024-03-15 Fri 21:18]
+:END:
 - [X] logging
 - [X] error handling in controllers
 - [X] put and delete are missing
 - [X] need to refactor Delete and Put (resetting)
-- [ ] test if the controllers give you back the right data
-- [ ] make controller independent of the routes
-- [ ] update server.go (integration test)
-- [ ] rename AssertionFunctions (assertNoteCalls, GotCallsEqualsWantCalls)
+- [X] test if the controllers give you back the right data
+- [X] make controller independent of the routes
+- [X] update server.go (integration test)
 - [ ] authentication service
 - [ ] database integration
 * TODO Setup
@@ -83,18 +85,23 @@
      - [ ] Format the response in JSON with a list of notes.
      - [ ] Retrieve all notes from the database.
 
-2. [ ] Route: =GET /notes/{id}=
+2. [ ] Route: =GET /users/{userID}/notes=
+   + [ ] Retrieve All Notes Functionality:
+     - [ ] Format the response in JSON with a list of notes.
+     - [ ] Retrieve all notes from the database.
+
+3. [ ] Route: =GET /users/{userID}/notes/{noteID}=
    + [ ] Retrieve Specific Note Functionality:
      - [ ] Extract note ID from the request parameters.
      - [ ] Retrieve the specific note from the database based on the ID.
 
-3. [ ] Route: =POST /notes=
+4. [ ] Route: =POST /users/{userID}/notes=
    + [ ] Create Note Functionality:
      - [ ] Parse request body to extract note data.
      - [ ] Validate and sanitize input data.
      - [ ] Create a new note in the database.
 
-4. [ ] Route: =PUT /notes/{id}=
+5. [ ] Route: =PUT /users/{userID}/notes/{noteID}=
    + [ ] Update Note Functionality:
      - [ ] Extract note ID from the request parameters.
      - [ ] Parse request body to get updated note data.
@@ -102,7 +109,7 @@
      - [ ] Return NotFound if note data not found (Use POST?)
      - [ ] Update the specific note in the database.
 
-5. [ ] Route: =DELETE /notes/{id}=
+6. [ ] Route: =DELETE /users/{userID}/notes/{noteID}=
    + [ ] Delete Note Functionality:
      - [ ] Extract note ID from the request parameters.
      - [ ] Delete the specific note from the database.

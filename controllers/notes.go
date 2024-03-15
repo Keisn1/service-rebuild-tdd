@@ -19,6 +19,7 @@ type Notes []Note
 
 type NotesStore interface {
 	GetAllNotes() (Notes, error)
+	GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, error)
 	GetNotesByUserID(userID int) (Notes, error)
 	AddNote(userID int, note string) error
 	EditNote(userID, noteID int, note string) error
@@ -142,6 +143,33 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nc.Logger.Infof("Success: GetNotesByUserID with userID %d", userID)
+	return
+}
+
+func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+	if handleBadRequest(w, err, nc.Logger, "Edit", "userID") {
+		return
+	}
+
+	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
+	if handleBadRequest(w, err, nc.Logger, "Edit", "noteID") {
+		return
+	}
+
+	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		nc.Logger.Errorf("GetNoteByUserIDAndNoteID with userID %v and noteID %v %v: %w", userID, noteID, DBError.Error(), err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(notes)
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetNotesByUserID", "invalid json") {
+		return
+	}
+
+	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID)
 	return
 }
 

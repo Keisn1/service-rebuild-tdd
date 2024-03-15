@@ -55,7 +55,7 @@ func deleteANote(t testing.TB, notesC NotesCtrlr) (restOfNotes Notes) {
 
 	deleteRequest, err := http.NewRequest(http.MethodDelete, "", nil)
 	assertNoError(t, err)
-	deleteRequest = WithUrlParams(deleteRequest, map[string]string{
+	deleteRequest = WithUrlParams(deleteRequest, Params{
 		"userID": strconv.Itoa(dNote.UserID),
 		"noteID": strconv.Itoa(dNote.NoteID),
 	})

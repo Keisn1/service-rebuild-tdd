@@ -14,15 +14,15 @@ Existing note-taking apps lack key features, leading users to juggle multiple ap
 5. Focus on reliability, security, and documentation to ensure successful backend implementation.
 
 ** User Stories for MVP:
-1. As a user, I want to be able to sign up for an account and log in securely to access my notes.
-2. As a user, I want to create new notes and save them to my account.
-3. As a user, I want to view and edit existing notes stored in my account.
-4. As a user, I want a simple and intuitive interface to easily navigate and manage my notes.
-5. As a user, I want my notes to be saved and accessible only on the device I am currently using.
-6. As a user, I want the option to delete notes that I no longer need.
-7. User can sign up, log in securely, create, view, and edit notes.
-8. Notes are accessible only on the device in use.
-9. Users can delete unnecessary notes.
+1. [ ] As a user, I want to be able to sign up for an account and log in securely to access my notes.
+2. [ ] As a user, I want to create new notes and save them to my account.
+3. [ ] As a user, I want to view and edit existing notes stored in my account.
+4. [ ] As a user, I want a simple and intuitive interface to easily navigate and manage my notes.
+5. [ ] As a user, I want my notes to be saved and accessible only on the device I am currently using.
+6. [ ] As a user, I want the option to delete notes that I no longer need.
+7. [ ] User can sign up, log in securely, create, view, and edit notes.
+8. [ ] Notes are accessible only on the device in use.
+9. [ ] Users can delete unnecessary notes.
 
 ** Technical Requirements for MVP (Backend):
 1. Server-Side Framework:

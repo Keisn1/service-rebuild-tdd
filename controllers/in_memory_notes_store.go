@@ -57,6 +57,19 @@ func (i *InMemoryNotesStore) EditNote(userID, noteID int, newNote string) error 
 	return fmt.Errorf("note with UserID %d and NoteID %d not found", userID, noteID)
 }
 
+func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, error) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+
+	var userNotes Notes
+	for _, note := range i.notes {
+		if note.UserID == userID && note.NoteID == noteID {
+			userNotes = append(userNotes, note)
+		}
+	}
+	return userNotes, nil
+}
+
 func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (Notes, error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()

@@ -24,11 +24,12 @@ type EditCall struct {
 type StubNotesStore struct {
 	Notes Notes
 
-	getNotesByUserIDCalls []int
-	getAllNotesGotCalled  bool
-	addNoteCalls          []AddNoteCall
-	editNoteCalls         []EditCall
-	deleteNoteCalls       []DeleteCall
+	getNotesByUserIDCalls         []int
+	getNoteByUserIDAndNoteIDCalls [][2]int
+	getAllNotesGotCalled          bool
+	addNoteCalls                  []AddNoteCall
+	editNoteCalls                 []EditCall
+	deleteNoteCalls               []DeleteCall
 }
 
 type StubNotesStoreFailureGetAllNotes struct {
@@ -78,17 +79,33 @@ func (sns *StubNotesStore) GetAllNotes() (Notes, error) {
 	return sns.Notes, nil
 }
 
+func (sns *StubNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, error) {
+	sns.getNoteByUserIDAndNoteIDCalls = append(sns.getNoteByUserIDAndNoteIDCalls, [2]int{userID, noteID})
+	var userNotes Notes
+	if userID == -1 {
+		err := DBError
+		return nil, err
+	}
+	for _, note := range sns.Notes {
+		if note.UserID == userID && note.NoteID == noteID {
+			userNotes = append(userNotes, note)
+		}
+	}
+	return userNotes, nil
+}
+
 func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes, err error) {
 	sns.getNotesByUserIDCalls = append(sns.getNotesByUserIDCalls, userID)
 	if userID == -1 {
 		err = DBError
+		return nil, err
 	}
 	for _, n := range sns.Notes {
 		if n.UserID == userID {
 			ret = append(ret, n)
 		}
 	}
-	return
+	return ret, err
 }
 
 type StubLogger struct {

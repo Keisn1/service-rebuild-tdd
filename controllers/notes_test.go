@@ -53,6 +53,37 @@ func TestNotes(t *testing.T) {
 		})
 	})
 
+	t.Run("Return note with noteID and userID", func(t *testing.T) {
+		logger.Reset()
+		testCases := []struct {
+			userID     int
+			noteID     int
+			wantNote   Note
+			statusCode int
+		}{
+			{1, 1, Note{NoteID: 1, UserID: 1, Note: "Note 1 user 1"}, http.StatusOK},
+			{-1, -1, Note{}, http.StatusInternalServerError}, // simulating DBError
+		}
+
+		for _, tc := range testCases {
+			response := httptest.NewRecorder()
+			request := newGetNoteByUserIDAndNoteIDRequest(t, tc.userID, tc.noteID)
+			notesC.GetNoteByUserIDAndNoteID(response, request)
+			if tc.userID != -1 {
+				gotNotes := getNotesFromResponse(t, response.Body)
+				assertSlicesAnyAreEqual(t, gotNotes, Notes{tc.wantNote})
+			}
+
+			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
+		}
+		assertSlicesAnyAreEqual(t, notesStore.getNoteByUserIDAndNoteIDCalls, [][2]int{{1, 1}, {-1, -1}})
+		assertLoggingCalls(t, logger.infofCalls, []string{
+			"Success: GetNoteByUserIDAndNoteID with userID 1 and noteID 1",
+		})
+		assertLoggingCalls(t, logger.errorfCall, []string{
+			fmt.Sprintf("GetNoteByUserIDAndNoteID with userID -1 and noteID -1 %v", DBError.Error()),
+		})
+	})
 	t.Run("Return notes for user with userID", func(t *testing.T) {
 		logger.Reset()
 		testCases := []struct {
@@ -159,9 +190,9 @@ func TestNotes(t *testing.T) {
 		userID, noteID := 1, 2
 		request, err := http.NewRequest(http.MethodDelete, "", nil)
 		assertNoError(t, err)
-		request = WithUrlParams(request, map[string]string{
-			"userID": fmt.Sprintf("%d", userID),
-			"noteID": fmt.Sprintf("%d", noteID),
+		request = WithUrlParams(request, Params{
+			"userID": strconv.Itoa(userID),
+			"noteID": strconv.Itoa(noteID),
 		})
 
 		response := httptest.NewRecorder()
@@ -178,9 +209,9 @@ func TestNotes(t *testing.T) {
 		userID, noteID := 50, 50
 		request, err := http.NewRequest(http.MethodDelete, "", nil)
 		assertNoError(t, err)
-		request = WithUrlParams(request, map[string]string{
-			"userID": fmt.Sprintf("%d", userID),
-			"noteID": fmt.Sprintf("%d", noteID),
+		request = WithUrlParams(request, Params{
+			"userID": strconv.Itoa(userID),
+			"noteID": strconv.Itoa(noteID),
 		})
 
 		response := httptest.NewRecorder()
@@ -235,6 +266,14 @@ func encodeRequestBodyAddNote(t testing.TB, rb map[string]string) *bytes.Buffer 
 	err := json.NewEncoder(buf).Encode(rb)
 	assertNoError(t, err)
 	return buf
+}
+func newGetNoteByUserIDAndNoteIDRequest(t testing.TB, userID, noteID int) *http.Request {
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	assertNoError(t, err)
+	return WithUrlParams(request, Params{
+		"userID": strconv.Itoa(userID),
+		"noteID": strconv.Itoa(noteID),
+	})
 }
 
 func newGetNotesByUserIdRequest(t testing.TB, userID int) *http.Request {
