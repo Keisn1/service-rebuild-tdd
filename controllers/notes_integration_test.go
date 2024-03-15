@@ -137,7 +137,7 @@ func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
 
 func addNotes(t testing.TB, notes Notes, notesC NotesCtrlr) {
 	for _, n := range notes {
-		notesC.ProcessAddNote(
+		notesC.Add(
 			httptest.NewRecorder(),
 			newPostRequestWithNoteAndUrlParam(t, n.Note, "userID", strconv.Itoa(n.UserID)),
 		)

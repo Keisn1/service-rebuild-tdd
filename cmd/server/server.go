@@ -36,10 +36,12 @@ func main() {
 
 	r := chi.NewRouter()
 
-	r.Route("/notes", func(r chi.Router) {
-		r.Get("/", notesC.GetAllNotes)
-		r.Get("/{id}", notesC.GetNotesByUserID)
-		r.Post("/{id}", notesC.ProcessAddNote)
+	r.Route("/users/", func(r chi.Router) {
+		r.Get("{userID}/notes", notesC.GetNotesByUserID)
+		r.Get("/{userID}/notes/{id}", notesC.GetNoteByUserIDAndNoteID)
+		r.Post("/{userID}/notes", notesC.Add)
+		r.Put("/{userID}/notes/{noteID}", notesC.Edit)
+		r.Delete("/{userID}/notes/{noteID}", notesC.Delete)
 	})
 
 	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, r))

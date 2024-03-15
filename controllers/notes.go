@@ -96,7 +96,7 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	nc.Logger.Infof("Success: Delete noteID %v userID %v", noteID, userID)
 }
 
-func (nc *NotesCtrlr) ProcessAddNote(w http.ResponseWriter, r *http.Request) {
+func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if handleBadRequest(w, err, nc.Logger, "ProcessAddNote", "userID") {
 		return

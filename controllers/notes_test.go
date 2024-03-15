@@ -141,7 +141,7 @@ func TestNotes(t *testing.T) {
 
 		request := newPostRequestWithNoteAndUrlParam(t, note, "userID", fmt.Sprintf("%d", userID))
 		response := httptest.NewRecorder()
-		notesC.ProcessAddNote(response, request)
+		notesC.Add(response, request)
 
 		wantAddNoteCalls := []AddNoteCall{{userID: userID, note: note}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
@@ -154,7 +154,7 @@ func TestNotes(t *testing.T) {
 		badRequest := newPostRequestFromBody(t, "{}}")
 		badRequest = WithUrlParam(badRequest, "userID", "1")
 		response := httptest.NewRecorder()
-		notesC.ProcessAddNote(response, badRequest)
+		notesC.Add(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid json:"})
@@ -166,7 +166,7 @@ func TestNotes(t *testing.T) {
 		badRequest := newInvalidBodyPostRequest(t)
 		badRequest = WithUrlParam(badRequest, "userID", fmt.Sprintf("%d", 1))
 		response := httptest.NewRecorder()
-		notesC.ProcessAddNote(response, badRequest)
+		notesC.Add(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid body:"})
@@ -179,7 +179,7 @@ func TestNotes(t *testing.T) {
 		request = WithUrlParam(request, "userID", fmt.Sprintf("%d", 1))
 		response := httptest.NewRecorder()
 
-		notesC.ProcessAddNote(response, request)
+		notesC.Add(response, request)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusConflict)
 		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote DBerror:"})
 	})
