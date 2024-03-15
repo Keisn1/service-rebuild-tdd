@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -31,35 +30,37 @@ func TestIntegrationInMemoryStore(t *testing.T) {
 	addNotes(t, notesUser1, notesC)
 	addNotes(t, notesUser2, notesC)
 
+	// Testing all notes
+	assertAllNotesAsExpected(t, allNotes, notesC)
+
 	// Testing notes by userID
 	assertNotesByIdAsExpected(t, 1, notesUser1, notesC)
 	assertNotesByIdAsExpected(t, 2, notesUser2, notesC)
-
-	// Testing all notes
-	assertAllNotesAsExpected(t, allNotes, notesC)
 
 	// Edit a note
 	pNote, text := EditNote(t, notesC)
 	assertNoteWasEdited(t, pNote, text, notesC)
 
 	// Delete a note
+	restOfNotes := deleteANote(t, notesC)
+	assertAllNotesAsExpected(t, restOfNotes, notesC)
+}
+
+func deleteANote(t testing.TB, notesC NotesCtrlr) (restOfNotes Notes) {
+	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes = getNotesFromResponse(t, response.Body)
-	dNote, wantAllNotes := allNotes[0], allNotes[1:]
+	allNotes := getNotesFromResponse(t, response.Body)
+	dNote, restOfNotes := allNotes[0], allNotes[1:]
 
-	request, err := http.NewRequest(http.MethodDelete, "", nil)
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "", nil)
 	assertNoError(t, err)
-	request = WithUrlParams(request, map[string]string{
+	deleteRequest = WithUrlParams(deleteRequest, map[string]string{
 		"userID": strconv.Itoa(dNote.UserID),
 		"noteID": strconv.Itoa(dNote.NoteID),
 	})
-	notesC.Delete(response, request)
-
-	response = httptest.NewRecorder()
-	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	gotAllNotes := getNotesFromResponse(t, response.Body)
-	assertSlicesAnyAreEqual(t, gotAllNotes, wantAllNotes)
+	notesC.Delete(response, deleteRequest)
+	return restOfNotes
 }
 
 func assertNoteWasEdited(t testing.TB, pNote Note, text string, notesC NotesCtrlr) {
@@ -92,7 +93,6 @@ func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC
 	response := httptest.NewRecorder()
 	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
 
-	fmt.Println(response.Body)
 	gotNotes := getNotesFromResponse(t, response.Body)
 	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)

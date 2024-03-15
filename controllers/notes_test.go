@@ -23,19 +23,22 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		logger.Reset()
+		wantNotes := notesStore.Notes
 
 		request := newGetAllNotesRequest(t)
 		response := httptest.NewRecorder()
 		notesC.GetAllNotes(response, request)
+		gotNotes := getNotesFromResponse(t, response.Body)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
+		assertSlicesAnyAreEqual(t, gotNotes, wantNotes)
 		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
 	})
 
 	t.Run("Failure DB on GetAllNotes", func(t *testing.T) {
 		logger.Reset()
-		notesStore := StubNotesStoreFailureGetAllNotes{}
+		notesStore := StubNotesStoreFailureGetAllNotes{} // different stubNotesStore
 		logger := NewStubLogger()
 		notesC := NewNotesCtrlr(&notesStore, logger)
 
@@ -54,17 +57,29 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		testCases := []struct {
 			userID     int
+			wantNotes  Notes
 			statusCode int
 		}{
-			{1, http.StatusOK},
-			{2, http.StatusOK},                   // no notes for user with userID 100
-			{-1, http.StatusInternalServerError}, // simulating DBError
+			{1, Notes{
+				{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
+				{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
+			}, http.StatusOK},
+			{2, Notes{
+				{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
+				{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
+			}, http.StatusOK}, // no notes for user with userID 2
+			{-1, Notes{}, http.StatusInternalServerError}, // simulating DBError
 		}
 
 		for _, tc := range testCases {
 			response := httptest.NewRecorder()
 			request := newGetNotesByUserIdRequest(t, tc.userID)
 			notesC.GetNotesByUserID(response, request)
+			if tc.userID != -1 {
+				gotNotes := getNotesFromResponse(t, response.Body)
+				assertSlicesAnyAreEqual(t, gotNotes, tc.wantNotes)
+			}
+
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
 		}
 		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, -1})
@@ -72,7 +87,6 @@ func TestNotes(t *testing.T) {
 			"Success: GetNotesByUserID with userID 1",
 			"Success: GetNotesByUserID with userID 2",
 		})
-
 		assertLoggingCalls(t, logger.errorfCall, []string{
 			fmt.Sprintf("GetNotesByUserID userID -1 %v", DBError.Error()),
 		})

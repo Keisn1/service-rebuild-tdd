@@ -16,7 +16,6 @@ This project README contains build and usage instructions for a note-taking appl
 3. Update the values as needed
 
 ** Building and Running the Application
-
 *** Makefile
 
 The project includes a Makefile with the following commands:

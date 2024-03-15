@@ -3,7 +3,6 @@
 * PRD note taking app
 ** Introduction:
 The Note-Taking App aims to provide users with a simple yet powerful tool to organize, store, and retrieve their notes seamlessly, enhancing productivity and streamlining the note-taking process.
-
 ** Problem Statement:
 Existing note-taking apps lack key features, leading users to juggle multiple applications or resort to outdated methods, resulting in inefficiencies and disorganization. There is a clear need for a comprehensive solution that addresses these pain points effectively.
 
