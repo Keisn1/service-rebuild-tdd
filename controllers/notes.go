@@ -41,7 +41,7 @@ func NewNotesCtrlr(store NotesStore, logger Logger) NotesCtrlr {
 }
 
 var (
-	DBError = errors.New("DBError")
+	ErrDB = errors.New("ErrDB")
 )
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +133,7 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	notes, err := nc.NotesStore.GetNotesByUserID(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", userID, DBError.Error(), err)
+		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", userID, ErrDB.Error(), err)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("GetNoteByUserIDAndNoteID with userID %v and noteID %v %v: %w", userID, noteID, DBError.Error(), err)
+		nc.Logger.Errorf("GetNoteByUserIDAndNoteID with userID %v and noteID %v %v: %w", userID, noteID, ErrDB.Error(), err)
 		return
 	}
 
@@ -175,7 +175,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes, err := nc.NotesStore.GetAllNotes()
-	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes", fmt.Sprintf("%v", DBError.Error())) {
+	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes", fmt.Sprintf("%v", ErrDB.Error())) {
 		return
 	}
 

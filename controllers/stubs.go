@@ -38,7 +38,7 @@ type StubNotesStoreFailureGetAllNotes struct {
 
 func (snsF *StubNotesStoreFailureGetAllNotes) GetAllNotes() (Notes, error) {
 	snsF.getAllNotesGotCalled = true
-	return nil, DBError
+	return nil, ErrDB
 }
 
 func NewStubNotesStore() *StubNotesStore {
@@ -83,7 +83,7 @@ func (sns *StubNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, 
 	sns.getNoteByUserIDAndNoteIDCalls = append(sns.getNoteByUserIDAndNoteIDCalls, [2]int{userID, noteID})
 	var userNotes Notes
 	if userID == -1 {
-		err := DBError
+		err := ErrDB
 		return nil, err
 	}
 	for _, note := range sns.Notes {
@@ -97,7 +97,7 @@ func (sns *StubNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, 
 func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes, err error) {
 	sns.getNotesByUserIDCalls = append(sns.getNotesByUserIDCalls, userID)
 	if userID == -1 {
-		err = DBError
+		err = ErrDB
 		return nil, err
 	}
 	for _, n := range sns.Notes {

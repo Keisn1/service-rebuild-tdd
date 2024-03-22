@@ -1,0 +1,17 @@
+#+title: Authentication
+
+* writing a middleware for authentication with JWT
+** TODO Write a test for a function that validates the token
+- look at https://github.com/auth0/go-jwt-middleware and https://github.com/golang-jwt/jwt for some sensible function signatures and error strings already
+  - e.g. [[https://pkg.go.dev/github.com/auth0/go-jwt-middleware/v2#ValidateToken][validateToken function from jwt-middleware]]
+    #+begin_src go :results output :imports "fmt"
+type ValidateToken func(context.Context, string) (interface{}, error)
+    #+end_src
+  - example implementation in [[https://github.com/auth0/go-jwt-middleware/blob/master/validator/validator.go][jwt-middleware validator]]
+- Validate token returns type {}interface due to the dynamic nature of possible claims being returned
+- we will start with a simple map[string]string
+- Registered claims are such that are recommended
+  - issuer (iss)
+  - expiration time (exp)
+  - subject (sub) - This claim typically contains the unique identifier for the user or entity that the token represents.
+  - audience (aud e.g. api endpoint or service that the token is intended for)

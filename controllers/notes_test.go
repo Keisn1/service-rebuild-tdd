@@ -49,7 +49,7 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
 		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetAllNotes %v", DBError.Error()),
+			fmt.Sprintf("GetAllNotes %v", ErrDB.Error()),
 		})
 	})
 
@@ -81,7 +81,7 @@ func TestNotes(t *testing.T) {
 			"Success: GetNoteByUserIDAndNoteID with userID 1 and noteID 1",
 		})
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetNoteByUserIDAndNoteID with userID -1 and noteID -1 %v", DBError.Error()),
+			fmt.Sprintf("GetNoteByUserIDAndNoteID with userID -1 and noteID -1 %v", ErrDB.Error()),
 		})
 	})
 	t.Run("Return notes for user with userID", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestNotes(t *testing.T) {
 			"Success: GetNotesByUserID with userID 2",
 		})
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetNotesByUserID userID -1 %v", DBError.Error()),
+			fmt.Sprintf("GetNotesByUserID userID -1 %v", ErrDB.Error()),
 		})
 	})
 
