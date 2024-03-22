@@ -4,9 +4,14 @@ import (
 	"net/http"
 )
 
+type JWTToken string
+
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
+		val, _ := r.Context().Value(JWTToken("token")).(bool)
+		if !val {
+			w.WriteHeader(http.StatusForbidden)
+		}
 	})
 }
 

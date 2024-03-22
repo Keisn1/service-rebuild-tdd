@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type JWTToken string
-
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	// Initialize your JWT middleware and other necessary dependencies for testing
 

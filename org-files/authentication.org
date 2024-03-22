@@ -15,3 +15,50 @@ type ValidateToken func(context.Context, string) (interface{}, error)
   - expiration time (exp)
   - subject (sub) - This claim typically contains the unique identifier for the user or entity that the token represents.
   - audience (aud e.g. api endpoint or service that the token is intended for)
+* Chatting with ChatGPT
+** what to test
+1. *Token Generation*:
+   - Test that the middleware can generate a JWT token correctly with the provided claims (e.g., user ID, expiration time).
+
+2. *Token Parsing*:
+   - Test that the middleware can parse and validate a JWT token extracted from the request headers.
+
+3. *Middleware Functionality*:
+   - Test that the middleware correctly verifies the JWT token and either allows or denies access based on the token's validity.
+
+4. *Error Handling*:
+   - Test how the middleware behaves in case of invalid or missing tokens, ensuring it returns the appropriate HTTP status codes and error responses.
+
+5. *Integration Testing*:
+   - Perform end-to-end tests to verify that protected routes are inaccessible without a valid JWT token and accessible with a valid token.
+
+** proposed test layout
+#+begin_src go
+package middleware
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestJWTAuthenticationMiddleware(t *testing.T) {
+	// Initialize your JWT middleware and other necessary dependencies for testing
+
+	// Create a new test server with the JWT middleware applied to the handler
+	handler := JWTAuthenticationMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+
+	req := httptest.NewRequest("GET", "/protected-route", nil)
+
+	// Add a valid or invalid JWT token to the request headers for testing different scenarios
+
+	// Make a request to the test server
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, req)
+
+	// Assert the expected outcome based on the token validity
+	assert.Equal(t, http.StatusOK, recorder.Code)
+}
+#+end_src
