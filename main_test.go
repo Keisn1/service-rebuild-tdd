@@ -2,9 +2,31 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestJWTAuthenticationMiddleware(t *testing.T) {
+	// Initialize your JWT middleware and other necessary dependencies for testing
+
+	// Create a new test server with the JWT middleware applied to the handler
+	handler := JWTAuthenticationMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+
+	req := httptest.NewRequest("GET", "/protected-route", nil)
+
+	// Add a valid or invalid JWT token to the request headers for testing different scenarios
+
+	// Make a request to the test server
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, req)
+
+	// Assert the expected outcome based on the token validity
+	assert.Equal(t, http.StatusForbidden, recorder.Code)
+}
 
 func TestAuthentication(t *testing.T) {
 	tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
