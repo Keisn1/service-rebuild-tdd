@@ -11,6 +11,8 @@ func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 		val, _ := r.Context().Value(JWTToken("token")).(bool)
 		if !val {
 			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("No valid JWTToken"))
+			return
 		}
 		next.ServeHTTP(w, r)
 	})
