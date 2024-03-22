@@ -12,6 +12,7 @@ func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 		if !val {
 			w.WriteHeader(http.StatusForbidden)
 		}
+		next.ServeHTTP(w, r)
 	})
 }
 

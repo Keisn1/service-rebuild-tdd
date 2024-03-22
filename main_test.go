@@ -15,7 +15,11 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	// Initialize your JWT middleware and other necessary dependencies for testing
 
 	// Create a new test server with the JWT middleware applied to the handler
-	handler := JWTAuthenticationMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	handler := JWTAuthenticationMiddleware(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("Hello from Test"))
+		}),
+	)
 
 	req := httptest.NewRequest("GET", "/protected-route", nil)
 
@@ -30,6 +34,22 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 
 	// Assert the expected outcome based on the token validity
 	assert.Equal(t, http.StatusForbidden, recorder.Code)
+	assert.Equal(t, []byte("No valid JWTToken"), recorder.Body.Bytes())
+
+	req = httptest.NewRequest("GET", "/protected-route", nil)
+
+	// Add a valid or invalid JWT token to the request headers for testing different scenarios
+	ctx = context.Background()
+	ctx = context.WithValue(ctx, JWTToken("token"), true)
+	req = req.WithContext(ctx)
+
+	// Make a request to the test server
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, req)
+
+	// Assert the expected outcome based on the token validity
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, []byte("Hello from Test"), recorder.Body.Bytes())
 }
 
 func TestAuthentication(t *testing.T) {
