@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/go-chi/chi v1.5.5
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.9.0
 )

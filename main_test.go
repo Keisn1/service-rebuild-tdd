@@ -8,18 +8,26 @@ import (
 	"testing"
 
 	"context"
+	"os"
+
+	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	// Initialize your JWT middleware and other necessary dependencies for testing
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	validTokenString, err := jwt.New(jwt.SigningMethodHS256).SignedString([]byte(secretKey))
+	invalidTokenString := "An Invalid string"
+
+	assertNoError(t, err)
 	testCases := []struct {
 		valid      bool
 		statusCode int
 		body       []byte
 	}{
-		{false, http.StatusForbidden, []byte("No valid JWTToken")},
-		{true, http.StatusOK, []byte("Test Handler")},
+		{false, http.StatusForbidden, []byte(invalidTokenString)},
+		{true, http.StatusOK, []byte(validTokenString)},
 	}
 
 	// Create a new test server with the JWT middleware applied to the handler
@@ -31,6 +39,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 
 	for _, tc := range testCases {
 		req := httptest.NewRequest("GET", "/protected-route", nil)
+
 		// Add a valid or invalid JWT token to the request headers for testing different scenarios
 		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tc.valid))
 
