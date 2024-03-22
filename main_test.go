@@ -17,17 +17,16 @@ import (
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	// Initialize your JWT middleware and other necessary dependencies for testing
 	secretKey := os.Getenv("JWT_SECRET_KEY")
-	validTokenString, err := jwt.New(jwt.SigningMethodHS256).SignedString([]byte(secretKey))
 	invalidTokenString := "An Invalid string"
-
+	validTokenString, err := jwt.New(jwt.SigningMethodHS256).SignedString([]byte(secretKey))
 	assertNoError(t, err)
 	testCases := []struct {
-		valid      bool
-		statusCode int
-		body       []byte
+		tokenString string
+		statusCode  int
+		wantBody    string
 	}{
-		{false, http.StatusForbidden, []byte(invalidTokenString)},
-		{true, http.StatusOK, []byte(validTokenString)},
+		{invalidTokenString, http.StatusForbidden, "No valid JWTToken"},
+		{validTokenString, http.StatusOK, "Test Handler"},
 	}
 
 	// Create a new test server with the JWT middleware applied to the handler
@@ -41,14 +40,14 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		req := httptest.NewRequest("GET", "/protected-route", nil)
 
 		// Add a valid or invalid JWT token to the request headers for testing different scenarios
-		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tc.valid))
+		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tc.tokenString))
 
 		// Make a request to the test server
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
 
 		assert.Equal(t, tc.statusCode, recorder.Code)
-		assert.Equal(t, tc.body, recorder.Body.Bytes())
+		assert.Equal(t, tc.wantBody, recorder.Body.String())
 	}
 }
 
