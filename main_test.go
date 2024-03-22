@@ -7,8 +7,11 @@ import (
 	"reflect"
 	"testing"
 
+	"context"
 	"github.com/stretchr/testify/assert"
 )
+
+type JWTToken string
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	// Initialize your JWT middleware and other necessary dependencies for testing
@@ -19,6 +22,9 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	req := httptest.NewRequest("GET", "/protected-route", nil)
 
 	// Add a valid or invalid JWT token to the request headers for testing different scenarios
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, JWTToken("token"), false)
+	req = req.WithContext(ctx)
 
 	// Make a request to the test server
 	recorder := httptest.NewRecorder()
