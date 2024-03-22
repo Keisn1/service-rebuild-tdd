@@ -13,43 +13,34 @@ import (
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	// Initialize your JWT middleware and other necessary dependencies for testing
+	testCases := []struct {
+		valid      bool
+		statusCode int
+		body       []byte
+	}{
+		{false, http.StatusForbidden, []byte("No valid JWTToken")},
+		{true, http.StatusOK, []byte("Test Handler")},
+	}
 
 	// Create a new test server with the JWT middleware applied to the handler
 	handler := JWTAuthenticationMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Hello from Test"))
+			w.Write([]byte("Test Handler"))
 		}),
 	)
 
-	req := httptest.NewRequest("GET", "/protected-route", nil)
+	for _, tc := range testCases {
+		req := httptest.NewRequest("GET", "/protected-route", nil)
+		// Add a valid or invalid JWT token to the request headers for testing different scenarios
+		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tc.valid))
 
-	// Add a valid or invalid JWT token to the request headers for testing different scenarios
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, JWTToken("token"), false)
-	req = req.WithContext(ctx)
+		// Make a request to the test server
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
 
-	// Make a request to the test server
-	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, req)
-
-	// Assert the expected outcome based on the token validity
-	assert.Equal(t, http.StatusForbidden, recorder.Code)
-	assert.Equal(t, []byte("No valid JWTToken"), recorder.Body.Bytes())
-
-	req = httptest.NewRequest("GET", "/protected-route", nil)
-
-	// Add a valid or invalid JWT token to the request headers for testing different scenarios
-	ctx = context.Background()
-	ctx = context.WithValue(ctx, JWTToken("token"), true)
-	req = req.WithContext(ctx)
-
-	// Make a request to the test server
-	recorder = httptest.NewRecorder()
-	handler.ServeHTTP(recorder, req)
-
-	// Assert the expected outcome based on the token validity
-	assert.Equal(t, http.StatusOK, recorder.Code)
-	assert.Equal(t, []byte("Hello from Test"), recorder.Body.Bytes())
+		assert.Equal(t, tc.statusCode, recorder.Code)
+		assert.Equal(t, tc.body, recorder.Body.Bytes())
+	}
 }
 
 func TestAuthentication(t *testing.T) {
