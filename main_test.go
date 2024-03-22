@@ -8,7 +8,7 @@ import (
 
 func TestAuthentication(t *testing.T) {
 	tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-	gotClaims, err := validateToken(tokenString)
+	gotClaims, err := ValidateToken(tokenString)
 	assertNoError(t, err)
 	wantClaims := map[string]string{
 		"iss": "note-taking-app",
