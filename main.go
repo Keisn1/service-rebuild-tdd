@@ -5,7 +5,9 @@ import (
 )
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
-	return next
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
 }
 
 func ValidateToken(t string) (claims map[string]string, err error) {
