@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -26,8 +27,8 @@ func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte("No valid JWTToken"))
+			http.Error(w, "Invalid Authorization Token", http.StatusForbidden)
+			slog.Info("Invalid JWT")
 			return
 		}
 		next.ServeHTTP(w, r)

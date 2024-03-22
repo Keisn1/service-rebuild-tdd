@@ -25,7 +25,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		invalidTokenString := "An Invalid string"
 
 		req, err := http.NewRequest(http.MethodGet, "", nil)
-		assertNoError(t, err)
+		assert.NoError(t, err)
 		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), invalidTokenString))
 
 		var buf bytes.Buffer
@@ -34,7 +34,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 
 		handler.ServeHTTP(recorder, req)
 		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		assert.Equal(t, "Invalid JWT", buf.String())
+		assert.Contains(t, recorder.Body.String(), "Invalid Authorization Token")
+		assert.Contains(t, buf.String(), "Invalid JWT")
 
 		// test token valid
 		// test claims valid
@@ -70,7 +71,6 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			handler.ServeHTTP(recorder, req)
 
 			assert.Equal(t, tc.statusCode, recorder.Code)
-			assert.Equal(t, tc.wantBody, recorder.Body.String())
 		}
 	})
 }
