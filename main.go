@@ -26,7 +26,6 @@ func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			fmt.Println(err)
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte("No valid JWTToken"))
 			return
