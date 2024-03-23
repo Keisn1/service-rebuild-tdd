@@ -15,6 +15,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 func TestAuthentication(t *testing.T) {
@@ -41,14 +42,37 @@ func TestAuthentication(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Test if user is enabled", func(t *testing.T) {
+	t.Run("Test that user is not enabled", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, UserIDKey, 123)
+		ctx = context.WithValue(ctx, userIDKey, "123")
 		claims := jwt.MapClaims{
 			"sub": "456",
 		}
 		err := a.isUserEnabled(ctx, claims)
 		assert.ErrorContains(t, err, "user not enabled")
+	})
+
+	t.Run("Test that user is enabled", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, userIDKey, "123")
+		claims := jwt.MapClaims{
+			"sub": "123",
+		}
+		err := a.isUserEnabled(ctx, claims)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Test Authentication pipeline happy path", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, userIDKey, "123")
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"sub": "123",
+		})
+		tokenS, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+		assert.NoError(t, err)
+		bearerToken := "Bearer " + tokenS
+		_, err := a.Authenticate(ctx, bearerToken)
+		assert.NoError(t, err)
 	})
 }
 

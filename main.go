@@ -15,7 +15,7 @@ import (
 
 type key int
 
-const UserIDKey key = 1
+const userIDKey key = 1
 
 type Auth struct{}
 
@@ -27,7 +27,7 @@ func (a *Auth) getTokenString(bearerToken string) (string, error) {
 	return parts[1], nil
 }
 
-func (a *Auth) parseTokenString(tokenS string) (*jwt.Token, error) {
+func (a *Auth) parseTokenString(tokenS string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenS, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -42,10 +42,22 @@ func (a *Auth) parseTokenString(tokenS string) (*jwt.Token, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tokenString: %w", err)
 	}
-	return token, nil
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		return claims, nil
+	} else {
+		return nil, errors.New("error extracting claims")
+	}
 }
 
 func (a *Auth) isUserEnabled(ctx context.Context, claims jwt.MapClaims) error {
+	userID, ok := ctx.Value(userIDKey).(string)
+	if !ok {
+		return errors.New("error parsing userIDKey to key")
+	}
+	if userID != claims["sub"] {
+		return errors.New("user not enabled")
+	}
 	return nil
 }
 
