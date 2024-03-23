@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/elliptic"
 	"crypto/rand"
 	"log"
@@ -42,37 +41,36 @@ func TestAuthentication(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Test that user is not enabled", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, userIDKey, "123")
+	t.Run("Test that user is NOT enabled", func(t *testing.T) {
+		userID := "123"
 		claims := jwt.MapClaims{
 			"sub": "456",
 		}
-		err := a.isUserEnabled(ctx, claims)
+		err := a.isUserEnabled(userID, claims)
 		assert.ErrorContains(t, err, "user not enabled")
 	})
 
-	t.Run("Test that user is enabled", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, userIDKey, "123")
+	t.Run("Test that user IS enabled", func(t *testing.T) {
+		userID := "123"
 		claims := jwt.MapClaims{
 			"sub": "123",
 		}
-		err := a.isUserEnabled(ctx, claims)
+		err := a.isUserEnabled(userID, claims)
 		assert.NoError(t, err)
 	})
 
 	t.Run("Test Authentication pipeline happy path", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, userIDKey, "123")
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		userID := "123"
+		wantClaims := jwt.MapClaims{
 			"sub": "123",
-		})
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, wantClaims)
 		tokenS, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 		assert.NoError(t, err)
 		bearerToken := "Bearer " + tokenS
-		_, err = a.Authenticate(ctx, bearerToken)
+		gotClaims, err := a.Authenticate(userID, bearerToken)
 		assert.NoError(t, err)
+		assert.Equal(t, gotClaims, wantClaims)
 	})
 }
 

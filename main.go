@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -50,19 +49,20 @@ func (a *Auth) parseTokenString(tokenS string) (jwt.MapClaims, error) {
 	}
 }
 
-func (a *Auth) isUserEnabled(ctx context.Context, claims jwt.MapClaims) error {
-	userID, ok := ctx.Value(userIDKey).(string)
-	if !ok {
-		return errors.New("error parsing userIDKey to key")
-	}
+func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
 	if userID != claims["sub"] {
 		return errors.New("user not enabled")
 	}
 	return nil
 }
 
-func (a *Auth) Authenticate(ctx context.Context, bearerToken string) (jwt.Claims, error) {
-	return nil, errors.New("some error")
+func (a *Auth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
+	tokenS, _ := a.getTokenString(bearerToken)
+	claims, _ := a.parseTokenString(tokenS)
+	if a.isUserEnabled(userID, claims) != nil {
+		return nil, nil
+	}
+	return claims, nil
 }
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
