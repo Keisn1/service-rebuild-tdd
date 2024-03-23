@@ -9,6 +9,7 @@ import (
 
 	"strings"
 
+	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -57,17 +58,39 @@ func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
 }
 
 func (a *Auth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
-	tokenS, _ := a.getTokenString(bearerToken)
-	claims, _ := a.parseTokenString(tokenS)
-	if a.isUserEnabled(userID, claims) != nil {
-		return nil, nil
+	tokenS, err := a.getTokenString(bearerToken)
+	if err != nil {
+		return nil, fmt.Errorf("authenticate: %w", err)
+	}
+
+	claims, err := a.parseTokenString(tokenS)
+	if err != nil {
+		return nil, fmt.Errorf("authenticate: %w", err)
+	}
+
+	if err := a.isUserEnabled(userID, claims); err != nil {
+		return nil, fmt.Errorf("authenticate: %w", err)
 	}
 	return claims, nil
+}
+
+type MidHandler func(http.Handler) http.Handler
+
+func NewJWTMidHandler(a *Auth) MidHandler {
+	m := func(next http.Handler) http.Handler {
+		h := func(w http.ResponseWriter, r *http.Request) {
+			a.Authenticate(chi.URLParam(r, "userID"), r.Header.Get("Authorization"))
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(h)
+	}
+	return m
 }
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := &Auth{}
+
 		tokenString, err := a.getTokenString(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "Failed Authorization", http.StatusForbidden)

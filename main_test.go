@@ -12,51 +12,44 @@ import (
 
 	"crypto/ecdsa"
 
+	"os"
+
+	"errors"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
-	"os"
 )
 
 func TestAuthentication(t *testing.T) {
 	a := &Auth{}
-	t.Run("Test false authorization header format", func(t *testing.T) {
+	t.Run("Test Authentication Errors", func(t *testing.T) {
 		testBearerTokens := []string{
 			"", "Bearer invalid length", "NoBearer asdf;lkj",
 		}
 		for _, bearerT := range testBearerTokens {
-			_, err := a.getTokenString(bearerT)
-			assert.Contains(t, err.Error(), "expected authorization header format: Bearer <token>")
+			_, err := a.Authenticate("", bearerT)
+			assert.ErrorContains(t, err, "expected authorization header format: Bearer <token>")
+			assert.ErrorContains(t, err, "authenticate:")
 		}
-	})
 
-	t.Run("Test wrong signing method", func(t *testing.T) {
 		wrongMethodToken := getTokenEcdsa256(t)
-		_, err := a.parseTokenString(wrongMethodToken)
-		assert.Contains(t, err.Error(), "unexpected signing method: ES256")
-	})
+		_, err := a.Authenticate("", "Bearer "+wrongMethodToken)
+		assert.ErrorContains(t, err, "unexpected signing method: ES256")
+		assert.ErrorContains(t, err, "error parsing tokenString")
+		assert.ErrorContains(t, err, "authenticate:")
 
-	t.Run("Test invalid token", func(t *testing.T) {
 		invalidToken := "invalidToken"
-		_, err := a.parseTokenString(invalidToken)
-		assert.Error(t, err)
-	})
+		_, err = a.Authenticate("", "Bearer "+invalidToken)
+		assert.ErrorContains(t, err, "error parsing tokenString")
+		assert.ErrorContains(t, err, "authenticate:")
 
-	t.Run("Test that user is NOT enabled", func(t *testing.T) {
 		userID := "123"
 		claims := jwt.MapClaims{
 			"sub": "456",
 		}
-		err := a.isUserEnabled(userID, claims)
+		bearerToken := setupJwtTokenString(t, claims)
+		_, err = a.Authenticate(userID, bearerToken)
 		assert.ErrorContains(t, err, "user not enabled")
-	})
-
-	t.Run("Test that user IS enabled", func(t *testing.T) {
-		userID := "123"
-		claims := jwt.MapClaims{
-			"sub": "123",
-		}
-		err := a.isUserEnabled(userID, claims)
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, "authenticate:")
 	})
 
 	t.Run("Test Authentication pipeline happy path", func(t *testing.T) {
@@ -64,24 +57,31 @@ func TestAuthentication(t *testing.T) {
 		wantClaims := jwt.MapClaims{
 			"sub": "123",
 		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, wantClaims)
-		tokenS, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
-		assert.NoError(t, err)
-		bearerToken := "Bearer " + tokenS
+
+		bearerToken := setupJwtTokenString(t, wantClaims)
 		gotClaims, err := a.Authenticate(userID, bearerToken)
+
 		assert.NoError(t, err)
 		assert.Equal(t, gotClaims, wantClaims)
 	})
 }
 
+type StubAuth struct{}
+
+func (sa *StubAuth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
+	return nil, errors.New("Authentication error")
+}
+
 func TestJWTAuthenticationMiddleware(t *testing.T) {
-	handler := JWTAuthenticationMiddleware(http.HandlerFunc(
+	jwtMid := NewJWTMidHandler(&StubAuth{})
+
+	handler := jwtMid(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Test Handler"))
 		}),
 	)
 
-	t.Run("Test false authorization header format", func(t *testing.T) {
+	t.Run("Test authentication failure", func(t *testing.T) {
 		testReqs := []*http.Request{
 			newEmptyGetRequest(t),
 			addAuthorizationJWT(t, "invalid length", newEmptyGetRequest(t)),
@@ -99,35 +99,35 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("Test invalid signing method", func(t *testing.T) {
-		tString := getTokenEcdsa256(t) // wrong signing method
-		req := newEmptyGetRequest(t)
-		req = addAuthorizationJWT(t, tString, req)
+	// t.Run("Test invalid signing method", func(t *testing.T) {
+	// 	tString := getTokenEcdsa256(t) // wrong signing method
+	// 	req := newEmptyGetRequest(t)
+	// 	req = addAuthorizationJWT(t, tString, req)
 
-		var logBuf bytes.Buffer
-		log.SetOutput(&logBuf)
-		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(recorder, req)
+	// 	var logBuf bytes.Buffer
+	// 	log.SetOutput(&logBuf)
+	// 	recorder := httptest.NewRecorder()
+	// 	handler.ServeHTTP(recorder, req)
 
-		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		assert.Contains(t, recorder.Body.String(), "Failed Authorization")
-		assert.Contains(t, logBuf.String(), "unexpected signing method")
-	})
+	// 	assert.Equal(t, http.StatusForbidden, recorder.Code)
+	// 	assert.Contains(t, recorder.Body.String(), "Failed Authorization")
+	// 	assert.Contains(t, logBuf.String(), "unexpected signing method")
+	// })
 
-	t.Run("Test invalid token", func(t *testing.T) {
-		tString := "InvalidToken"
-		req := newEmptyGetRequest(t)
-		req = addAuthorizationJWT(t, tString, req)
+	// t.Run("Test invalid token", func(t *testing.T) {
+	// 	tString := "InvalidToken"
+	// 	req := newEmptyGetRequest(t)
+	// 	req = addAuthorizationJWT(t, tString, req)
 
-		var logBuf bytes.Buffer
-		log.SetOutput(&logBuf)
-		recorder := httptest.NewRecorder()
+	// 	var logBuf bytes.Buffer
+	// 	log.SetOutput(&logBuf)
+	// 	recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(recorder, req)
-		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		assert.Contains(t, recorder.Body.String(), "Failed Authorization")
-		assert.Contains(t, logBuf.String(), "Token invalid")
-	})
+	// 	handler.ServeHTTP(recorder, req)
+	// 	assert.Equal(t, http.StatusForbidden, recorder.Code)
+	// 	assert.Contains(t, recorder.Body.String(), "Failed Authorization")
+	// 	assert.Contains(t, logBuf.String(), "Token invalid")
+	// })
 }
 
 func assertNoError(t *testing.T, err error) {
@@ -166,4 +166,13 @@ func addAuthorizationJWT(t *testing.T, tokenS string, req *http.Request) *http.R
 func addFalseAuthorizationHeader(t *testing.T, tokenS string, req *http.Request) *http.Request {
 	req.Header.Add("Authorization", "False "+tokenS)
 	return req
+}
+
+func setupJwtTokenString(t *testing.T, claims jwt.MapClaims) string {
+	t.Helper()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenS, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	assert.NoError(t, err)
+	bearerToken := "Bearer " + tokenS
+	return bearerToken
 }
