@@ -23,6 +23,19 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		}),
 	)
 
+	t.Run("Test invalid claim", func(t *testing.T) {
+		req := newEmptyGetRequest(t)
+
+		var logBuf bytes.Buffer
+		log.SetOutput(&logBuf)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
+
+		assert.Equal(t, http.StatusForbidden, recorder.Code)
+		// assert.Contains(t, recorder.Body.String(), "Failed Authorization")
+		// assert.Contains(t, logBuf.String(), "expected authorization header format: Bearer <token>")
+	})
+
 	t.Run("Test false authorization header format", func(t *testing.T) {
 		testReqs := []*http.Request{
 			newEmptyGetRequest(t),

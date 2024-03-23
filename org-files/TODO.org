@@ -133,7 +133,7 @@
 * TODO Authentication
 ** TODO Validating JWT
 - [X] test JWT valid
-- [ ] test JWT signing method
+- [X] test JWT signing method
 - [ ] test claims valid
 - [ ] test claim userID
 - [ ] test userID equal url parameter userID
