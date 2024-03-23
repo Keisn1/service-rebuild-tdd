@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -12,7 +13,9 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type JWT string
+type key int
+
+const UserIDKey key = 1
 
 type Auth struct{}
 
@@ -40,6 +43,10 @@ func (a *Auth) parseTokenString(tokenS string) (*jwt.Token, error) {
 		return nil, fmt.Errorf("error parsing tokenString: %w", err)
 	}
 	return token, nil
+}
+
+func (a *Auth) isUserEnabled(ctx context.Context, claims jwt.MapClaims) error {
+	return nil
 }
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {

@@ -43,14 +43,11 @@ func TestAuthentication(t *testing.T) {
 
 	t.Run("Test if user is enabled", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, "userID", 123)
+		ctx = context.WithValue(ctx, UserIDKey, 123)
 		claims := jwt.MapClaims{
 			"sub": "456",
 		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signedToken, err := token.SignedString([]byte("your_secret_key"))
-		assert.NoError(t, err)
-		_, err := a.isUserEnabled(ctx, signedToken)
+		err := a.isUserEnabled(ctx, claims)
 		assert.ErrorContains(t, err, "user not enabled")
 	})
 }
