@@ -61,6 +61,10 @@ func (a *Auth) isUserEnabled(ctx context.Context, claims jwt.MapClaims) error {
 	return nil
 }
 
+func (a *Auth) Authenticate(ctx context.Context, bearerToken string) (jwt.Claims, error) {
+	return nil, errors.New("some error")
+}
+
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := &Auth{}

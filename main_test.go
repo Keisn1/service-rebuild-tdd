@@ -71,7 +71,7 @@ func TestAuthentication(t *testing.T) {
 		tokenS, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 		assert.NoError(t, err)
 		bearerToken := "Bearer " + tokenS
-		_, err := a.Authenticate(ctx, bearerToken)
+		_, err = a.Authenticate(ctx, bearerToken)
 		assert.NoError(t, err)
 	})
 }
