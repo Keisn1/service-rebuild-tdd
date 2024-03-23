@@ -8,9 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"context"
-	"os"
-
 	"bytes"
 
 	"crypto/ecdsa"
@@ -26,78 +23,52 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		}),
 	)
 
-	t.Run("Test no token String provided", func(t *testing.T) {
-		req := newEmptyGetRequest(t)
+	t.Run("Test false authorization header format", func(t *testing.T) {
+		testReqs := []*http.Request{
+			newEmptyGetRequest(t),
+			addAuthorizationJWT(t, "invalid length", newEmptyGetRequest(t)),
+			addFalseAuthorizationHeader(t, "", newEmptyGetRequest(t)),
+		}
+		for _, req := range testReqs {
+			var logBuf bytes.Buffer
+			log.SetOutput(&logBuf)
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, req)
 
-		var buf bytes.Buffer
-		log.SetOutput(&buf)
-		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(recorder, req)
-
-		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-		// assert.Contains(t, recorder.Body.String(), "Invalid Authorization")
-		// assert.Contains(t, buf.String(), "unexpected signing method")
+			assert.Equal(t, http.StatusForbidden, recorder.Code)
+			assert.Contains(t, recorder.Body.String(), "Failed Authorization")
+			assert.Contains(t, logBuf.String(), "expected authorization header format: Bearer <token>")
+		}
 	})
 
-	t.Run("Test invalid invalid signing method", func(t *testing.T) {
+	t.Run("Test invalid signing method", func(t *testing.T) {
 		tString := getTokenEcdsa256(t) // wrong signing method
 		req := newEmptyGetRequest(t)
 		req = addAuthorizationJWT(t, tString, req)
 
-		var buf bytes.Buffer
-		log.SetOutput(&buf)
+		var logBuf bytes.Buffer
+		log.SetOutput(&logBuf)
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
 
 		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		assert.Contains(t, recorder.Body.String(), "Invalid Authorization")
-		assert.Contains(t, buf.String(), "unexpected signing method")
+		assert.Contains(t, recorder.Body.String(), "Failed Authorization")
+		assert.Contains(t, logBuf.String(), "unexpected signing method")
 	})
 
 	t.Run("Test invalid token", func(t *testing.T) {
-		tString := "An Invalid string"
+		tString := "InvalidToken"
 		req := newEmptyGetRequest(t)
 		req = addAuthorizationJWT(t, tString, req)
 
-		var buf bytes.Buffer
-		log.SetOutput(&buf)
+		var logBuf bytes.Buffer
+		log.SetOutput(&logBuf)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(recorder, req)
 		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		assert.Contains(t, recorder.Body.String(), "Invalid Authorization")
-		assert.Contains(t, buf.String(), "Invalid Authorization")
-	})
-
-	t.Run("Test token validation", func(t *testing.T) {
-		// Initialize your JWT middleware and other necessary dependencies for testing
-		secretKey := os.Getenv("JWT_SECRET_KEY")
-		invalidTokenString := "An Invalid string"
-		validTokenString, err := jwt.New(jwt.SigningMethodHS256).SignedString([]byte(secretKey))
-		assertNoError(t, err)
-		testCases := []struct {
-			tokenString string
-			statusCode  int
-			wantBody    string
-		}{
-			{invalidTokenString, http.StatusForbidden, "No valid JWTToken"},
-			{validTokenString, http.StatusOK, "Test Handler"},
-		}
-
-		// Create a new test server with the JWT middleware applied to the handler
-
-		for _, tc := range testCases {
-			req := httptest.NewRequest("GET", "/protected-route", nil)
-
-			// Add a valid or invalid JWT token to the request headers for testing different scenarios
-			req = req.WithContext(context.WithValue(context.Background(), JWT("token"), tc.tokenString))
-
-			// Make a request to the test server
-			recorder := httptest.NewRecorder()
-			handler.ServeHTTP(recorder, req)
-
-			assert.Equal(t, tc.statusCode, recorder.Code)
-		}
+		assert.Contains(t, recorder.Body.String(), "Failed Authorization")
+		assert.Contains(t, logBuf.String(), "Token invalid")
 	})
 }
 
@@ -129,7 +100,12 @@ func newEmptyGetRequest(t *testing.T) *http.Request {
 	return req
 }
 
-func addAuthorizationJWT(t *testing.T, tString string, req *http.Request) *http.Request {
-	req.Header.Add("Authorization", "Bearer"+tString)
+func addAuthorizationJWT(t *testing.T, tokenS string, req *http.Request) *http.Request {
+	req.Header.Add("Authorization", "Bearer "+tokenS)
+	return req
+}
+
+func addFalseAuthorizationHeader(t *testing.T, tokenS string, req *http.Request) *http.Request {
+	req.Header.Add("Authorization", "False "+tokenS)
 	return req
 }

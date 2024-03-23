@@ -1,28 +1,29 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 
+	"strings"
+
 	"github.com/golang-jwt/jwt"
 )
 
 type JWT string
 
-func getTokenString(ctx context.Context) (string, error) {
-	tokenString, ok := ctx.Value(JWT("token")).(string)
-	if !ok {
-		return "", errors.New("could not get JWT from context")
+func getTokenString(r *http.Request) (string, error) {
+	parts := strings.Split(r.Header.Get("Authorization"), " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", errors.New("expected authorization header format: Bearer <token>")
 	}
-	return tokenString, nil
+	return parts[1], nil
 }
 
-func parseTokenString(tString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tString, func(token *jwt.Token) (interface{}, error) {
+func parseTokenString(tokenS string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenS, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			slog.Info("unexpected signing method: %v", token.Header["alg"])
@@ -38,17 +39,17 @@ func parseTokenString(tString string) (*jwt.Token, error) {
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := getTokenString(r.Context())
+		tokenString, err := getTokenString(r)
 		if err != nil {
-			http.Error(w, "", http.StatusInternalServerError)
-			return
+			http.Error(w, "Failed Authorization", http.StatusForbidden)
+			slog.Info("Failed Authorization: ", err)
 		}
 
 		_, err = parseTokenString(tokenString)
 
 		if err != nil {
-			http.Error(w, "Invalid Authorization", http.StatusForbidden)
-			slog.Info("Invalid Authorization: %w", err)
+			http.Error(w, "Failed Authorization", http.StatusForbidden)
+			slog.Info("Failed Authorization: Token invalid", err)
 			return
 		}
 		next.ServeHTTP(w, r)
