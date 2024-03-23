@@ -73,3 +73,16 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 }
 #+end_src
+
+* [[https://www.youtube.com/watch?v=bQgNYK1Z5ho][Domain Driven, Data Oriented Architecture with Bill Kennedy]]
+** App layer
+- startup and shutdown
+- receive input
+- validate input
+- call into business layer
+- formulate response after business layer is done
+** Business layer
+- process business rules
+** Storage layer
+- data gets persisted
+- data can be retreived

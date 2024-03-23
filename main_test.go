@@ -27,37 +27,24 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	)
 
 	t.Run("Test invalid invalid signing method", func(t *testing.T) {
-		var (
-			key         *ecdsa.PrivateKey
-			token       *jwt.Token
-			tokenString string
-		)
-
-		key, _ = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		token = jwt.New(jwt.SigningMethodES256)
-		tokenString, err := token.SignedString(key)
-		assert.NoError(t, err)
-
-		req, err := http.NewRequest(http.MethodGet, "", nil)
-		assert.NoError(t, err)
-		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tokenString))
+		tString := getTokenEcdsa256(t) // wrong signing method
+		req := newEmptyGetRequest(t)
+		req = addJwtTokenToContext(t, tString, req)
 
 		var buf bytes.Buffer
 		log.SetOutput(&buf)
 		recorder := httptest.NewRecorder()
-
 		handler.ServeHTTP(recorder, req)
+
 		assert.Equal(t, http.StatusForbidden, recorder.Code)
 		assert.Contains(t, recorder.Body.String(), "Invalid Authorization")
 		assert.Contains(t, buf.String(), "unexpected signing method")
 	})
 
 	t.Run("Test invalid token", func(t *testing.T) {
-		invalidTokenString := "An Invalid string"
-
-		req, err := http.NewRequest(http.MethodGet, "", nil)
-		assert.NoError(t, err)
-		req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), invalidTokenString))
+		tString := "An Invalid string"
+		req := newEmptyGetRequest(t)
+		req = addJwtTokenToContext(t, tString, req)
 
 		var buf bytes.Buffer
 		log.SetOutput(&buf)
@@ -106,4 +93,29 @@ func assertNoError(t *testing.T, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getTokenEcdsa256(t *testing.T) (tokenString string) {
+	t.Helper()
+	var (
+		key   *ecdsa.PrivateKey
+		token *jwt.Token
+	)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	assert.NoError(t, err)
+	token = jwt.New(jwt.SigningMethodES256)
+	tokenString, err = token.SignedString(key)
+	assert.NoError(t, err)
+	return tokenString
+}
+
+func newEmptyGetRequest(t *testing.T) *http.Request {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, "", nil)
+	assert.NoError(t, err)
+	return req
+}
+
+func addJwtTokenToContext(t *testing.T, tString string, req *http.Request) *http.Request {
+	return req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tString))
 }
