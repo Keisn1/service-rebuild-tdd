@@ -18,7 +18,9 @@ func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				slog.Info("unexpected signing method: %v", token.Header["alg"])
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+
 			}
 
 			// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
@@ -27,8 +29,8 @@ func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			http.Error(w, "Invalid Authorization Token", http.StatusForbidden)
-			slog.Info("Invalid JWT")
+			http.Error(w, "Invalid Authorization", http.StatusForbidden)
+			slog.Info("Invalid Authorization: %w", err)
 			return
 		}
 		next.ServeHTTP(w, r)
