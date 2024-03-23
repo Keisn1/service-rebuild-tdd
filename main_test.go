@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/elliptic"
 	"crypto/rand"
 	"log"
@@ -16,25 +17,50 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAuthentication(t *testing.T) {
+	a := &Auth{}
+	t.Run("Test false authorization header format", func(t *testing.T) {
+		testBearerTokens := []string{
+			"", "Bearer invalid length", "NoBearer asdf;lkj",
+		}
+		for _, bearerT := range testBearerTokens {
+			_, err := a.getTokenString(bearerT)
+			assert.Contains(t, err.Error(), "expected authorization header format: Bearer <token>")
+		}
+	})
+
+	t.Run("Test wrong signing method", func(t *testing.T) {
+		wrongMethodToken := getTokenEcdsa256(t)
+		_, err := a.parseTokenString(wrongMethodToken)
+		assert.Contains(t, err.Error(), "unexpected signing method: ES256")
+	})
+
+	t.Run("Test invalid token", func(t *testing.T) {
+		invalidToken := "invalidToken"
+		_, err := a.parseTokenString(invalidToken)
+		assert.Error(t, err)
+	})
+
+	t.Run("Test if user is enabled", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, "userID", 123)
+		claims := jwt.MapClaims{
+			"sub": "456",
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signedToken, err := token.SignedString([]byte("your_secret_key"))
+		assert.NoError(t, err)
+		_, err := a.isUserEnabled(ctx, signedToken)
+		assert.ErrorContains(t, err, "user not enabled")
+	})
+}
+
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	handler := JWTAuthenticationMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Test Handler"))
 		}),
 	)
-
-	t.Run("Test invalid claim", func(t *testing.T) {
-		req := newEmptyGetRequest(t)
-
-		var logBuf bytes.Buffer
-		log.SetOutput(&logBuf)
-		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(recorder, req)
-
-		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		// assert.Contains(t, recorder.Body.String(), "Failed Authorization")
-		// assert.Contains(t, logBuf.String(), "expected authorization header format: Bearer <token>")
-	})
 
 	t.Run("Test false authorization header format", func(t *testing.T) {
 		testReqs := []*http.Request{

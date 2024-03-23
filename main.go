@@ -16,8 +16,8 @@ type JWT string
 
 type Auth struct{}
 
-func (a *Auth) getTokenString(r *http.Request) (string, error) {
-	parts := strings.Split(r.Header.Get("Authorization"), " ")
+func (a *Auth) getTokenString(bearerToken string) (string, error) {
+	parts := strings.Split(bearerToken, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		return "", errors.New("expected authorization header format: Bearer <token>")
 	}
@@ -35,13 +35,17 @@ func (a *Auth) parseTokenString(tokenS string) (*jwt.Token, error) {
 		secret := []byte(os.Getenv("JWT_SECRET_KEY"))
 		return secret, nil
 	})
-	return token, err
+
+	if err != nil {
+		return nil, fmt.Errorf("error parsing tokenString: %w", err)
+	}
+	return token, nil
 }
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := &Auth{}
-		tokenString, err := a.getTokenString(r)
+		tokenString, err := a.getTokenString(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "Failed Authorization", http.StatusForbidden)
 			slog.Info("Failed Authorization: ", err)
