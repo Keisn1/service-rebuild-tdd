@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -9,10 +11,13 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type JWTToken string
+type JWT string
 
-func getTokenString(r *http.Request) (string, error) {
-	tokenString, _ := r.Context().Value(JWTToken("token")).(string)
+func getTokenString(ctx context.Context) (string, error) {
+	tokenString, ok := ctx.Value(JWT("token")).(string)
+	if !ok {
+		return "", errors.New("could not get JWT from context")
+	}
 	return tokenString, nil
 }
 
@@ -33,8 +38,13 @@ func parseTokenString(tString string) (*jwt.Token, error) {
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tokenString, _ := getTokenString(r)
-		_, err := parseTokenString(tokenString)
+		tokenString, err := getTokenString(r.Context())
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = parseTokenString(tokenString)
 
 		if err != nil {
 			http.Error(w, "Invalid Authorization", http.StatusForbidden)

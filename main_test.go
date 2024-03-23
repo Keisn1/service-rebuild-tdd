@@ -26,10 +26,23 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		}),
 	)
 
+	t.Run("Test no token String provided", func(t *testing.T) {
+		req := newEmptyGetRequest(t)
+
+		var buf bytes.Buffer
+		log.SetOutput(&buf)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
+
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		// assert.Contains(t, recorder.Body.String(), "Invalid Authorization")
+		// assert.Contains(t, buf.String(), "unexpected signing method")
+	})
+
 	t.Run("Test invalid invalid signing method", func(t *testing.T) {
 		tString := getTokenEcdsa256(t) // wrong signing method
 		req := newEmptyGetRequest(t)
-		req = addJwtTokenToContext(t, tString, req)
+		req = addAuthorizationJWT(t, tString, req)
 
 		var buf bytes.Buffer
 		log.SetOutput(&buf)
@@ -44,7 +57,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	t.Run("Test invalid token", func(t *testing.T) {
 		tString := "An Invalid string"
 		req := newEmptyGetRequest(t)
-		req = addJwtTokenToContext(t, tString, req)
+		req = addAuthorizationJWT(t, tString, req)
 
 		var buf bytes.Buffer
 		log.SetOutput(&buf)
@@ -77,7 +90,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			req := httptest.NewRequest("GET", "/protected-route", nil)
 
 			// Add a valid or invalid JWT token to the request headers for testing different scenarios
-			req = req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tc.tokenString))
+			req = req.WithContext(context.WithValue(context.Background(), JWT("token"), tc.tokenString))
 
 			// Make a request to the test server
 			recorder := httptest.NewRecorder()
@@ -116,6 +129,7 @@ func newEmptyGetRequest(t *testing.T) *http.Request {
 	return req
 }
 
-func addJwtTokenToContext(t *testing.T, tString string, req *http.Request) *http.Request {
-	return req.WithContext(context.WithValue(context.Background(), JWTToken("token"), tString))
+func addAuthorizationJWT(t *testing.T, tString string, req *http.Request) *http.Request {
+	req.Header.Add("Authorization", "Bearer"+tString)
+	return req
 }
