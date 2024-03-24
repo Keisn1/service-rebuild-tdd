@@ -69,6 +69,13 @@ func (a *Auth) checkIssuer(claims jwt.MapClaims) error {
 	return nil
 }
 
+func (a *Auth) checkExpSet(claims jwt.MapClaims) error {
+	if _, ok := claims["exp"]; !ok {
+		return fmt.Errorf("authenticate: no expiration date set")
+	}
+	return nil
+}
+
 func (a *Auth) Authenticate(userID, bearerToken string) error {
 	tokenS, err := a.getTokenString(bearerToken)
 	if err != nil {
@@ -80,8 +87,8 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 
-	if _, ok := claims["exp"]; !ok {
-		return fmt.Errorf("authenticate: no expiration date set")
+	if err := a.checkExpSet(claims); err != nil {
+		return fmt.Errorf("authenticate: %w", err)
 	}
 
 	if err := a.checkIssuer(claims); err != nil {

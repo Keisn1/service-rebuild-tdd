@@ -135,10 +135,10 @@
 - [X] test JWT valid
 - [X] test JWT signing method
 - [X] test userID equal url parameter userID
-- [-] test claims valid
+- [X] test claims valid
   - [X] test claim issuer
   - [X] test claim not expired
-  - [ ] test if expired is set
+  - [X] test if expired is set
 
 * TODO Database
 ** TODO GORM and PostgreSQL

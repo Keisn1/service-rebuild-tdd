@@ -48,65 +48,47 @@ func TestAuthentication(t *testing.T) {
 		}
 		for _, bearerT := range testBearerTokens {
 			err := a.Authenticate("", bearerT)
-			assert.ErrorContains(t, err, "expected authorization header format: Bearer <token>")
-			assert.ErrorContains(t, err, "authenticate:")
+			ErrorContainss(t, err, "expected authorization header format: Bearer <token>", "authenticate:")
 		}
 
 		wrongMethodToken := getTokenEcdsa256(t)
 		err := a.Authenticate("", "Bearer "+wrongMethodToken)
-		assert.ErrorContains(t, err, "unexpected signing method: ES256")
-		assert.ErrorContains(t, err, "error parsing tokenString")
-		assert.ErrorContains(t, err, "authenticate:")
+		ErrorContainss(t, err, "error parsing tokenString", "unexpected signing method: ES256", "authenticate:")
 
 		invalidToken := "invalidToken"
 		err = a.Authenticate("", "Bearer "+invalidToken)
-		assert.ErrorContains(t, err, "error parsing tokenString")
-		assert.ErrorContains(t, err, "authenticate:")
+		ErrorContainss(t, err, "error parsing tokenString", "authenticate:")
 
 		secret := os.Getenv("JWT_SECRET_KEY")
 		bearerToken := setupJwtTokenString(t, jwt.MapClaims{}, secret)
 		err = a.Authenticate("", bearerToken)
-		assert.ErrorContains(t, err, "no expiration date set")
-		assert.ErrorContains(t, err, "authenticate:")
+		ErrorContainss(t, err, "no expiration date set", "authenticate:")
 
-		secret = os.Getenv("JWT_SECRET_KEY")
-		current := time.Now()
-		oneMinuteAgo := current.Add(-1 * time.Minute)
-		exp_time := jwt.NewNumericDate(oneMinuteAgo)
-		claims := jwt.MapClaims{
-			"exp": exp_time,
-		}
+		oneMinuteAgo := jwt.NewNumericDate(time.Now().Add(-1 * time.Minute))
+		claims := setupClaims(oneMinuteAgo, "", "")
 		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate("", bearerToken)
-		assert.ErrorContains(t, err, "token is expired")
-		assert.ErrorContains(t, err, "authenticate:")
+		ErrorContainss(t, err, "token is expired", "authenticate:")
 
-		secret = os.Getenv("JWT_SECRET_KEY")
-		inOneHour := current.Add(1 * time.Hour)
-		exp_time = jwt.NewNumericDate(inOneHour)
-		issuer := "false issuer" // correct Issuer stored in env
-		claims = jwt.MapClaims{
-			"iss": issuer,
-			"exp": exp_time,
-		}
+		inOneHour := jwt.NewNumericDate(time.Now().Add(1 * time.Hour))
+		claims = setupClaims(inOneHour, "false issuer", "")
 		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate("", bearerToken)
-		assert.ErrorContains(t, err, "incorrect Issuer")
-		assert.ErrorContains(t, err, "authenticate:")
+		ErrorContainss(t, err, "incorrect Issuer", "authenticate:")
 
-		issuer = os.Getenv("JWT_NOTES_ISSUER")
-		userID := "123"
-		claims = jwt.MapClaims{
-			"sub": "456",
-			"iss": issuer,
-			"exp": exp_time,
-		}
+		rightUserID, falseUserID := "123", "456"
+		claims = setupClaims(inOneHour, os.Getenv("JWT_NOTES_ISSUER"), falseUserID)
 		bearerToken = setupJwtTokenString(t, claims, secret)
-		err = a.Authenticate(userID, bearerToken)
-		assert.ErrorContains(t, err, "user not enabled")
-		assert.ErrorContains(t, err, "authenticate:")
+		err = a.Authenticate(rightUserID, bearerToken)
+		ErrorContainss(t, err, "user not enabled", "authenticate:")
 	})
+}
 
+func ErrorContainss(t *testing.T, err error, containss ...string) {
+	t.Helper()
+	for _, contains := range containss {
+		assert.ErrorContains(t, err, contains)
+	}
 }
 
 type MockAuth struct {
@@ -206,4 +188,14 @@ func WithUrlParam(r *http.Request, key, value string) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
 	chiCtx.URLParams.Add(key, value)
 	return r
+}
+
+func setupClaims(exp *jwt.NumericDate, iss, sub string) jwt.MapClaims {
+	claims := jwt.MapClaims{
+		"exp": exp,
+		"iss": iss,
+		"sub": sub,
+	}
+	return claims
+
 }
