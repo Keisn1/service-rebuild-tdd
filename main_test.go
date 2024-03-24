@@ -14,9 +14,9 @@ import (
 
 	"os"
 
-	"errors"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAuthentication(t *testing.T) {
@@ -66,18 +66,33 @@ func TestAuthentication(t *testing.T) {
 	})
 }
 
-type StubAuth struct{}
+type MockAuth struct {
+	mock.Mock
+}
 
-func (sa *StubAuth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
-	return nil, errors.New("Authentication error")
+func (ma *MockAuth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
+	_ = ma.Called(userID, bearerToken)
+	return nil, nil
 }
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
-	handler := JWTAuthenticationMiddleware(http.HandlerFunc(
+	mockAuth := new(MockAuth)
+	jwtMidHandler := NewJwtMidHandler(mockAuth)
+	handler := jwtMidHandler(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Test Handler"))
 		}),
 	)
+
+	t.Run("Test auth authenticate is called", func(t *testing.T) {
+		mockAuth.On("Authenticate", "123", "valid token").Return(jwt.MapClaims{}, nil)
+		req, err := http.NewRequest(http.MethodGet, "", nil)
+		assert.NoError(t, err)
+		req.Header.Set("Authorization", "Bearer valid token")
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
+		mockAuth.AssertCalled(t, "Authenticate")
+	})
 
 	t.Run("Test authentication success", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "", nil)
@@ -89,21 +104,16 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	})
 
 	t.Run("Test authentication failure", func(t *testing.T) {
-		testReqs := []*http.Request{
-			newEmptyGetRequest(t),
-			// addAuthorizationJWT(t, "invalid length", newEmptyGetRequest(t)),
-			// addFalseAuthorizationHeader(t, "", newEmptyGetRequest(t)),
-		}
-		for _, req := range testReqs {
-			var logBuf bytes.Buffer
-			log.SetOutput(&logBuf)
-			recorder := httptest.NewRecorder()
-			handler.ServeHTTP(recorder, req)
+		req, err := http.NewRequest(http.MethodGet, "", nil)
+		assert.NoError(t, err)
+		var logBuf bytes.Buffer
+		log.SetOutput(&logBuf)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
 
-			assert.Equal(t, http.StatusForbidden, recorder.Code)
-			assert.Contains(t, recorder.Body.String(), "Failed Authentication")
-			assert.Contains(t, logBuf.String(), "Failed Authentication")
-		}
+		assert.Equal(t, http.StatusForbidden, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "Failed Authentication")
+		assert.Contains(t, logBuf.String(), "Failed Authentication")
 	})
 
 	// t.Run("Test invalid signing method", func(t *testing.T) {

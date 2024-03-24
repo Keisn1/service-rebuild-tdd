@@ -143,7 +143,6 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nc.Logger.Infof("Success: GetNotesByUserID with userID %d", userID)
-	return
 }
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
@@ -188,17 +187,17 @@ func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 
 func handleBadRequest(w http.ResponseWriter, err error, logger Logger, action, param string) bool {
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
 		logger.Errorf("%s invalid %s: %v", action, param, err)
+		http.Error(w, "", http.StatusBadRequest)
 		return true
 	}
 	return false
 }
 
-func handleError(w http.ResponseWriter, err error, httpErr uint, logger Logger, action, msg string) bool {
+func handleError(w http.ResponseWriter, err error, httpErr int, logger Logger, action, msg string) bool {
 	if err != nil {
-		w.WriteHeader(int(httpErr))
 		logger.Errorf("%s %s: %w", action, msg, err)
+		http.Error(w, "", httpErr)
 		return true
 	}
 	return false
