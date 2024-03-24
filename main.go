@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type key int

@@ -8,7 +8,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/go-chi/chi"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"log"
@@ -16,6 +16,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestAuthentication(t *testing.T) {
@@ -42,11 +43,23 @@ func TestAuthentication(t *testing.T) {
 		assert.ErrorContains(t, err, "authenticate:")
 
 		secret := os.Getenv("JWT_SECRET_KEY")
-		issuer := "false issuer" // correct Issuer stored in env
+		current := time.Now()
+		oneMinuteAgo := current.Add(-1 * time.Minute)
+		exp_time := jwt.NewNumericDate(oneMinuteAgo)
 		claims := jwt.MapClaims{
-			"iss": issuer,
+			"exp": exp_time,
 		}
 		bearerToken := setupJwtTokenString(t, claims, secret)
+		err = a.Authenticate("", bearerToken)
+		assert.ErrorContains(t, err, "token is expired")
+		assert.ErrorContains(t, err, "authenticate:")
+
+		secret = os.Getenv("JWT_SECRET_KEY")
+		issuer := "false issuer" // correct Issuer stored in env
+		claims = jwt.MapClaims{
+			"iss": issuer,
+		}
+		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate("", bearerToken)
 		assert.ErrorContains(t, err, "incorrect Issuer")
 		assert.ErrorContains(t, err, "authenticate:")
