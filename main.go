@@ -3,13 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 
 	"strings"
 
-	"github.com/go-chi/chi"
+	// "github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -74,37 +73,37 @@ func (a *Auth) Authenticate(userID string, bearerToken string) (jwt.Claims, erro
 	return claims, nil
 }
 
-type MidHandler func(http.Handler) http.Handler
+// type MidHandler func(http.Handler) http.Handler
 
-func NewJWTMidHandler(a *Auth) MidHandler {
-	m := func(next http.Handler) http.Handler {
-		h := func(w http.ResponseWriter, r *http.Request) {
-			a.Authenticate(chi.URLParam(r, "userID"), r.Header.Get("Authorization"))
-			next.ServeHTTP(w, r)
-		}
-		return http.HandlerFunc(h)
-	}
-	return m
-}
+// func NewJWTMidHandler(a *Auth) MidHandler {
+// 	m := func(next http.Handler) http.Handler {
+// 		h := func(w http.ResponseWriter, r *http.Request) {
+// 			a.Authenticate(chi.URLParam(r, "userID"), r.Header.Get("Authorization"))
+// 			next.ServeHTTP(w, r)
+// 		}
+// 		return http.HandlerFunc(h)
+// 	}
+// 	return m
+// }
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a := &Auth{}
+		// a := &Auth{}
 
-		tokenString, err := a.getTokenString(r.Header.Get("Authorization"))
-		if err != nil {
-			http.Error(w, "Failed Authorization", http.StatusForbidden)
-			slog.Info("Failed Authorization: ", err)
-		}
+		// tokenString, err := a.getTokenString(r.Header.Get("Authorization"))
+		// if err != nil {
+		// 	http.Error(w, "Failed Authorization", http.StatusForbidden)
+		// 	slog.Info("Failed Authorization: ", err)
+		// }
 
-		_, err = a.parseTokenString(tokenString)
+		// _, err = a.parseTokenString(tokenString)
 
-		if err != nil {
-			http.Error(w, "Failed Authorization", http.StatusForbidden)
-			slog.Info("Failed Authorization: Token invalid", err)
-			return
-		}
-		next.ServeHTTP(w, r)
+		// if err != nil {
+		// 	http.Error(w, "Failed Authorization", http.StatusForbidden)
+		// 	slog.Info("Failed Authorization: Token invalid", err)
+		// 	return
+		// }
+		// next.ServeHTTP(w, r)
 	})
 }
 

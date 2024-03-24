@@ -170,7 +170,6 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 	}
 
 	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID)
-	return
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
@@ -185,7 +184,6 @@ func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nc.Logger.Infof("Success: GetAllNotes")
-	return
 }
 
 func handleBadRequest(w http.ResponseWriter, err error, logger Logger, action, param string) bool {
