@@ -72,6 +72,11 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 
+	issuer := os.Getenv("JWT_NOTES_ISSUER")
+	if issuer != claims["iss"] {
+		return fmt.Errorf("authenticate: incorrect Issuer")
+	}
+
 	if err := a.isUserEnabled(userID, claims); err != nil {
 		return fmt.Errorf("authenticate: %w", err)
 	}

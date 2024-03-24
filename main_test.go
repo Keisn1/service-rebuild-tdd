@@ -41,11 +41,24 @@ func TestAuthentication(t *testing.T) {
 		assert.ErrorContains(t, err, "error parsing tokenString")
 		assert.ErrorContains(t, err, "authenticate:")
 
-		userID := "123"
+		secret := os.Getenv("JWT_SECRET_KEY")
+		issuer := "false issuer" // correct Issuer stored in env
 		claims := jwt.MapClaims{
-			"sub": "456",
+			"iss": issuer,
 		}
-		bearerToken := setupJwtTokenString(t, claims)
+		bearerToken := setupJwtTokenString(t, claims, secret)
+		err = a.Authenticate("", bearerToken)
+		assert.ErrorContains(t, err, "incorrect Issuer")
+		assert.ErrorContains(t, err, "authenticate:")
+
+		secret = os.Getenv("JWT_SECRET_KEY")
+		issuer = os.Getenv("JWT_NOTES_ISSUER")
+		userID := "123"
+		claims = jwt.MapClaims{
+			"sub": "456",
+			"iss": issuer,
+		}
+		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate(userID, bearerToken)
 		assert.ErrorContains(t, err, "user not enabled")
 		assert.ErrorContains(t, err, "authenticate:")
@@ -53,11 +66,14 @@ func TestAuthentication(t *testing.T) {
 
 	t.Run("Test Authentication happy path", func(t *testing.T) {
 		userID := "123"
+		issuer := os.Getenv("JWT_NOTES_ISSUER")
 		claims := jwt.MapClaims{
 			"sub": "123",
+			"iss": issuer,
 		}
 
-		bearerToken := setupJwtTokenString(t, claims)
+		secret := os.Getenv("JWT_SECRET_KEY")
+		bearerToken := setupJwtTokenString(t, claims, secret)
 		err := a.Authenticate(userID, bearerToken)
 
 		assert.NoError(t, err)
@@ -147,10 +163,10 @@ func addAuthorizationJWT(t *testing.T, tokenS string, req *http.Request) *http.R
 	return req
 }
 
-func setupJwtTokenString(t *testing.T, claims jwt.MapClaims) string {
+func setupJwtTokenString(t *testing.T, claims jwt.MapClaims, secret string) string {
 	t.Helper()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenS, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	tokenS, err := token.SignedString([]byte(secret))
 	assert.NoError(t, err)
 	bearerToken := "Bearer " + tokenS
 	return bearerToken
