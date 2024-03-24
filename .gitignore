@@ -2,3 +2,4 @@
 /note-taking-app
 /.env
 /.envrc
+/coverage.out
