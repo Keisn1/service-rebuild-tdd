@@ -122,43 +122,6 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		assert.Contains(t, logBuf.String(), "Failed Authentication")
 		assert.Contains(t, logBuf.String(), "error in authenticate")
 	})
-
-	// t.Run("Test invalid signing method", func(t *testing.T) {
-	// 	tString := getTokenEcdsa256(t) // wrong signing method
-	// 	req := newEmptyGetRequest(t)
-	// 	req = addAuthorizationJWT(t, tString, req)
-
-	// 	var logBuf bytes.Buffer
-	// 	log.SetOutput(&logBuf)
-	// 	recorder := httptest.NewRecorder()
-	// 	handler.ServeHTTP(recorder, req)
-
-	// 	assert.Equal(t, http.StatusForbidden, recorder.Code)
-	// 	assert.Contains(t, recorder.Body.String(), "Failed Authorization")
-	// 	assert.Contains(t, logBuf.String(), "unexpected signing method")
-	// })
-
-	// t.Run("Test invalid token", func(t *testing.T) {
-	// 	tString := "InvalidToken"
-	// 	req := newEmptyGetRequest(t)
-	// 	req = addAuthorizationJWT(t, tString, req)
-
-	// 	var logBuf bytes.Buffer
-	// 	log.SetOutput(&logBuf)
-	// 	recorder := httptest.NewRecorder()
-
-	// 	handler.ServeHTTP(recorder, req)
-	// 	assert.Equal(t, http.StatusForbidden, recorder.Code)
-	// 	assert.Contains(t, recorder.Body.String(), "Failed Authorization")
-	// 	assert.Contains(t, logBuf.String(), "Token invalid")
-	// })
-}
-
-func assertNoError(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func getTokenEcdsa256(t *testing.T) (tokenString string) {
@@ -184,11 +147,6 @@ func newEmptyGetRequest(t *testing.T) *http.Request {
 
 func addAuthorizationJWT(t *testing.T, tokenS string, req *http.Request) *http.Request {
 	req.Header.Add("Authorization", "Bearer "+tokenS)
-	return req
-}
-
-func addFalseAuthorizationHeader(t *testing.T, tokenS string, req *http.Request) *http.Request {
-	req.Header.Add("Authorization", "False "+tokenS)
 	return req
 }
 

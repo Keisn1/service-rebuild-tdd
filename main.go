@@ -99,32 +99,5 @@ func NewJwtMidHandler(a AuthInterface) MidHandler {
 	return m
 }
 
-func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") == "valid token" {
-			return
-		}
-
-		http.Error(w, "Failed Authentication", http.StatusForbidden)
-		slog.Info("Failed Authentication")
-		// a := &Auth{}
-
-		// tokenString, err := a.getTokenString(r.Header.Get("Authorization"))
-		// if err != nil {
-		// 	http.Error(w, "Failed Authorization", http.StatusForbidden)
-		// 	slog.Info("Failed Authorization: ", err)
-		// }
-
-		// _, err = a.parseTokenString(tokenString)
-
-		// if err != nil {
-		// 	http.Error(w, "Failed Authorization", http.StatusForbidden)
-		// 	slog.Info("Failed Authorization: Token invalid", err)
-		// 	return
-		// }
-		// next.ServeHTTP(w, r)
-	})
-}
-
 func main() {
 }
