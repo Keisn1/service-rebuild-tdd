@@ -79,6 +79,15 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		}),
 	)
 
+	t.Run("Test authentication success", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, "", nil)
+		req.Header.Set("Authorization", "valid token")
+		assert.NoError(t, err)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+	})
+
 	t.Run("Test authentication failure", func(t *testing.T) {
 		testReqs := []*http.Request{
 			newEmptyGetRequest(t),
@@ -92,8 +101,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			handler.ServeHTTP(recorder, req)
 
 			assert.Equal(t, http.StatusForbidden, recorder.Code)
-			// assert.Contains(t, recorder.Body.String(), "Failed Authorization")
-			// assert.Contains(t, logBuf.String(), "Failed Authentication:")
+			assert.Contains(t, recorder.Body.String(), "Failed Authentication")
+			assert.Contains(t, logBuf.String(), "Failed Authentication")
 		}
 	})
 

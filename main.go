@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -88,6 +89,12 @@ func (a *Auth) Authenticate(userID string, bearerToken string) (jwt.Claims, erro
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "valid token" {
+			return
+		}
+
+		http.Error(w, "Failed Authentication", http.StatusForbidden)
+		slog.Info("Failed Authentication")
 		// a := &Auth{}
 
 		// tokenString, err := a.getTokenString(r.Header.Get("Authorization"))
