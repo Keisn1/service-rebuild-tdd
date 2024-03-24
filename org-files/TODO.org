@@ -134,9 +134,11 @@
 ** TODO Validating JWT
 - [X] test JWT valid
 - [X] test JWT signing method
-- [ ] test claims valid
+- [X] test userID equal url parameter userID
 - [ ] test claim userID
-- [ ] test userID equal url parameter userID
+- [ ] test claims valid
+  - [ ] test claim not expired
+  - [ ] test claim issuer
 * TODO Database
 ** TODO GORM and PostgreSQL
 1. [ ] Install and Set Up PostgreSQL:

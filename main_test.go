@@ -1,45 +1,43 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
+	"github.com/go-chi/chi"
+	"github.com/golang-jwt/jwt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-
-	"bytes"
-
-	"github.com/go-chi/chi"
-	"github.com/golang-jwt/jwt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestAuthentication(t *testing.T) {
 	a := &Auth{}
-	t.Run("Test Authentication Errors", func(t *testing.T) {
+	t.Run("Test Authentication Failures", func(t *testing.T) {
 		testBearerTokens := []string{
 			"", "Bearer invalid length", "NoBearer asdf;lkj",
 		}
 		for _, bearerT := range testBearerTokens {
-			_, err := a.Authenticate("", bearerT)
+			err := a.Authenticate("", bearerT)
 			assert.ErrorContains(t, err, "expected authorization header format: Bearer <token>")
 			assert.ErrorContains(t, err, "authenticate:")
 		}
 
 		wrongMethodToken := getTokenEcdsa256(t)
-		_, err := a.Authenticate("", "Bearer "+wrongMethodToken)
+		err := a.Authenticate("", "Bearer "+wrongMethodToken)
 		assert.ErrorContains(t, err, "unexpected signing method: ES256")
 		assert.ErrorContains(t, err, "error parsing tokenString")
 		assert.ErrorContains(t, err, "authenticate:")
 
 		invalidToken := "invalidToken"
-		_, err = a.Authenticate("", "Bearer "+invalidToken)
+		err = a.Authenticate("", "Bearer "+invalidToken)
 		assert.ErrorContains(t, err, "error parsing tokenString")
 		assert.ErrorContains(t, err, "authenticate:")
 
@@ -48,22 +46,21 @@ func TestAuthentication(t *testing.T) {
 			"sub": "456",
 		}
 		bearerToken := setupJwtTokenString(t, claims)
-		_, err = a.Authenticate(userID, bearerToken)
+		err = a.Authenticate(userID, bearerToken)
 		assert.ErrorContains(t, err, "user not enabled")
 		assert.ErrorContains(t, err, "authenticate:")
 	})
 
-	t.Run("Test Authentication pipeline happy path", func(t *testing.T) {
+	t.Run("Test Authentication happy path", func(t *testing.T) {
 		userID := "123"
-		wantClaims := jwt.MapClaims{
+		claims := jwt.MapClaims{
 			"sub": "123",
 		}
 
-		bearerToken := setupJwtTokenString(t, wantClaims)
-		gotClaims, err := a.Authenticate(userID, bearerToken)
+		bearerToken := setupJwtTokenString(t, claims)
+		err := a.Authenticate(userID, bearerToken)
 
 		assert.NoError(t, err)
-		assert.Equal(t, gotClaims, wantClaims)
 	})
 }
 

@@ -61,21 +61,21 @@ func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
 	return nil
 }
 
-func (a *Auth) Authenticate(userID, bearerToken string) (jwt.Claims, error) {
+func (a *Auth) Authenticate(userID, bearerToken string) error {
 	tokenS, err := a.getTokenString(bearerToken)
 	if err != nil {
-		return nil, fmt.Errorf("authenticate: %w", err)
+		return fmt.Errorf("authenticate: %w", err)
 	}
 
 	claims, err := a.parseTokenString(tokenS)
 	if err != nil {
-		return nil, fmt.Errorf("authenticate: %w", err)
+		return fmt.Errorf("authenticate: %w", err)
 	}
 
 	if err := a.isUserEnabled(userID, claims); err != nil {
-		return nil, fmt.Errorf("authenticate: %w", err)
+		return fmt.Errorf("authenticate: %w", err)
 	}
-	return claims, nil
+	return nil
 }
 
 type MidHandler func(http.Handler) http.Handler
