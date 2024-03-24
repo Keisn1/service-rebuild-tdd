@@ -3,3 +3,4 @@
 /.env
 /.envrc
 /coverage.out
+/controllers/coverage.out

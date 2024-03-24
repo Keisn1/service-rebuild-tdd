@@ -74,6 +74,16 @@ func assertNoteWasEdited(t testing.TB, pNote Note, text string, notesC NotesCtrl
 	}
 }
 
+func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC NotesCtrlr) {
+	t.Helper()
+	response := httptest.NewRecorder()
+	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
+
+	gotNotes := getNotesFromResponse(t, response.Body)
+	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
+}
+
 func EditNote(t testing.TB, notesC NotesCtrlr) (Note, string) {
 	// returns note that is being edited
 	response := httptest.NewRecorder()
@@ -86,16 +96,6 @@ func EditNote(t testing.TB, notesC NotesCtrlr) (Note, string) {
 		"noteID": strconv.Itoa(note.NoteID),
 	}))
 	return note, "Edit Note"
-}
-
-func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC NotesCtrlr) {
-	t.Helper()
-	response := httptest.NewRecorder()
-	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
-
-	gotNotes := getNotesFromResponse(t, response.Body)
-	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
 }
 
 // compareNotesByUserIDAndNote compares two slices of Notes by UserID and Note fields

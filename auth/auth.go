@@ -1,15 +1,12 @@
-package main
+package auth
 
 import (
 	"errors"
 	"fmt"
-	"log/slog"
-	"net/http"
 	"os"
 
 	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -99,28 +96,4 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 	return nil
-}
-
-type MidHandler func(http.Handler) http.Handler
-
-func NewJwtMidHandler(a AuthInterface) MidHandler {
-	m := func(next http.Handler) http.Handler {
-		h := func(w http.ResponseWriter, r *http.Request) {
-			userID := chi.URLParam(r, "userID")
-			bearerToken := r.Header.Get("Authorization")
-
-			_, err := a.Authenticate(userID, bearerToken)
-			if err != nil {
-				http.Error(w, "Failed Authentication", http.StatusForbidden)
-				slog.Info("Failed Authentication: ", err)
-				return
-			}
-			next.ServeHTTP(w, r)
-		}
-		return http.HandlerFunc(h)
-	}
-	return m
-}
-
-func main() {
 }

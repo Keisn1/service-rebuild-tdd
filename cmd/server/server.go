@@ -38,7 +38,7 @@ func main() {
 
 	r.Route("/users/", func(r chi.Router) {
 		r.Get("{userID}/notes", notesC.GetNotesByUserID)
-		r.Get("/{userID}/notes/{id}", notesC.GetNoteByUserIDAndNoteID)
+		r.Get("/{userID}/notes/{noteID}", notesC.GetNoteByUserIDAndNoteID)
 		r.Post("/{userID}/notes", notesC.Add)
 		r.Put("/{userID}/notes/{noteID}", notesC.Edit)
 		r.Delete("/{userID}/notes/{noteID}", notesC.Delete)
