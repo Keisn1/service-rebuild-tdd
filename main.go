@@ -9,13 +9,17 @@ import (
 
 	"strings"
 
-	// "github.com/go-chi/chi"
+	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt"
 )
 
 type key int
 
 const userIDKey key = 1
+
+type AuthInterface interface {
+	Authenticate(userID, bearerToken string) (jwt.Claims, error)
+}
 
 type Auth struct{}
 
@@ -57,7 +61,7 @@ func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
 	return nil
 }
 
-func (a *Auth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
+func (a *Auth) Authenticate(userID, bearerToken string) (jwt.Claims, error) {
 	tokenS, err := a.getTokenString(bearerToken)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate: %w", err)
@@ -74,18 +78,26 @@ func (a *Auth) Authenticate(userID string, bearerToken string) (jwt.Claims, erro
 	return claims, nil
 }
 
-// type MidHandler func(http.Handler) http.Handler
+type MidHandler func(http.Handler) http.Handler
 
-// func NewJWTMidHandler(a *Auth) MidHandler {
-// 	m := func(next http.Handler) http.Handler {
-// 		h := func(w http.ResponseWriter, r *http.Request) {
-// 			a.Authenticate(chi.URLParam(r, "userID"), r.Header.Get("Authorization"))
-// 			next.ServeHTTP(w, r)
-// 		}
-// 		return http.HandlerFunc(h)
-// 	}
-// 	return m
-// }
+func NewJwtMidHandler(a AuthInterface) MidHandler {
+	m := func(next http.Handler) http.Handler {
+		h := func(w http.ResponseWriter, r *http.Request) {
+			userID := chi.URLParam(r, "userID")
+			bearerToken := r.Header.Get("Authorization")
+
+			_, err := a.Authenticate(userID, bearerToken)
+			if err != nil {
+				http.Error(w, "Failed Authentication", http.StatusForbidden)
+				slog.Info("Failed Authentication: ", err)
+				return
+			}
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(h)
+	}
+	return m
+}
 
 func JWTAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

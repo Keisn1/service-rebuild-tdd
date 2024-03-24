@@ -1,19 +1,20 @@
 package main
 
 import (
+	"context"
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"bytes"
 
-	"crypto/ecdsa"
-
-	"os"
-
+	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -70,9 +71,9 @@ type MockAuth struct {
 	mock.Mock
 }
 
-func (ma *MockAuth) Authenticate(userID string, bearerToken string) (jwt.Claims, error) {
-	_ = ma.Called(userID, bearerToken)
-	return nil, nil
+func (ma *MockAuth) Authenticate(userID, bearerToken string) (jwt.Claims, error) {
+	args := ma.Called(userID, bearerToken)
+	return args.Get(0).(jwt.Claims), args.Error(1)
 }
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
@@ -85,35 +86,41 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	)
 
 	t.Run("Test auth authenticate is called", func(t *testing.T) {
-		mockAuth.On("Authenticate", "123", "valid token").Return(jwt.MapClaims{}, nil)
+		mockAuth.On("Authenticate", "123", "Bearer valid token").Return(jwt.MapClaims{}, nil)
+
 		req, err := http.NewRequest(http.MethodGet, "", nil)
 		assert.NoError(t, err)
+		req = WithUrlParam(req, "userID", "123")
+
 		req.Header.Set("Authorization", "Bearer valid token")
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
-		mockAuth.AssertCalled(t, "Authenticate")
-	})
 
-	t.Run("Test authentication success", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, "", nil)
-		req.Header.Set("Authorization", "valid token")
-		assert.NoError(t, err)
-		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(recorder, req)
+		mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer valid token")
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
 
 	t.Run("Test authentication failure", func(t *testing.T) {
+		var claims jwt.MapClaims
+		mockAuth.On("Authenticate", "123", "Bearer INVALID token").Return(
+			claims, errors.New("error in authenticate"),
+		)
+
 		req, err := http.NewRequest(http.MethodGet, "", nil)
 		assert.NoError(t, err)
+		req.Header.Set("Authorization", "Bearer INVALID token")
+		req = WithUrlParam(req, "userID", "123")
+
 		var logBuf bytes.Buffer
 		log.SetOutput(&logBuf)
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
 
+		mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer INVALID token")
 		assert.Equal(t, http.StatusForbidden, recorder.Code)
 		assert.Contains(t, recorder.Body.String(), "Failed Authentication")
 		assert.Contains(t, logBuf.String(), "Failed Authentication")
+		assert.Contains(t, logBuf.String(), "error in authenticate")
 	})
 
 	// t.Run("Test invalid signing method", func(t *testing.T) {
@@ -192,4 +199,11 @@ func setupJwtTokenString(t *testing.T, claims jwt.MapClaims) string {
 	assert.NoError(t, err)
 	bearerToken := "Bearer " + tokenS
 	return bearerToken
+}
+
+func WithUrlParam(r *http.Request, key, value string) *http.Request {
+	chiCtx := chi.NewRouteContext()
+	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
+	chiCtx.URLParams.Add(key, value)
+	return r
 }
