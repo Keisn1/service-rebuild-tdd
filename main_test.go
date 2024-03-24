@@ -21,6 +21,27 @@ import (
 
 func TestAuthentication(t *testing.T) {
 	a := &Auth{}
+
+	t.Run("Test Authentication happy path", func(t *testing.T) {
+		userID := "123"
+		current := time.Now()
+		inOneHour := current.Add(1 * time.Hour)
+		exp_time := jwt.NewNumericDate(inOneHour)
+
+		issuer := os.Getenv("JWT_NOTES_ISSUER")
+		claims := jwt.MapClaims{
+			"sub": "123",
+			"iss": issuer,
+			"exp": exp_time,
+		}
+
+		secret := os.Getenv("JWT_SECRET_KEY")
+		bearerToken := setupJwtTokenString(t, claims, secret)
+		err := a.Authenticate(userID, bearerToken)
+
+		assert.NoError(t, err)
+	})
+
 	t.Run("Test Authentication Failures", func(t *testing.T) {
 		testBearerTokens := []string{
 			"", "Bearer invalid length", "NoBearer asdf;lkj",
@@ -43,21 +64,30 @@ func TestAuthentication(t *testing.T) {
 		assert.ErrorContains(t, err, "authenticate:")
 
 		secret := os.Getenv("JWT_SECRET_KEY")
+		bearerToken := setupJwtTokenString(t, jwt.MapClaims{}, secret)
+		err = a.Authenticate("", bearerToken)
+		assert.ErrorContains(t, err, "no expiration date set")
+		assert.ErrorContains(t, err, "authenticate:")
+
+		secret = os.Getenv("JWT_SECRET_KEY")
 		current := time.Now()
 		oneMinuteAgo := current.Add(-1 * time.Minute)
 		exp_time := jwt.NewNumericDate(oneMinuteAgo)
 		claims := jwt.MapClaims{
 			"exp": exp_time,
 		}
-		bearerToken := setupJwtTokenString(t, claims, secret)
+		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate("", bearerToken)
 		assert.ErrorContains(t, err, "token is expired")
 		assert.ErrorContains(t, err, "authenticate:")
 
 		secret = os.Getenv("JWT_SECRET_KEY")
+		inOneHour := current.Add(1 * time.Hour)
+		exp_time = jwt.NewNumericDate(inOneHour)
 		issuer := "false issuer" // correct Issuer stored in env
 		claims = jwt.MapClaims{
 			"iss": issuer,
+			"exp": exp_time,
 		}
 		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate("", bearerToken)
@@ -69,6 +99,7 @@ func TestAuthentication(t *testing.T) {
 		claims = jwt.MapClaims{
 			"sub": "456",
 			"iss": issuer,
+			"exp": exp_time,
 		}
 		bearerToken = setupJwtTokenString(t, claims, secret)
 		err = a.Authenticate(userID, bearerToken)
@@ -76,20 +107,6 @@ func TestAuthentication(t *testing.T) {
 		assert.ErrorContains(t, err, "authenticate:")
 	})
 
-	t.Run("Test Authentication happy path", func(t *testing.T) {
-		userID := "123"
-		issuer := os.Getenv("JWT_NOTES_ISSUER")
-		claims := jwt.MapClaims{
-			"sub": "123",
-			"iss": issuer,
-		}
-
-		secret := os.Getenv("JWT_SECRET_KEY")
-		bearerToken := setupJwtTokenString(t, claims, secret)
-		err := a.Authenticate(userID, bearerToken)
-
-		assert.NoError(t, err)
-	})
 }
 
 type MockAuth struct {

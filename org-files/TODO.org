@@ -135,10 +135,11 @@
 - [X] test JWT valid
 - [X] test JWT signing method
 - [X] test userID equal url parameter userID
-- [ ] test claim userID
-- [ ] test claims valid
-  - [ ] test claim not expired
-  - [ ] test claim issuer
+- [-] test claims valid
+  - [X] test claim issuer
+  - [X] test claim not expired
+  - [ ] test if expired is set
+
 * TODO Database
 ** TODO GORM and PostgreSQL
 1. [ ] Install and Set Up PostgreSQL:

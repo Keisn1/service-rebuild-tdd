@@ -80,6 +80,10 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 
+	if _, ok := claims["exp"]; !ok {
+		return fmt.Errorf("authenticate: no expiration date set")
+	}
+
 	if err := a.checkIssuer(claims); err != nil {
 		return fmt.Errorf("authenticate: %w", err)
 	}
