@@ -51,7 +51,6 @@ func TestAuthentication(t *testing.T) {
 		assert.ErrorContains(t, err, "incorrect Issuer")
 		assert.ErrorContains(t, err, "authenticate:")
 
-		secret = os.Getenv("JWT_SECRET_KEY")
 		issuer = os.Getenv("JWT_NOTES_ISSUER")
 		userID := "123"
 		claims = jwt.MapClaims{

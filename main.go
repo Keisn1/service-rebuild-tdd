@@ -61,6 +61,14 @@ func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
 	return nil
 }
 
+func (a *Auth) checkIssuer(claims jwt.MapClaims) error {
+	issuer := os.Getenv("JWT_NOTES_ISSUER")
+	if issuer != claims["iss"] {
+		return errors.New("incorrect Issuer")
+	}
+	return nil
+}
+
 func (a *Auth) Authenticate(userID, bearerToken string) error {
 	tokenS, err := a.getTokenString(bearerToken)
 	if err != nil {
@@ -72,9 +80,8 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 
-	issuer := os.Getenv("JWT_NOTES_ISSUER")
-	if issuer != claims["iss"] {
-		return fmt.Errorf("authenticate: incorrect Issuer")
+	if err := a.checkIssuer(claims); err != nil {
+		return fmt.Errorf("authenticate: %w", err)
 	}
 
 	if err := a.isUserEnabled(userID, claims); err != nil {
