@@ -2,7 +2,7 @@
 
 * Technical Requirements
 [[file:PRD.org::*Technical Requirements for MVP (Backend):][Technical Requirements for MVP (Backend)]]
-* Daily Plan
+* TODO Still need to do
 - [X] logging
 - [X] error handling in controllers
 - [X] put and delete are missing
@@ -11,7 +11,18 @@
 - [X] make controller independent of the routes
 - [X] update server.go (integration test)
 - [ ] authentication service
+  - [ ] Write acceptance test for Routes /signin, /signup, /signout
+  - [ ] Fill out the routes
+  - [ ] write integration test
+    - e.g. flow of request through middleware to notesCtrl
 - [ ] database integration
+- [ ] think about logging in middleware, how can you inject logger
+  - read more about slog
+  - look at how other packages are doing it
+- [ ] Refactor notes_test
+  - [ ] integration test doesn't test by UserID and NotesID
+  - [ ] use testify assert in all of the project
+
 * TODO Setup
 ** DONE Local setup
 1. [X] *Setup Go Development Environment:**

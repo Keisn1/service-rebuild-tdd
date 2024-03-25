@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/go-chi/chi"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockAuth struct {
@@ -32,19 +33,20 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		}),
 	)
 
-	t.Run("Test auth authenticate is called", func(t *testing.T) {
+	t.Run("Test authenticate is called", func(t *testing.T) {
 		mockAuth.On("Authenticate", "123", "Bearer valid token").Return(jwt.MapClaims{}, nil)
 
 		req, err := http.NewRequest(http.MethodGet, "", nil)
 		assert.NoError(t, err)
 		req = WithUrlParam(req, "userID", "123")
-
 		req.Header.Set("Authorization", "Bearer valid token")
+
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
 
 		mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer valid token")
 		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Test Handler", recorder.Body.String())
 	})
 
 	t.Run("Test authentication failure", func(t *testing.T) {
@@ -55,8 +57,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodGet, "", nil)
 		assert.NoError(t, err)
-		req.Header.Set("Authorization", "Bearer INVALID token")
 		req = WithUrlParam(req, "userID", "123")
+		req.Header.Set("Authorization", "Bearer INVALID token")
 
 		var logBuf bytes.Buffer
 		log.SetOutput(&logBuf)

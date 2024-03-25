@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 )
@@ -46,6 +46,7 @@ var (
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+
 	if handleBadRequest(w, err, nc.Logger, "Edit", "userID") {
 		return
 	}

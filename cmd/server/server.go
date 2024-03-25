@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/Keisn1/note-taking-app/controllers"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"

@@ -1,8 +1,0 @@
-:PROPERTIES:
-:ID:       53f3516e-4e17-43ec-9b0e-78637ac1c622
-:END:
-#+title: Root
-#+date: [2024-02-29 Thu 12:41]
-#+startup: overview
-
-Root of note taking app

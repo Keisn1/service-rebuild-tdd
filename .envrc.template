@@ -1,4 +1,0 @@
-#!/bin/bash
-export GO_VERSION=
-export SERVER_ADDRESS=
-export HOST_PORT=

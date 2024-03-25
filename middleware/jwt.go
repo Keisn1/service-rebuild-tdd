@@ -2,7 +2,7 @@ package jwt
 
 import (
 	"github.com/Keisn1/note-taking-app/auth"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"log/slog"
 	"net/http"
 )
