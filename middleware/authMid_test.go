@@ -1,4 +1,4 @@
-package jwt
+package authMid
 
 import (
 	"bytes"
@@ -28,18 +28,32 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	mockAuth := new(MockAuth)
 	jwtMidHandler := NewJwtMidHandler(mockAuth)
 	handler := jwtMidHandler(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Test Handler"))
-		}),
+		func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }),
 	)
 
-	t.Run("Test authenticate is called", func(t *testing.T) {
-		mockAuth.On("Authenticate", "123", "Bearer valid token").Return(jwt.MapClaims{}, nil)
+	testCases := []struct {
+		name          string
+		setupMockAuth func()
+		setupRequest  func(req *http.Request) *http.Request
+	}{
+		{
+			name: "Test authentication success",
+			setupRequest: func(req *http.Request) *http.Request {
+				req = WithUrlParam(req, "userID", "123")
+				req.Header.Set("Authorization", "Bearer valid token")
+				return req
+			},
+			setupMockAuth: func() {
+				mockAuth.On("Authenticate", "123", "Bearer valid token").Return(jwt.MapClaims{}, nil)
+			},
+		},
+	}
 
-		req, err := http.NewRequest(http.MethodGet, "", nil)
-		assert.NoError(t, err)
-		req = WithUrlParam(req, "userID", "123")
-		req.Header.Set("Authorization", "Bearer valid token")
+	for _, tc := range testCases {
+		tc.setupMockAuth()
+
+		req := httptest.NewRequest(http.MethodGet, "/auth", nil)
+		req = tc.setupRequest(req)
 
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
@@ -47,9 +61,9 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 		mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer valid token")
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Test Handler", recorder.Body.String())
-	})
+	}
 
-	t.Run("Test authentication failure", func(t *testing.T) {
+	t.Run("Test authentication success", func(t *testing.T) {
 		var claims jwt.MapClaims
 		mockAuth.On("Authenticate", "123", "Bearer INVALID token").Return(
 			claims, errors.New("error in authenticate"),

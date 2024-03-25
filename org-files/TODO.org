@@ -20,6 +20,7 @@
   - read more about slog
   - look at how other packages are doing it
 - [ ] Refactor notes_test
+  - [ ] Make seperate test package
   - [ ] integration test doesn't test by UserID and NotesID
   - [ ] use testify assert in all of the project
 

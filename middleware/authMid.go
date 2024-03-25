@@ -1,10 +1,11 @@
-package jwt
+package authMid
 
 import (
-	"github.com/Keisn1/note-taking-app/auth"
-	"github.com/go-chi/chi/v5"
 	"log/slog"
 	"net/http"
+
+	"github.com/Keisn1/note-taking-app/auth"
+	"github.com/go-chi/chi/v5"
 )
 
 type MidHandler func(http.Handler) http.Handler
