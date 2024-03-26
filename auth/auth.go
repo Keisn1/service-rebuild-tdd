@@ -17,7 +17,20 @@ type AuthInterface interface {
 	Authenticate(userID, bearerToken string) (jwt.Claims, error)
 }
 
-type Auth struct{}
+type UserStore interface {
+	FindUserByID(userID string) error
+}
+
+type Auth struct {
+	userStore UserStore
+}
+
+func (a *Auth) checkUserID(userID string) error {
+	if err := a.userStore.FindUserByID(userID); err != nil {
+		return fmt.Errorf("checkUserID: %w", err)
+	}
+	return nil
+}
 
 func (a *Auth) getTokenString(bearerToken string) (string, error) {
 	parts := strings.Split(bearerToken, " ")
@@ -60,14 +73,14 @@ func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
 func (a *Auth) checkIssuer(claims jwt.MapClaims) error {
 	issuer := os.Getenv("JWT_NOTES_ISSUER")
 	if issuer != claims["iss"] {
-		return errors.New("incorrect Issuer")
+		return errors.New("incorrect issuer")
 	}
 	return nil
 }
 
 func (a *Auth) checkExpSet(claims jwt.MapClaims) error {
 	if _, ok := claims["exp"]; !ok {
-		return fmt.Errorf("authenticate: no expiration date set")
+		return fmt.Errorf("no expiration date set")
 	}
 	return nil
 }
@@ -88,6 +101,10 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 	}
 
 	if err := a.checkIssuer(claims); err != nil {
+		return fmt.Errorf("authenticate: %w", err)
+	}
+
+	if err := a.checkUserID(userID); err != nil {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 
