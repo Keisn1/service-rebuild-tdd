@@ -25,6 +25,8 @@ func (ma *MockAuth) Authenticate(userID, bearerToken string) (jwt.Claims, error)
 }
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
 	mockAuth := new(MockAuth)
 	jwtMidHandler := NewJwtMidHandler(mockAuth)
 	handler := jwtMidHandler(http.HandlerFunc(
@@ -34,11 +36,13 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	testCases := []struct {
 		name          string
 		setupMockAuth func()
-		setupRequest  func(req *http.Request) *http.Request
+		setupRequest  func() *http.Request
+		assertions    func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Test authentication success",
-			setupRequest: func(req *http.Request) *http.Request {
+			setupRequest: func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/auth", nil)
 				req = WithUrlParam(req, "userID", "123")
 				req.Header.Set("Authorization", "Bearer valid token")
 				return req
@@ -46,45 +50,44 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			setupMockAuth: func() {
 				mockAuth.On("Authenticate", "123", "Bearer valid token").Return(jwt.MapClaims{}, nil)
 			},
+			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, "Test Handler", recorder.Body.String())
+				mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer valid token")
+			},
+		},
+		{
+			name: "Test authentication Failure",
+			setupRequest: func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/auth", nil)
+				req = WithUrlParam(req, "userID", "123")
+				req.Header.Set("Authorization", "Bearer INVALID token")
+				return req
+			},
+			setupMockAuth: func() {
+				var claims jwt.MapClaims
+				mockAuth.On("Authenticate", "123", "Bearer INVALID token").Return(
+					claims, errors.New("error in authenticate"),
+				)
+			},
+			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusForbidden, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), "Failed Authentication")
+				assert.Contains(t, logBuf.String(),
+					"Failed Authentication userID \"123\" bearerToken \"Bearer INVALID token\"")
+			},
 		},
 	}
 
 	for _, tc := range testCases {
 		tc.setupMockAuth()
-
-		req := httptest.NewRequest(http.MethodGet, "/auth", nil)
-		req = tc.setupRequest(req)
+		req := tc.setupRequest()
 
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
 
-		mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer valid token")
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, "Test Handler", recorder.Body.String())
+		tc.assertions(t, recorder)
 	}
-
-	t.Run("Test authentication success", func(t *testing.T) {
-		var claims jwt.MapClaims
-		mockAuth.On("Authenticate", "123", "Bearer INVALID token").Return(
-			claims, errors.New("error in authenticate"),
-		)
-
-		req, err := http.NewRequest(http.MethodGet, "", nil)
-		assert.NoError(t, err)
-		req = WithUrlParam(req, "userID", "123")
-		req.Header.Set("Authorization", "Bearer INVALID token")
-
-		var logBuf bytes.Buffer
-		log.SetOutput(&logBuf)
-		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(recorder, req)
-
-		mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer INVALID token")
-		assert.Equal(t, http.StatusForbidden, recorder.Code)
-		assert.Contains(t, recorder.Body.String(), "Failed Authentication")
-		assert.Contains(t, logBuf.String(), "Failed Authentication")
-		assert.Contains(t, logBuf.String(), "error in authenticate")
-	})
 }
 
 func WithUrlParam(r *http.Request, key, value string) *http.Request {

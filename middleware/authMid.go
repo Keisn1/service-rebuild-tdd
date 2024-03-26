@@ -1,6 +1,7 @@
 package authMid
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -19,7 +20,11 @@ func NewJwtMidHandler(a auth.AuthInterface) MidHandler {
 			_, err := a.Authenticate(userID, bearerToken)
 			if err != nil {
 				http.Error(w, "Failed Authentication", http.StatusForbidden)
-				slog.Info("Failed Authentication: ", err)
+				slog.Info(
+					fmt.Sprintf(
+						"Failed Authentication userID \"%v\" bearerToken \"%v\": %v",
+						userID, bearerToken, err),
+				)
 				return
 			}
 			next.ServeHTTP(w, r)
