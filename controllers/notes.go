@@ -10,17 +10,12 @@ import (
 	"strconv"
 )
 
-type Logger interface {
-	Infof(format string, args ...any)
-	Errorf(format string, a ...any)
-}
-
 type NotesCtrlr struct {
 	NotesStore domain.NotesStore
-	Logger     Logger
+	Logger     domain.Logger
 }
 
-func NewNotesCtrlr(store domain.NotesStore, logger Logger) NotesCtrlr {
+func NewNotesCtrlr(store domain.NotesStore, logger domain.Logger) NotesCtrlr {
 	return NotesCtrlr{NotesStore: store, Logger: logger}
 }
 
@@ -167,10 +162,11 @@ func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("here")
 	nc.Logger.Infof("Success: GetAllNotes")
 }
 
-func handleBadRequest(w http.ResponseWriter, err error, logger Logger, action, param string) bool {
+func handleBadRequest(w http.ResponseWriter, err error, logger domain.Logger, action, param string) bool {
 	if err != nil {
 		logger.Errorf("%s invalid %s: %v", action, param, err)
 		http.Error(w, "", http.StatusBadRequest)
@@ -179,7 +175,7 @@ func handleBadRequest(w http.ResponseWriter, err error, logger Logger, action, p
 	return false
 }
 
-func handleError(w http.ResponseWriter, err error, httpErr int, logger Logger, action, msg string) bool {
+func handleError(w http.ResponseWriter, err error, httpErr int, logger domain.Logger, action, msg string) bool {
 	if err != nil {
 		logger.Errorf("%s %s: %w", action, msg, err)
 		http.Error(w, "", httpErr)

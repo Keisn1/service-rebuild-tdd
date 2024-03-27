@@ -12,7 +12,7 @@
 - [X] update server.go (integration test)
 - [ ] Refactor notes_test
   - [ ] Make seperate test package
-  - [ ] integration test doesn't test by UserID and NotesID
+  - [ ] integration test doesn't test by UserID and NotesID yet
   - [ ] use testify assert in all of the project
 - [ ] authentication service
   - [ ] Write acceptance test for Routes /signin, /signup, /signout

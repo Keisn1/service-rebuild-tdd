@@ -43,14 +43,9 @@ func (snsF *StubNotesStoreFailureGetAllNotes) GetAllNotes() (domain.Notes, error
 	return nil, ctrls.ErrDB
 }
 
-func NewStubNotesStore() *StubNotesStore {
+func NewStubNotesStore(notes domain.Notes) *StubNotesStore {
 	return &StubNotesStore{
-		Notes: domain.Notes{
-			{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
-			{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
-			{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
-			{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
-		},
+		Notes: notes,
 	}
 }
 

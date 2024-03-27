@@ -16,23 +16,114 @@ import (
 	ctrls "github.com/Keisn1/note-taking-app/controllers"
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
+type mockLogger struct {
+	mock.Mock
+}
+
+func (ml *mockLogger) Infof(format string, args ...any) {
+	if len(args) == 0 {
+		ml.Called(format)
+	} else {
+		ml.Called(format, args)
+	}
+}
+
+func (ml *mockLogger) Errorf(format string, a ...any) {
+	if len(a) == 0 {
+		ml.Called(format)
+	} else {
+		ml.Called(format, a)
+	}
+}
+
 func TestNotes(t *testing.T) {
-	notesStore := NewStubNotesStore()
+	notes := domain.Notes{
+		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
+		{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
+		{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
+		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
+	}
+
+	notesStore := NewStubNotesStore(notes)
+	mLogger := mockLogger{}
+	notesCtrl := ctrls.NewNotesCtrlr(notesStore, &mLogger)
+
+	testCases := []struct {
+		setupMock    func()
+		setupRequest func(*testing.T) *http.Request
+		handler      func(http.ResponseWriter, *http.Request)
+		assertions   func(*testing.T, *httptest.ResponseRecorder)
+	}{
+		{
+			setupMock: func() {
+				mLogger.On("Infof", "Success: GetAllNotes").Return(nil)
+			},
+			setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
+			handler:      notesCtrl.GetAllNotes,
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
+				wantNotes := notes
+				gotNotes := getNotesFromResponse(t, rr.Body)
+				assert.Equal(t, http.StatusOK, rr.Code)
+				assert.Equal(t, gotNotes, wantNotes)
+				mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
+			},
+		},
+		{
+			setupMock: func() {
+				mLogger.On("Infof", "Success: GetAllNotes").Return(nil)
+			},
+			setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
+			handler:      notesCtrl.GetAllNotes,
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
+				wantNotes := notes
+				gotNotes := getNotesFromResponse(t, rr.Body)
+				assert.Equal(t, http.StatusOK, rr.Code)
+				assert.Equal(t, gotNotes, wantNotes)
+				mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		// setup
+		tc.setupMock()
+		req := tc.setupRequest(t)
+
+		// call handler
+		rr := httptest.NewRecorder()
+		tc.handler(rr, req)
+
+		// assert assertions
+		tc.assertions(t, rr)
+	}
+}
+
+func TestNotes2(t *testing.T) {
+	notes := domain.Notes{
+		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
+		{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
+		{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
+		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
+	}
+
+	notesStore := NewStubNotesStore(notes)
 	logger := NewStubLogger()
-	notesC := ctrls.NewNotesCtrlr(notesStore, logger)
+	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		logger.Reset()
 		wantNotes := notesStore.Notes
-
 		request := newGetAllNotesRequest(t)
-		response := httptest.NewRecorder()
-		notesC.GetAllNotes(response, request)
-		gotNotes := getNotesFromResponse(t, response.Body)
 
-		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+		rr := httptest.NewRecorder()
+		notesCtrl.GetAllNotes(rr, request)
+
+		gotNotes := getNotesFromResponse(t, rr.Body)
+		assertStatusCode(t, rr.Result().StatusCode, http.StatusOK)
 		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
 		assertSlicesAnyAreEqual(t, gotNotes, wantNotes)
 		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
@@ -70,7 +161,7 @@ func TestNotes(t *testing.T) {
 		for _, tc := range testCases {
 			response := httptest.NewRecorder()
 			request := newGetNoteByUserIDAndNoteIDRequest(t, tc.userID, tc.noteID)
-			notesC.GetNoteByUserIDAndNoteID(response, request)
+			notesCtrl.GetNoteByUserIDAndNoteID(response, request)
 			if tc.userID != -1 {
 				gotNotes := getNotesFromResponse(t, response.Body)
 				assertSlicesAnyAreEqual(t, gotNotes, domain.Notes{tc.wantNote})
@@ -107,7 +198,7 @@ func TestNotes(t *testing.T) {
 		for _, tc := range testCases {
 			response := httptest.NewRecorder()
 			request := newGetNotesByUserIdRequest(t, tc.userID)
-			notesC.GetNotesByUserID(response, request)
+			notesCtrl.GetNotesByUserID(response, request)
 			if tc.userID != -1 {
 				gotNotes := getNotesFromResponse(t, response.Body)
 				assertSlicesAnyAreEqual(t, gotNotes, tc.wantNotes)
@@ -131,7 +222,7 @@ func TestNotes(t *testing.T) {
 		badID := "notAnInt"
 		badRequest := newRequestWithBadIdParam(t, badID)
 		response := httptest.NewRecorder()
-		notesC.GetNotesByUserID(response, badRequest)
+		notesCtrl.GetNotesByUserID(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggingCalls(t, logger.errorfCall, []string{"GetNotesByUserID invalid userID:"})
@@ -143,7 +234,7 @@ func TestNotes(t *testing.T) {
 
 		request := newPostRequestWithNoteAndUrlParam(t, note, "userID", fmt.Sprintf("%d", userID))
 		response := httptest.NewRecorder()
-		notesC.Add(response, request)
+		notesCtrl.Add(response, request)
 
 		wantAddNoteCalls := []AddNoteCall{{userID: userID, note: note}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
@@ -156,7 +247,7 @@ func TestNotes(t *testing.T) {
 		badRequest := newPostRequestFromBody(t, "{}}")
 		badRequest = WithUrlParam(badRequest, "userID", "1")
 		response := httptest.NewRecorder()
-		notesC.Add(response, badRequest)
+		notesCtrl.Add(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid json:"})
@@ -168,7 +259,7 @@ func TestNotes(t *testing.T) {
 		badRequest := newInvalidBodyPostRequest(t)
 		badRequest = WithUrlParam(badRequest, "userID", fmt.Sprintf("%d", 1))
 		response := httptest.NewRecorder()
-		notesC.Add(response, badRequest)
+		notesCtrl.Add(response, badRequest)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusBadRequest)
 		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote invalid body:"})
@@ -181,7 +272,7 @@ func TestNotes(t *testing.T) {
 		request = WithUrlParam(request, "userID", fmt.Sprintf("%d", 1))
 		response := httptest.NewRecorder()
 
-		notesC.Add(response, request)
+		notesCtrl.Add(response, request)
 		assertStatusCode(t, response.Result().StatusCode, http.StatusConflict)
 		assertLoggingCalls(t, logger.errorfCall, []string{"ProcessAddNote DBerror:"})
 	})
@@ -198,7 +289,7 @@ func TestNotes(t *testing.T) {
 		})
 
 		response := httptest.NewRecorder()
-		notesC.Delete(response, request)
+		notesCtrl.Delete(response, request)
 		wantDeleteNoteCalls := []DeleteCall{{userID: userID, noteID: noteID}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
 		assertSlicesAnyAreEqual(t, notesStore.deleteNoteCalls, wantDeleteNoteCalls)
@@ -217,7 +308,7 @@ func TestNotes(t *testing.T) {
 		})
 
 		response := httptest.NewRecorder()
-		notesC.Delete(response, request)
+		notesCtrl.Delete(response, request)
 
 		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
 		assertLoggingCalls(t, logger.errorfCall, []string{"Delete DBerror:"})
@@ -232,7 +323,7 @@ func TestNotes(t *testing.T) {
 			"noteID": strconv.Itoa(noteID),
 		})
 		response := httptest.NewRecorder()
-		notesC.Edit(response, putRequest)
+		notesCtrl.Edit(response, putRequest)
 
 		wantEditCalls := []EditCall{{userID: userID, noteID: noteID, note: note}}
 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
