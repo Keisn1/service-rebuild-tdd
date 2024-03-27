@@ -1,16 +1,19 @@
 package controllers
 
-import "sync"
-import "fmt"
+import (
+	"fmt"
+	"github.com/Keisn1/note-taking-app/domain"
+	"sync"
+)
 
 type InMemoryNotesStore struct {
-	notes Notes
+	notes domain.Notes
 	lock  sync.RWMutex
 }
 
 func NewInMemoryNotesStore() *InMemoryNotesStore {
 	return &InMemoryNotesStore{
-		notes: Notes{},
+		notes: domain.Notes{},
 		lock:  sync.RWMutex{},
 	}
 }
@@ -57,11 +60,11 @@ func (i *InMemoryNotesStore) EditNote(userID, noteID int, newNote string) error 
 	return fmt.Errorf("note with UserID %d and NoteID %d not found", userID, noteID)
 }
 
-func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, error) {
+func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (domain.Notes, error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	var userNotes Notes
+	var userNotes domain.Notes
 	for _, note := range i.notes {
 		if note.UserID == userID && note.NoteID == noteID {
 			userNotes = append(userNotes, note)
@@ -70,11 +73,11 @@ func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes
 	return userNotes, nil
 }
 
-func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (Notes, error) {
+func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (domain.Notes, error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	var userNotes Notes
+	var userNotes domain.Notes
 	for _, note := range i.notes {
 		if note.UserID == userID {
 			userNotes = append(userNotes, note)
@@ -83,7 +86,7 @@ func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (Notes, error) {
 	return userNotes, nil
 }
 
-func (i *InMemoryNotesStore) GetAllNotes() (Notes, error) {
+func (i *InMemoryNotesStore) GetAllNotes() (domain.Notes, error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return i.notes, nil
@@ -93,7 +96,7 @@ func (i *InMemoryNotesStore) AddNote(userID int, note string) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	noteID := len(i.notes) + 1
-	newNote := Note{NoteID: noteID, UserID: userID, Note: note}
+	newNote := domain.Note{NoteID: noteID, UserID: userID, Note: note}
 	i.notes = append(i.notes, newNote)
 	return nil
 }

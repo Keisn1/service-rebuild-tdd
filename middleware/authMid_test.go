@@ -27,6 +27,7 @@ func (ma *MockAuth) Authenticate(userID, bearerToken string) (jwt.Claims, error)
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	var logBuf bytes.Buffer
 	log.SetOutput(&logBuf)
+
 	mockAuth := new(MockAuth)
 	jwtMidHandler := NewJwtMidHandler(mockAuth)
 	handler := jwtMidHandler(http.HandlerFunc(
@@ -80,6 +81,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		logBuf.Reset()
 		tc.setupMockAuth()
 		req := tc.setupRequest()
 

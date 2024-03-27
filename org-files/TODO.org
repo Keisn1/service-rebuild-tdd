@@ -10,6 +10,10 @@
 - [X] test if the controllers give you back the right data
 - [X] make controller independent of the routes
 - [X] update server.go (integration test)
+- [ ] Refactor notes_test
+  - [ ] Make seperate test package
+  - [ ] integration test doesn't test by UserID and NotesID
+  - [ ] use testify assert in all of the project
 - [ ] authentication service
   - [ ] Write acceptance test for Routes /signin, /signup, /signout
   - [ ] Fill out the routes
@@ -19,10 +23,6 @@
 - [ ] think about logging in middleware, how can you inject logger
   - read more about slog
   - look at how other packages are doing it
-- [ ] Refactor notes_test
-  - [ ] Make seperate test package
-  - [ ] integration test doesn't test by UserID and NotesID
-  - [ ] use testify assert in all of the project
 
 * TODO Setup
 ** DONE Local setup

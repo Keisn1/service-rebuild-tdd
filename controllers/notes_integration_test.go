@@ -1,4 +1,4 @@
-package controllers
+package controllers_test
 
 import (
 	"encoding/json"
@@ -7,21 +7,25 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/Keisn1/note-taking-app/common"
+	ctrls "github.com/Keisn1/note-taking-app/controllers"
+	"github.com/Keisn1/note-taking-app/domain"
 )
 
-func buildNotes(t testing.TB, userID int, notes []string) Notes {
+func buildNotes(t testing.TB, userID int, notes []string) domain.Notes {
 	t.Helper()
-	var ret Notes
+	var ret domain.Notes
 	for _, note := range notes {
-		ret = append(ret, Note{UserID: userID, Note: note})
+		ret = append(ret, domain.Note{UserID: userID, Note: note})
 	}
 	return ret
 }
 
 func TestIntegrationInMemoryStore(t *testing.T) {
-	store := NewInMemoryNotesStore()
-	logger := NewSimpleLogger()
-	notesC := NewNotesCtrlr(store, &logger)
+	store := ctrls.NewInMemoryNotesStore()
+	logger := common.NewSimpleLogger()
+	notesC := ctrls.NewNotesCtrlr(store, &logger)
 
 	notesUser1 := buildNotes(t, 1, []string{"Test note 1", "Test note 2", "Test note 3"})
 	notesUser2 := buildNotes(t, 2, []string{"Test note 4", "Test note 5"})
@@ -46,7 +50,7 @@ func TestIntegrationInMemoryStore(t *testing.T) {
 	assertAllNotesAsExpected(t, restOfNotes, notesC)
 }
 
-func deleteANote(t testing.TB, notesC NotesCtrlr) (restOfNotes Notes) {
+func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Notes) {
 	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
@@ -63,7 +67,7 @@ func deleteANote(t testing.TB, notesC NotesCtrlr) (restOfNotes Notes) {
 	return restOfNotes
 }
 
-func assertNoteWasEdited(t testing.TB, pNote Note, text string, notesC NotesCtrlr) {
+func assertNoteWasEdited(t testing.TB, pNote domain.Note, text string, notesC ctrls.NotesCtrlr) {
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
 	allNotes := getNotesFromResponse(t, response.Body)
@@ -74,7 +78,7 @@ func assertNoteWasEdited(t testing.TB, pNote Note, text string, notesC NotesCtrl
 	}
 }
 
-func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC NotesCtrlr) {
+func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes domain.Notes, notesC ctrls.NotesCtrlr) {
 	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
@@ -84,7 +88,7 @@ func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes Notes, notesC
 	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
 }
 
-func EditNote(t testing.TB, notesC NotesCtrlr) (Note, string) {
+func EditNote(t testing.TB, notesC ctrls.NotesCtrlr) (domain.Note, string) {
 	// returns note that is being edited
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
@@ -99,7 +103,7 @@ func EditNote(t testing.TB, notesC NotesCtrlr) (Note, string) {
 }
 
 // compareNotesByUserIDAndNote compares two slices of Notes by UserID and Note fields
-func compareNotesByUserIDAndNote(t testing.TB, got, want Notes) {
+func compareNotesByUserIDAndNote(t testing.TB, got, want domain.Notes) {
 	t.Helper()
 	assertSlicesSameLength(t, got, want)
 
@@ -117,7 +121,7 @@ func compareNotesByUserIDAndNote(t testing.TB, got, want Notes) {
 	}
 }
 
-func assertAllNotesAsExpected(t testing.TB, wantNotes Notes, notesC NotesCtrlr) {
+func assertAllNotesAsExpected(t testing.TB, wantNotes domain.Notes, notesC ctrls.NotesCtrlr) {
 	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
@@ -126,7 +130,7 @@ func assertAllNotesAsExpected(t testing.TB, wantNotes Notes, notesC NotesCtrlr) 
 	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
 }
 
-func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
+func getNotesFromResponse(t testing.TB, body io.Reader) (notes domain.Notes) {
 	t.Helper()
 	err := json.NewDecoder(body).Decode(&notes)
 	if err != nil {
@@ -135,7 +139,7 @@ func getNotesFromResponse(t testing.TB, body io.Reader) (notes Notes) {
 	return
 }
 
-func addNotes(t testing.TB, notes Notes, notesC NotesCtrlr) {
+func addNotes(t testing.TB, notes domain.Notes, notesC ctrls.NotesCtrlr) {
 	for _, n := range notes {
 		notesC.Add(
 			httptest.NewRecorder(),

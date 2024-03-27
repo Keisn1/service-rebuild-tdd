@@ -1,4 +1,4 @@
-package controllers
+package controllers_test
 
 import (
 	"bytes"
@@ -13,13 +13,15 @@ import (
 
 	"fmt"
 
+	ctrls "github.com/Keisn1/note-taking-app/controllers"
+	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/go-chi/chi/v5"
 )
 
 func TestNotes(t *testing.T) {
 	notesStore := NewStubNotesStore()
 	logger := NewStubLogger()
-	notesC := NewNotesCtrlr(notesStore, logger)
+	notesC := ctrls.NewNotesCtrlr(notesStore, logger)
 
 	t.Run("Server returns all Notes", func(t *testing.T) {
 		logger.Reset()
@@ -40,7 +42,7 @@ func TestNotes(t *testing.T) {
 		logger.Reset()
 		notesStore := StubNotesStoreFailureGetAllNotes{} // different stubNotesStore
 		logger := NewStubLogger()
-		notesC := NewNotesCtrlr(&notesStore, logger)
+		notesC := ctrls.NewNotesCtrlr(&notesStore, logger)
 
 		request := newGetAllNotesRequest(t)
 		response := httptest.NewRecorder()
@@ -49,7 +51,7 @@ func TestNotes(t *testing.T) {
 		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
 		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetAllNotes %v", ErrDB.Error()),
+			fmt.Sprintf("GetAllNotes %v", ctrls.ErrDB.Error()),
 		})
 	})
 
@@ -58,11 +60,11 @@ func TestNotes(t *testing.T) {
 		testCases := []struct {
 			userID     int
 			noteID     int
-			wantNote   Note
+			wantNote   domain.Note
 			statusCode int
 		}{
-			{1, 1, Note{NoteID: 1, UserID: 1, Note: "Note 1 user 1"}, http.StatusOK},
-			{-1, -1, Note{}, http.StatusInternalServerError}, // simulating DBError
+			{1, 1, domain.Note{NoteID: 1, UserID: 1, Note: "Note 1 user 1"}, http.StatusOK},
+			{-1, -1, domain.Note{}, http.StatusInternalServerError}, // simulating DBError
 		}
 
 		for _, tc := range testCases {
@@ -71,7 +73,7 @@ func TestNotes(t *testing.T) {
 			notesC.GetNoteByUserIDAndNoteID(response, request)
 			if tc.userID != -1 {
 				gotNotes := getNotesFromResponse(t, response.Body)
-				assertSlicesAnyAreEqual(t, gotNotes, Notes{tc.wantNote})
+				assertSlicesAnyAreEqual(t, gotNotes, domain.Notes{tc.wantNote})
 			}
 
 			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
@@ -81,25 +83,25 @@ func TestNotes(t *testing.T) {
 			"Success: GetNoteByUserIDAndNoteID with userID 1 and noteID 1",
 		})
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetNoteByUserIDAndNoteID with userID -1 and noteID -1 %v", ErrDB.Error()),
+			fmt.Sprintf("GetNoteByUserIDAndNoteID with userID -1 and noteID -1 %v", ctrls.ErrDB.Error()),
 		})
 	})
 	t.Run("Return notes for user with userID", func(t *testing.T) {
 		logger.Reset()
 		testCases := []struct {
 			userID     int
-			wantNotes  Notes
+			wantNotes  domain.Notes
 			statusCode int
 		}{
-			{1, Notes{
+			{1, domain.Notes{
 				{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
 				{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
 			}, http.StatusOK},
-			{2, Notes{
+			{2, domain.Notes{
 				{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
 				{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
 			}, http.StatusOK}, // no notes for user with userID 2
-			{-1, Notes{}, http.StatusInternalServerError}, // simulating DBError
+			{-1, domain.Notes{}, http.StatusInternalServerError}, // simulating DBError
 		}
 
 		for _, tc := range testCases {
@@ -119,7 +121,7 @@ func TestNotes(t *testing.T) {
 			"Success: GetNotesByUserID with userID 2",
 		})
 		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetNotesByUserID userID -1 %v", ErrDB.Error()),
+			fmt.Sprintf("GetNotesByUserID userID -1 %v", ctrls.ErrDB.Error()),
 		})
 	})
 

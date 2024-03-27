@@ -1,8 +1,10 @@
-package controllers
+package controllers_test
 
 import (
 	"errors"
 	"fmt"
+	ctrls "github.com/Keisn1/note-taking-app/controllers"
+	"github.com/Keisn1/note-taking-app/domain"
 )
 
 type AddNoteCall struct {
@@ -22,7 +24,7 @@ type EditCall struct {
 }
 
 type StubNotesStore struct {
-	Notes Notes
+	Notes domain.Notes
 
 	getNotesByUserIDCalls         []int
 	getNoteByUserIDAndNoteIDCalls [][2]int
@@ -36,14 +38,14 @@ type StubNotesStoreFailureGetAllNotes struct {
 	StubNotesStore
 }
 
-func (snsF *StubNotesStoreFailureGetAllNotes) GetAllNotes() (Notes, error) {
+func (snsF *StubNotesStoreFailureGetAllNotes) GetAllNotes() (domain.Notes, error) {
 	snsF.getAllNotesGotCalled = true
-	return nil, ErrDB
+	return nil, ctrls.ErrDB
 }
 
 func NewStubNotesStore() *StubNotesStore {
 	return &StubNotesStore{
-		Notes: Notes{
+		Notes: domain.Notes{
 			{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
 			{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
 			{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
@@ -74,16 +76,16 @@ func (sns *StubNotesStore) EditNote(userID, noteID int, note string) error {
 	return nil
 }
 
-func (sns *StubNotesStore) GetAllNotes() (Notes, error) {
+func (sns *StubNotesStore) GetAllNotes() (domain.Notes, error) {
 	sns.getAllNotesGotCalled = true
 	return sns.Notes, nil
 }
 
-func (sns *StubNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, error) {
+func (sns *StubNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (domain.Notes, error) {
 	sns.getNoteByUserIDAndNoteIDCalls = append(sns.getNoteByUserIDAndNoteIDCalls, [2]int{userID, noteID})
-	var userNotes Notes
+	var userNotes domain.Notes
 	if userID == -1 {
-		err := ErrDB
+		err := ctrls.ErrDB
 		return nil, err
 	}
 	for _, note := range sns.Notes {
@@ -94,10 +96,10 @@ func (sns *StubNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (Notes, 
 	return userNotes, nil
 }
 
-func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret Notes, err error) {
+func (sns *StubNotesStore) GetNotesByUserID(userID int) (ret domain.Notes, err error) {
 	sns.getNotesByUserIDCalls = append(sns.getNotesByUserIDCalls, userID)
 	if userID == -1 {
-		err = ErrDB
+		err = ctrls.ErrDB
 		return nil, err
 	}
 	for _, n := range sns.Notes {
