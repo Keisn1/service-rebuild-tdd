@@ -17,28 +17,7 @@ import (
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type mockLogger struct {
-	mock.Mock
-}
-
-func (ml *mockLogger) Infof(format string, args ...any) {
-	if len(args) == 0 {
-		ml.Called(format)
-	} else {
-		ml.Called(format, args)
-	}
-}
-
-func (ml *mockLogger) Errorf(format string, a ...any) {
-	if len(a) == 0 {
-		ml.Called(format)
-	} else {
-		ml.Called(format, a)
-	}
-}
 
 func TestNotes(t *testing.T) {
 	notes := domain.Notes{
@@ -48,44 +27,50 @@ func TestNotes(t *testing.T) {
 		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
 	}
 
-	notesStore := NewStubNotesStore(notes)
+	mNotesStore := mockNotesStore{}
 	mLogger := mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(notesStore, &mLogger)
+	notesCtrl := ctrls.NewNotesCtrlr(&mNotesStore, &mLogger)
 
 	testCases := []struct {
+		name         string
 		setupMock    func()
 		setupRequest func(*testing.T) *http.Request
 		handler      func(http.ResponseWriter, *http.Request)
 		assertions   func(*testing.T, *httptest.ResponseRecorder)
 	}{
 		{
+			name: "GetAllNotes Happy path",
 			setupMock: func() {
+				mNotesStore.On("GetAllNotes").Return(notes, nil)
 				mLogger.On("Infof", "Success: GetAllNotes").Return(nil)
 			},
 			setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
 			handler:      notesCtrl.GetAllNotes,
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
 				wantNotes := notes
-				gotNotes := getNotesFromResponse(t, rr.Body)
+				gotNotes := decodeBodyNotes(t, rr.Body)
 				assert.Equal(t, http.StatusOK, rr.Code)
 				assert.Equal(t, gotNotes, wantNotes)
 				mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
 			},
 		},
-		{
-			setupMock: func() {
-				mLogger.On("Infof", "Success: GetAllNotes").Return(nil)
-			},
-			setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
-			handler:      notesCtrl.GetAllNotes,
-			assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				wantNotes := notes
-				gotNotes := getNotesFromResponse(t, rr.Body)
-				assert.Equal(t, http.StatusOK, rr.Code)
-				assert.Equal(t, gotNotes, wantNotes)
-				mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
-			},
-		},
+		// {
+		// 	name: "GetAllNotes DB Failure",
+		// 	setupMock: func() {
+		// 		mNotesStore.On("GetAllNotes").Return(nil, "getAllNotes: error")
+		// 		mLogger.On("Errorf", "Failure: GetAllNotes").Return(nil)
+		// 	},
+		// 	setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
+		// 	handler:      notesCtrl.GetAllNotes,
+		// 	assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
+		// 		wantNotes := notes
+		// 		gotNotes := decodeBodyNotes(t, rr.Body)
+		// 		assert.HTTPError()
+		// 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		// 		assert.Equal(t, gotNotes, wantNotes)
+		// 		mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
+		// 	},
+		// },
 	}
 
 	for _, tc := range testCases {
@@ -113,21 +98,6 @@ func TestNotes2(t *testing.T) {
 	notesStore := NewStubNotesStore(notes)
 	logger := NewStubLogger()
 	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
-
-	t.Run("Server returns all Notes", func(t *testing.T) {
-		logger.Reset()
-		wantNotes := notesStore.Notes
-		request := newGetAllNotesRequest(t)
-
-		rr := httptest.NewRecorder()
-		notesCtrl.GetAllNotes(rr, request)
-
-		gotNotes := getNotesFromResponse(t, rr.Body)
-		assertStatusCode(t, rr.Result().StatusCode, http.StatusOK)
-		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
-		assertSlicesAnyAreEqual(t, gotNotes, wantNotes)
-		assertLoggingCalls(t, logger.infofCalls, []string{"Success: GetAllNotes"})
-	})
 
 	t.Run("Failure DB on GetAllNotes", func(t *testing.T) {
 		logger.Reset()
@@ -163,7 +133,7 @@ func TestNotes2(t *testing.T) {
 			request := newGetNoteByUserIDAndNoteIDRequest(t, tc.userID, tc.noteID)
 			notesCtrl.GetNoteByUserIDAndNoteID(response, request)
 			if tc.userID != -1 {
-				gotNotes := getNotesFromResponse(t, response.Body)
+				gotNotes := decodeBodyNotes(t, response.Body)
 				assertSlicesAnyAreEqual(t, gotNotes, domain.Notes{tc.wantNote})
 			}
 
@@ -200,7 +170,7 @@ func TestNotes2(t *testing.T) {
 			request := newGetNotesByUserIdRequest(t, tc.userID)
 			notesCtrl.GetNotesByUserID(response, request)
 			if tc.userID != -1 {
-				gotNotes := getNotesFromResponse(t, response.Body)
+				gotNotes := decodeBodyNotes(t, response.Body)
 				assertSlicesAnyAreEqual(t, gotNotes, tc.wantNotes)
 			}
 

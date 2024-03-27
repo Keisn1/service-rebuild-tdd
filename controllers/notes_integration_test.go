@@ -54,7 +54,7 @@ func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Note
 	t.Helper()
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := getNotesFromResponse(t, response.Body)
+	allNotes := decodeBodyNotes(t, response.Body)
 	dNote, restOfNotes := allNotes[0], allNotes[1:]
 
 	deleteRequest, err := http.NewRequest(http.MethodDelete, "", nil)
@@ -70,7 +70,7 @@ func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Note
 func assertNoteWasEdited(t testing.TB, pNote domain.Note, text string, notesC ctrls.NotesCtrlr) {
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := getNotesFromResponse(t, response.Body)
+	allNotes := decodeBodyNotes(t, response.Body)
 	for _, n := range allNotes {
 		if n.UserID == pNote.UserID && n.NoteID == pNote.NoteID && n.Note != text {
 			t.Errorf("Did not edit note with userID %d, noteID %d and note %s to \"Edit Note\"", n.UserID, n.NoteID, n.Note)
@@ -83,7 +83,7 @@ func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes domain.Notes,
 	response := httptest.NewRecorder()
 	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
 
-	gotNotes := getNotesFromResponse(t, response.Body)
+	gotNotes := decodeBodyNotes(t, response.Body)
 	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
 	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
 }
@@ -92,7 +92,7 @@ func EditNote(t testing.TB, notesC ctrls.NotesCtrlr) (domain.Note, string) {
 	// returns note that is being edited
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := getNotesFromResponse(t, response.Body)
+	allNotes := decodeBodyNotes(t, response.Body)
 
 	note := allNotes[0]
 	notesC.Edit(httptest.NewRecorder(), newPutRequestWithNoteAndUrlParams(t, "Edit Note", Params{
@@ -126,15 +126,15 @@ func assertAllNotesAsExpected(t testing.TB, wantNotes domain.Notes, notesC ctrls
 	response := httptest.NewRecorder()
 	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
 
-	gotNotes := getNotesFromResponse(t, response.Body)
+	gotNotes := decodeBodyNotes(t, response.Body)
 	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
 }
 
-func getNotesFromResponse(t testing.TB, body io.Reader) (notes domain.Notes) {
+func decodeBodyNotes(t testing.TB, body io.Reader) (notes domain.Notes) {
 	t.Helper()
 	err := json.NewDecoder(body).Decode(&notes)
 	if err != nil {
-		t.Fatalf("Unable to parse response from server %q into map[int]Notes", err)
+		t.Fatalf("Unable to parse body into Notes: %v", err)
 	}
 	return
 }
