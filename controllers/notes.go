@@ -3,10 +3,12 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/Keisn1/note-taking-app/domain"
-	"github.com/go-chi/chi/v5"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/go-chi/chi/v5"
 )
 
 type NotesCtrlr struct {
@@ -126,19 +128,24 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if handleBadRequest(w, err, nc.Logger, "Edit", "userID") {
+	if err != nil || userID < 0 {
+		http.Error(w, "", http.StatusBadRequest)
+		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid userID %v", userID)
 		return
 	}
 
 	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
-	if handleBadRequest(w, err, nc.Logger, "Edit", "noteID") {
+	if err != nil || noteID < 0 {
+		http.Error(w, "", http.StatusBadRequest)
+		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid noteID %v", noteID)
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("GetNoteByUserIDAndNoteID with userID %v and noteID %v %v: %w", userID, noteID, ErrDB.Error(), err)
+		http.Error(w, "", http.StatusNotFound)
+		msg := fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", userID, noteID)
+		nc.Logger.Errorf("%s: %w", msg, err)
 		return
 	}
 

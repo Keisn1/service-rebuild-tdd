@@ -10,6 +10,7 @@ type mockNotesStore struct {
 }
 
 func (mNS *mockNotesStore) Reset() {
+	mNS.Calls = []mock.Call{}
 	mNS.ExpectedCalls = []*mock.Call{}
 }
 
@@ -19,7 +20,8 @@ func (mNS *mockNotesStore) GetAllNotes() (domain.Notes, error) {
 }
 
 func (mNS *mockNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (domain.Notes, error) {
-	return nil, nil
+	args := mNS.Called(userID, noteID)
+	return args.Get(0).(domain.Notes), args.Error(1)
 }
 
 func (mNS *mockNotesStore) GetNotesByUserID(userID int) (domain.Notes, error) {
@@ -44,6 +46,7 @@ type mockLogger struct {
 
 func (ml *mockLogger) Reset() {
 	ml.ExpectedCalls = []*mock.Call{}
+	ml.Calls = []mock.Call{}
 }
 
 func (ml *mockLogger) Infof(format string, args ...any) {
