@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -27,64 +29,79 @@ func TestNotes(t *testing.T) {
 		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
 	}
 
-	mNotesStore := mockNotesStore{}
-	mLogger := mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(&mNotesStore, &mLogger)
+	mNotesStore := &mockNotesStore{}
+	mLogger := &mockLogger{}
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
 
 	testCases := []struct {
-		name         string
-		setupMock    func()
-		setupRequest func(*testing.T) *http.Request
-		handler      func(http.ResponseWriter, *http.Request)
-		assertions   func(*testing.T, *httptest.ResponseRecorder)
+		name           string
+		handler        http.HandlerFunc
+		url            string
+		method         string
+		values         url.Values
+		wantStatusCode int
+		wantBody       string
+		setupMock      func()
+		assertions     func(t *testing.T, handler http.HandlerFunc, method, url string, values url.Values, wantStatus int, wantBody string)
 	}{
 		{
-			name: "GetAllNotes Happy path",
+			name:           "GetAllNotes Happy path",
+			handler:        notesCtrl.GetAllNotes,
+			method:         "GET",
+			url:            "/users/notes",
+			values:         url.Values{},
+			wantStatusCode: http.StatusOK,
+			wantBody:       mustEncode(t, notes),
 			setupMock: func() {
+				mNotesStore.Reset()
 				mNotesStore.On("GetAllNotes").Return(notes, nil)
+				mLogger.Reset()
 				mLogger.On("Infof", "Success: GetAllNotes").Return(nil)
 			},
-			setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
-			handler:      notesCtrl.GetAllNotes,
-			assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				wantNotes := notes
-				gotNotes := decodeBodyNotes(t, rr.Body)
-				assert.Equal(t, http.StatusOK, rr.Code)
-				assert.Equal(t, gotNotes, wantNotes)
+			assertions: func(t *testing.T, handler http.HandlerFunc, method, url string, values url.Values, wantStatusCode int, wantBody string) {
+				gotBody := assert.HTTPBody(handler, method, url, values)
+
+				mNotesStore.AssertCalled(t, "GetAllNotes")
 				mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
+				assert.HTTPStatusCode(t, handler, method, url, values, wantStatusCode)
+				assert.Equal(t, gotBody, wantBody)
 			},
 		},
-		// {
-		// 	name: "GetAllNotes DB Failure",
-		// 	setupMock: func() {
-		// 		mNotesStore.On("GetAllNotes").Return(nil, "getAllNotes: error")
-		// 		mLogger.On("Errorf", "Failure: GetAllNotes").Return(nil)
-		// 	},
-		// 	setupRequest: func(t *testing.T) *http.Request { return httptest.NewRequest(http.MethodGet, "/notes", nil) },
-		// 	handler:      notesCtrl.GetAllNotes,
-		// 	assertions: func(t *testing.T, rr *httptest.ResponseRecorder) {
-		// 		wantNotes := notes
-		// 		gotNotes := decodeBodyNotes(t, rr.Body)
-		// 		assert.HTTPError()
-		// 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		// 		assert.Equal(t, gotNotes, wantNotes)
-		// 		mLogger.AssertCalled(t, "Infof", "Success: GetAllNotes")
-		// 	},
-		// },
+		{
+			name:           "GetAllNotes Error DB",
+			handler:        notesCtrl.GetAllNotes,
+			method:         "GET",
+			url:            "/users/notes",
+			values:         url.Values{},
+			wantStatusCode: http.StatusInternalServerError,
+			wantBody:       "",
+			setupMock: func() {
+				mNotesStore.Reset()
+				mNotesStore.On("GetAllNotes").Return(domain.Notes{}, errors.New("error notesStore.GetAllNotes"))
+				mLogger.Reset()
+				mLogger.On("Errorf", "%s: %w", "GetAllNotes", errors.New("error notesStore.GetAllNotes")).Return(nil)
+			},
+			assertions: func(t *testing.T, handler http.HandlerFunc, method, url string, values url.Values, wantStatusCode int, wantBody string) {
+				assert.HTTPStatusCode(t, handler, method, url, values, wantStatusCode)
+				mNotesStore.AssertCalled(t, "GetAllNotes")
+				mLogger.AssertCalled(t, "Errorf", "%s: %w", "GetAllNotes", errors.New("error notesStore.GetAllNotes"))
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		// setup
 		tc.setupMock()
-		req := tc.setupRequest(t)
-
-		// call handler
-		rr := httptest.NewRecorder()
-		tc.handler(rr, req)
-
-		// assert assertions
-		tc.assertions(t, rr)
+		tc.assertions(t, tc.handler, tc.method, tc.url, tc.values, tc.wantStatusCode, tc.wantBody)
 	}
+}
+
+func mustEncode(t *testing.T, a any) string {
+	buf := bytes.NewBuffer([]byte{})
+	if err := json.NewEncoder(buf).Encode(a); err != nil {
+		t.Fatalf("encoding json: %v", err)
+	}
+	return buf.String()
 }
 
 func TestNotes2(t *testing.T) {
@@ -98,23 +115,6 @@ func TestNotes2(t *testing.T) {
 	notesStore := NewStubNotesStore(notes)
 	logger := NewStubLogger()
 	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
-
-	t.Run("Failure DB on GetAllNotes", func(t *testing.T) {
-		logger.Reset()
-		notesStore := StubNotesStoreFailureGetAllNotes{} // different stubNotesStore
-		logger := NewStubLogger()
-		notesC := ctrls.NewNotesCtrlr(&notesStore, logger)
-
-		request := newGetAllNotesRequest(t)
-		response := httptest.NewRecorder()
-		notesC.GetAllNotes(response, request)
-
-		assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
-		assertGetAllNotesGotCalled(t, notesStore.getAllNotesGotCalled)
-		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetAllNotes %v", ctrls.ErrDB.Error()),
-		})
-	})
 
 	t.Run("Return note with noteID and userID", func(t *testing.T) {
 		logger.Reset()

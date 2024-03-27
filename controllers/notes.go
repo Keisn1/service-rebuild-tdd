@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -153,7 +152,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes, err := nc.NotesStore.GetAllNotes()
-	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes", fmt.Sprintf("%v", ErrDB.Error())) {
+	if handleError2(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes") {
 		return
 	}
 
@@ -162,7 +161,6 @@ func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("here")
 	nc.Logger.Infof("Success: GetAllNotes")
 }
 
@@ -177,7 +175,16 @@ func handleBadRequest(w http.ResponseWriter, err error, logger domain.Logger, ac
 
 func handleError(w http.ResponseWriter, err error, httpErr int, logger domain.Logger, action, msg string) bool {
 	if err != nil {
-		logger.Errorf("%s %s: %w", action, msg, err)
+		logger.Errorf("%s: %s: %w", action, msg, err)
+		http.Error(w, "", httpErr)
+		return true
+	}
+	return false
+}
+
+func handleError2(w http.ResponseWriter, err error, httpErr int, logger domain.Logger, handler string) bool {
+	if err != nil {
+		logger.Errorf("%s: %w", handler, err)
 		http.Error(w, "", httpErr)
 		return true
 	}

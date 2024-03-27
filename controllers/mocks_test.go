@@ -9,6 +9,10 @@ type mockNotesStore struct {
 	mock.Mock
 }
 
+func (mNS *mockNotesStore) Reset() {
+	mNS.ExpectedCalls = []*mock.Call{}
+}
+
 func (mNS *mockNotesStore) GetAllNotes() (domain.Notes, error) {
 	args := mNS.Called()
 	return args.Get(0).(domain.Notes), args.Error(1)
@@ -38,18 +42,20 @@ type mockLogger struct {
 	mock.Mock
 }
 
+func (ml *mockLogger) Reset() {
+	ml.ExpectedCalls = []*mock.Call{}
+}
+
 func (ml *mockLogger) Infof(format string, args ...any) {
-	if len(args) == 0 {
-		ml.Called(format)
-	} else {
-		ml.Called(format, args)
-	}
+	var arguments mock.Arguments
+	arguments = append(arguments, format)
+	arguments = append(arguments, args...)
+	ml.Called(arguments...)
 }
 
 func (ml *mockLogger) Errorf(format string, a ...any) {
-	if len(a) == 0 {
-		ml.Called(format)
-	} else {
-		ml.Called(format, a)
-	}
+	var arguments mock.Arguments
+	arguments = append(arguments, format)
+	arguments = append(arguments, a...)
+	ml.Called(arguments...)
 }
