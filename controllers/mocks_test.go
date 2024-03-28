@@ -9,6 +9,17 @@ type mockNotesStore struct {
 	mock.Mock
 }
 
+type mockNotesStoreParams struct {
+	method          string
+	arguments       []any
+	returnArguments []any
+}
+
+func (mNS *mockNotesStore) Setup(p mockNotesStoreParams) {
+	mNS.Reset()
+	mNS.On(p.method, p.arguments...).Return(p.returnArguments...)
+}
+
 func (mNS *mockNotesStore) Reset() {
 	mNS.Calls = []mock.Call{}
 	mNS.ExpectedCalls = []*mock.Call{}
@@ -42,6 +53,16 @@ func (mNS *mockNotesStore) Delete(userID, noteID int) error {
 
 type mockLogger struct {
 	mock.Mock
+}
+
+type mockLoggingParams struct {
+	method    string
+	arguments []any
+}
+
+func (ml *mockLogger) Setup(lParams mockLoggingParams) {
+	ml.Reset()
+	ml.On(lParams.method, lParams.arguments...).Return(nil)
 }
 
 func (ml *mockLogger) Reset() {
