@@ -106,17 +106,19 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+	pUserID := chi.URLParam(r, "userID")
+
+	userID, err := strconv.Atoi(pUserID)
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNotesByUserID: invalid userID %v", userID)
+		nc.Logger.Errorf("GetNotesByUserID: invalid userID %v", pUserID)
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNotesByUserID(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", userID, ErrDB.Error(), err)
+		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", pUserID, ErrDB.Error(), err)
 		return
 	}
 
@@ -125,28 +127,30 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nc.Logger.Infof("Success: GetNotesByUserID with userID %d", userID)
+	nc.Logger.Infof("Success: GetNotesByUserID with userID %v", pUserID)
 }
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+	pUserID, pNoteID := chi.URLParam(r, "userID"), chi.URLParam(r, "noteID")
+
+	userID, err := strconv.Atoi(pUserID)
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid userID %v", userID)
+		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid userID %v", pUserID)
 		return
 	}
 
-	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
+	noteID, err := strconv.Atoi(pNoteID)
 	if err != nil || noteID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid noteID %v", noteID)
+		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid noteID %v", pNoteID)
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
 		http.Error(w, "", http.StatusNotFound)
-		msg := fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", userID, noteID)
+		msg := fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", pUserID, pNoteID)
 		nc.Logger.Errorf("%s: %w", msg, err)
 		return
 	}
@@ -156,7 +160,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID)
+	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", pUserID, pNoteID)
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
