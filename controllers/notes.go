@@ -93,13 +93,13 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&np)
 	if err != nil {
 		http.Error(w, "", http.StatusBadRequest)
-		slog.Error("Add: invalid body:", err)
+		slog.Error("Add: invalid body:", "error", err)
 		return
 	}
 
 	err = nc.NotesStore.AddNote(userID, np.Note)
 	if err != nil {
-		http.Error(w, "", http.StatusBadRequest)
+		http.Error(w, "", http.StatusConflict)
 		slog.Error(
 			fmt.Sprintf("Add with userID %v and body %v", userID, np),
 			"error", err,
