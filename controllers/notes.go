@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -86,19 +87,16 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 
 	var np domain.NotePost
 	err = json.NewDecoder(r.Body).Decode(&np)
-	if handleBadRequest(w, err, nc.Logger, "ProcessAddNote", "json") {
+	if err != nil {
+		http.Error(w, "", http.StatusBadRequest)
+		slog.Error("Add: invalid body:", err)
 		return
 	}
 
-	// note, ok := body["note"]
-	// if !ok {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	nc.Logger.Errorf("ProcessAddNote invalid body: %w", err)
-	// 	return
-	// }
-
 	err = nc.NotesStore.AddNote(userID, np.Note)
-	if handleError(w, err, http.StatusConflict, nc.Logger, "ProcessAddNote", "DBerror") {
+	if err != nil {
+		http.Error(w, "", http.StatusBadRequest)
+		nc.Logger.Errorf("AddNote: %w", err)
 		return
 	}
 
@@ -161,16 +159,20 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes, err := nc.NotesStore.GetAllNotes()
-	if handleError2(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes") {
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+		slog.Error("GetAllNotes", "error", err)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(notes)
-	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "GetAllNotes", "invalid json") {
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+		slog.Error("GetAllNotes", "error", err)
 		return
 	}
 
-	nc.Logger.Infof("Success: GetAllNotes")
+	slog.Info("Success: GetAllNotes")
 }
 
 func handleBadRequest(w http.ResponseWriter, err error, logger domain.Logger, action, param string) bool {
