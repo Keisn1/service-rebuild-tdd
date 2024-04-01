@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -124,28 +125,35 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nc.Logger.Infof("Success: GetNotesByUserID with userID %v", userID)
+	slog.Info(fmt.Sprintf("Success: GetNotesByUserID with userID %v", userID))
 }
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid userID %v", chi.URLParam(r, "userID"))
+		slog.Error(
+			fmt.Sprintf("GetNoteByUserIDandNoteID: invalid userID %v", chi.URLParam(r, "userID")),
+		)
 		return
 	}
 
 	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
 	if err != nil || noteID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid noteID %v", chi.URLParam(r, "noteID"))
+		slog.Error(
+			fmt.Sprintf("GetNoteByUserIDandNoteID: invalid noteID %v", chi.URLParam(r, "noteID")),
+		)
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
 		http.Error(w, "", http.StatusNotFound)
-		nc.Logger.Errorf("GetNoteByUserIDAndNoteID userID %v and noteID %v: %w", userID, noteID, err)
+		slog.Error(
+			fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", userID, noteID),
+			"error", err,
+		)
 		return
 	}
 
@@ -154,7 +162,9 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID)
+	slog.Info(fmt.Sprintf(
+		"Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID,
+	))
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
