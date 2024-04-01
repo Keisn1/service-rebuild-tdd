@@ -60,22 +60,35 @@ func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
 
 func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if handleBadRequest(w, err, nc.Logger, "Delete", "userID") {
+	if err != nil || userID < 0 {
+		http.Error(w, "", http.StatusBadRequest)
+		slog.Error(
+			fmt.Sprintf("Delete: invalid userID %v", chi.URLParam(r, "userID")),
+		)
 		return
 	}
 
 	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
-	if handleBadRequest(w, err, nc.Logger, "Delete", "noteID") {
+	if err != nil || noteID < 0 {
+		http.Error(w, "", http.StatusBadRequest)
+		slog.Error(
+			fmt.Sprintf("Delete: invalid noteID %v", chi.URLParam(r, "noteID")),
+		)
 		return
 	}
 
 	err = nc.NotesStore.Delete(userID, noteID)
-	if handleError(w, err, http.StatusInternalServerError, nc.Logger, "Delete", "DBerror") {
+	if err != nil {
+		http.Error(w, "", http.StatusNotFound)
+		slog.Error(
+			fmt.Sprintf("Delete: userID %v and noteID %v", userID, noteID),
+			"error", err,
+		)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	nc.Logger.Infof("Success: Delete noteID %v userID %v", noteID, userID)
+	slog.Info(fmt.Sprintf("Success: Delete userID %v noteID %v", userID, noteID))
 }
 
 func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +114,7 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "", http.StatusConflict)
 		slog.Error(
-			fmt.Sprintf("Add with userID %v and body %v", userID, np),
+			fmt.Sprintf("Add: userID %v body %v", userID, np),
 			"error", err,
 		)
 		return
@@ -109,7 +122,7 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusAccepted)
 	slog.Info(
-		fmt.Sprintf("Success: ProcessAddNote with userID %v and note %v note", userID, np),
+		fmt.Sprintf("Success: ProcessAddNote userID %v and note %v", userID, np),
 	)
 }
 
@@ -125,7 +138,7 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		slog.Error(
-			fmt.Sprintf("GetNotesByUserID userID %v", userID),
+			fmt.Sprintf("GetNotesByUserID: userID %v", userID),
 			"error", err,
 		)
 		return
@@ -136,7 +149,7 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info(fmt.Sprintf("Success: GetNotesByUserID with userID %v", userID))
+	slog.Info(fmt.Sprintf("Success: GetNotesByUserID userID %v", userID))
 }
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
@@ -162,7 +175,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		http.Error(w, "", http.StatusNotFound)
 		slog.Error(
-			fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", userID, noteID),
+			fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v and noteID %v", userID, noteID),
 			"error", err,
 		)
 		return
@@ -174,7 +187,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 	}
 
 	slog.Info(fmt.Sprintf(
-		"Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID,
+		"Success: GetNoteByUserIDAndNoteID userID %v and noteID %v", userID, noteID,
 	))
 }
 

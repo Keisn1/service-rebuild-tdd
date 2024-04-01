@@ -418,7 +418,6 @@ func TestAddNote(t *testing.T) {
 				}
 			},
 			wantStatus: http.StatusAccepted,
-			wantBody:   "",
 			wantLogging: func(up urlParams, body domain.NotePost) []string {
 				return []string{
 					"INFO",
@@ -550,6 +549,113 @@ func TestAddNote(t *testing.T) {
 	}
 }
 
+func TestDelete(t *testing.T) {
+	mNotesStore := &mockNotesStore{}
+	mLogger := &mockLogger{}
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	logBuf := &bytes.Buffer{}
+	log.SetOutput(logBuf)
+
+	testCases := []struct {
+		name         string
+		handler      http.HandlerFunc
+		urlParams    urlParams
+		mockNSParams func(urlP urlParams) mockNotesStoreParams
+		wantStatus   int
+		wantBody     string
+		wantLogging  func(urlParams) []string
+		assertions   func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams)
+	}{
+		{
+			name:      "Success Deletion",
+			handler:   notesCtrl.Delete,
+			urlParams: urlParams{userID: "1", noteID: "1"},
+			mockNSParams: func(up urlParams) mockNotesStoreParams {
+				userID, noteID := mustConvUrlParamsToInt(t, up)
+				return mockNotesStoreParams{
+					method:          "Delete",
+					arguments:       []any{userID, noteID},
+					returnArguments: []any{nil},
+				}
+			},
+			wantStatus: http.StatusNoContent,
+			wantLogging: func(up urlParams) []string {
+				return []string{
+					"INFO",
+					fmt.Sprintf("Success: Delete note with userID %v and noteID %v", up.userID, up.noteID),
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:         "Delete invalid userID",
+			handler:      notesCtrl.Delete,
+			urlParams:    urlParams{userID: "-1", noteID: "1"},
+			mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantLogging: func(up urlParams) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("Delete: invalid userID %v", up.userID),
+				}
+			},
+			wantBody: "\n",
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "Delete")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:         "Delete invalid noteID",
+			handler:      notesCtrl.Delete,
+			urlParams:    urlParams{userID: "1", noteID: "-1"},
+			mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantLogging: func(up urlParams) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("Delete: invalid noteID %v", up.noteID),
+				}
+			},
+			wantBody: "\n",
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "Delete")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		logBuf.Reset()
+		mNotesStore.Setup(tc.mockNSParams(tc.urlParams))
+		req := setupRequest(t, "/users/{userID}/notes", tc.urlParams, &bytes.Buffer{})
+		rr := httptest.NewRecorder()
+		tc.handler(rr, req)
+		tc.assertions(
+			t,
+			rr,
+			tc.wantStatus,
+			tc.wantBody,
+			tc.wantLogging(tc.urlParams),
+			tc.mockNSParams(tc.urlParams),
+		)
+	}
+}
 func TestNotes2(t *testing.T) {
 	notes := domain.Notes{
 		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
@@ -561,25 +667,6 @@ func TestNotes2(t *testing.T) {
 	notesStore := NewStubNotesStore(notes)
 	logger := NewStubLogger()
 	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
-
-	t.Run("Delete a Note", func(t *testing.T) {
-		logger.Reset()
-
-		userID, noteID := 1, 2
-		request, err := http.NewRequest(http.MethodDelete, "", nil)
-		assertNoError(t, err)
-		request = WithUrlParams(request, Params{
-			"userID": strconv.Itoa(userID),
-			"noteID": strconv.Itoa(noteID),
-		})
-
-		response := httptest.NewRecorder()
-		notesCtrl.Delete(response, request)
-		wantDeleteNoteCalls := []DeleteCall{{userID: userID, noteID: noteID}}
-		assertStatusCode(t, response.Result().StatusCode, http.StatusNoContent)
-		assertSlicesAnyAreEqual(t, notesStore.deleteNoteCalls, wantDeleteNoteCalls)
-		assertLoggingCalls(t, logger.infofCalls, []string{"Success: Delete noteID 2 userID 1"})
-	})
 
 	// t.Run("Deletion fail", func(t *testing.T) {
 	// 	logger.Reset()

@@ -50,7 +50,8 @@ func (mNS *mockNotesStore) EditNote(userID, noteID int, note string) error {
 }
 
 func (mNS *mockNotesStore) Delete(userID, noteID int) error {
-	return nil
+	args := mNS.Called(userID, noteID)
+	return args.Error(0)
 }
 
 type mockLogger struct {
