@@ -384,6 +384,69 @@ func TestAddNote(t *testing.T) {
 				mLogger.AssertCalled(t, wL.method, wL.arguments...)
 			},
 		},
+		{
+			name:         "AddNote invalid userID",
+			handler:      notesCtrl.Add,
+			urlParams:    urlParams{userID: "bullshit"},
+			body:         domain.NotePost{},
+			mockNSParams: func(up urlParams, body domain.NotePost) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantBody:     "\n",
+			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
+				return mockLoggingParams{
+					method:    "Errorf",
+					arguments: []any{"Add: invalid userID %v", up.userID},
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "AddNote")
+				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+			},
+		},
+		{
+			name:         "AddNote invalid userID",
+			handler:      notesCtrl.Add,
+			urlParams:    urlParams{userID: "-1"},
+			body:         domain.NotePost{},
+			mockNSParams: func(up urlParams, body domain.NotePost) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantBody:     "\n",
+			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
+				return mockLoggingParams{
+					method:    "Errorf",
+					arguments: []any{"Add: invalid userID %v", up.userID},
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "AddNote")
+				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+			},
+		},
+		{
+			name:         "AddNote invalid userID",
+			handler:      notesCtrl.Add,
+			urlParams:    urlParams{userID: "-1"},
+			body:         domain.NotePost{},
+			mockNSParams: func(up urlParams, body domain.NotePost) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantBody:     "\n",
+			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
+				return mockLoggingParams{
+					method:    "Errorf",
+					arguments: []any{"Add: invalid userID %v", up.userID},
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "AddNote")
+				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -414,20 +477,6 @@ func TestNotes2(t *testing.T) {
 	notesStore := NewStubNotesStore(notes)
 	logger := NewStubLogger()
 	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
-
-	t.Run("POST a Note", func(t *testing.T) {
-		logger.Reset()
-		userID, note := 1, "Test note"
-
-		request := newPostRequestWithNoteAndUrlParam(t, note, "userID", fmt.Sprintf("%d", userID))
-		response := httptest.NewRecorder()
-		notesCtrl.Add(response, request)
-
-		wantAddNoteCalls := []AddNoteCall{{userID: userID, note: note}}
-		assertStatusCode(t, response.Result().StatusCode, http.StatusAccepted)
-		assertSlicesAnyAreEqual(t, notesStore.addNoteCalls, wantAddNoteCalls)
-		assertLoggingCalls(t, logger.infofCalls, []string{"Success: ProcessAddNote with userID 1 and note Test note"})
-	})
 
 	t.Run("test invalid json body", func(t *testing.T) {
 		logger.Reset()

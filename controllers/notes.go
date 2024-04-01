@@ -77,10 +77,10 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
-	pUserID := chi.URLParam(r, "userID")
-
-	userID, err := strconv.Atoi(pUserID)
-	if handleBadRequest(w, err, nc.Logger, "ProcessAddNote", "userID") {
+	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+	if err != nil || userID < 0 {
+		http.Error(w, "", http.StatusBadRequest)
+		nc.Logger.Errorf("Add: invalid userID %v", chi.URLParam(r, "userID"))
 		return
 	}
 
