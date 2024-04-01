@@ -82,7 +82,10 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("Add: invalid userID %v", chi.URLParam(r, "userID"))
+		slog.Error(
+			fmt.Sprintf("Add: invalid userID %v", chi.URLParam(r, "userID")),
+			"error", err,
+		)
 		return
 	}
 
@@ -97,26 +100,34 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 	err = nc.NotesStore.AddNote(userID, np.Note)
 	if err != nil {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("AddNote: %w", err)
+		slog.Error(
+			fmt.Sprintf("Add with userID %v and body %v", userID, np),
+			"error", err,
+		)
 		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
-	nc.Logger.Infof("Success: ProcessAddNote with userID %v and note %v note", userID, np)
+	slog.Info(
+		fmt.Sprintf("Success: ProcessAddNote with userID %v and note %v note", userID, np),
+	)
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNotesByUserID: invalid userID %v", chi.URLParam(r, "userID"))
+		slog.Error(fmt.Sprintf("GetNotesByUserID: invalid userID %v", chi.URLParam(r, "userID")))
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNotesByUserID(userID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", userID, ErrDB.Error(), err)
+		http.Error(w, "", http.StatusInternalServerError)
+		slog.Error(
+			fmt.Sprintf("GetNotesByUserID userID %v", userID),
+			"error", err,
+		)
 		return
 	}
 
@@ -197,15 +208,6 @@ func handleBadRequest(w http.ResponseWriter, err error, logger domain.Logger, ac
 func handleError(w http.ResponseWriter, err error, httpErr int, logger domain.Logger, action, msg string) bool {
 	if err != nil {
 		logger.Errorf("%s: %s: %w", action, msg, err)
-		http.Error(w, "", httpErr)
-		return true
-	}
-	return false
-}
-
-func handleError2(w http.ResponseWriter, err error, httpErr int, logger domain.Logger, handler string) bool {
-	if err != nil {
-		logger.Errorf("%s: %w", handler, err)
 		http.Error(w, "", httpErr)
 		return true
 	}

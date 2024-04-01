@@ -295,46 +295,80 @@ func TestGetNotesByUserID(t *testing.T) {
 				}
 			},
 		},
-		// {
-		// 	name:         "GetNotesByUserID invalid userID: not an int",
-		// 	handler:      notesCtrl.GetNotesByUserID,
-		// 	urlParams:    urlParams{userID: "bullshit"},
-		// 	mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
-		// 	wantStatus:   http.StatusBadRequest,
-		// 	wantLogging: func(up urlParams) mockLoggingParams {
-		// 		return mockLoggingParams{
-		// 			method:    "Errorf",
-		// 			arguments: []any{"GetNotesByUserID: invalid userID %v", up.userID},
-		// 		}
-		// 	},
-		// 	wantBody: func(up urlParams) string { return "\n" },
-		// 	assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
-		// 		assert.Equal(t, wantStatus, rr.Code)
-		// 		assert.Equal(t, wantBody, rr.Body.String())
-		// 		mNotesStore.AssertNotCalled(t, "GetNotesByUserID")
-		// 		mLogger.AssertCalled(t, wL.method, wL.arguments...)
-		// 	},
-		// },
-		// {
-		// 	name:         "GetNotesByUserID invalid userID: negative number",
-		// 	handler:      notesCtrl.GetNotesByUserID,
-		// 	urlParams:    urlParams{userID: "-1"},
-		// 	mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
-		// 	wantStatus:   http.StatusBadRequest,
-		// 	wantLogging: func(up urlParams) mockLoggingParams {
-		// 		return mockLoggingParams{
-		// 			method:    "Errorf",
-		// 			arguments: []any{"GetNotesByUserID: invalid userID %v", up.userID},
-		// 		}
-		// 	},
-		// 	wantBody: func(up urlParams) string { return "\n" },
-		// 	assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
-		// 		assert.Equal(t, wantStatus, rr.Code)
-		// 		assert.Equal(t, wantBody, rr.Body.String())
-		// 		mNotesStore.AssertNotCalled(t, "GetNotesByUserID")
-		// 		mLogger.AssertCalled(t, wL.method, wL.arguments...)
-		// 	},
-		// },
+		{
+			name:         "GetNotesByUserID invalid userID: not an int",
+			handler:      notesCtrl.GetNotesByUserID,
+			urlParams:    urlParams{userID: "bullshit"},
+			mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantLogging: func(up urlParams) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("GetNotesByUserID: invalid userID %v", up.userID),
+				}
+			},
+			wantBody: func(up urlParams) string { return "\n" },
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "GetNotesByUserID")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:         "GetNotesByUserID invalid userID: negative number",
+			handler:      notesCtrl.GetNotesByUserID,
+			urlParams:    urlParams{userID: "-1"},
+			mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus:   http.StatusBadRequest,
+			wantLogging: func(up urlParams) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("GetNotesByUserID: invalid userID %v", up.userID),
+				}
+			},
+			wantBody: func(up urlParams) string { return "\n" },
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "GetNotesByUserID")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:      "GetNotesByUserID DBError",
+			handler:   notesCtrl.GetNotesByUserID,
+			urlParams: urlParams{userID: "1"},
+			mockNSParams: func(up urlParams) mockNotesStoreParams {
+				userID, _ := mustConvUrlParamsToInt(t, up)
+				return mockNotesStoreParams{
+					method:          "GetNotesByUserID",
+					arguments:       []any{userID},
+					returnArguments: []any{domain.Notes{}, errors.New("error notesStore.GetNotesByUserID")},
+				}
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   func(up urlParams) string { return "\n" },
+			wantLogging: func(up urlParams) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("GetNotesByUserID userID %v", up.userID),
+					"error notesStore.GetNotesByUserID",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -356,6 +390,8 @@ func TestAddNote(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
 	mLogger := &mockLogger{}
 	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	logBuf := &bytes.Buffer{}
+	log.SetOutput(logBuf)
 
 	testCases := []struct {
 		name         string
@@ -365,8 +401,8 @@ func TestAddNote(t *testing.T) {
 		mockNSParams func(urlP urlParams, body domain.NotePost) mockNotesStoreParams
 		wantStatus   int
 		wantBody     string
-		wantLogging  func(urlParams, domain.NotePost) mockLoggingParams
-		assertions   func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams)
+		wantLogging  func(urlParams, domain.NotePost) []string
+		assertions   func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams)
 	}{
 		{
 			name:      "Add Success",
@@ -381,18 +417,19 @@ func TestAddNote(t *testing.T) {
 			},
 			wantStatus: http.StatusAccepted,
 			wantBody:   "",
-			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
-				userID, _ := mustConvUrlParamsToInt(t, up)
-				return mockLoggingParams{
-					method:    "Infof",
-					arguments: []any{"Success: ProcessAddNote with userID %v and note %v note", userID, body},
+			wantLogging: func(up urlParams, body domain.NotePost) []string {
+				return []string{
+					"INFO",
+					fmt.Sprintf("Success: ProcessAddNote with userID %v and note %v note", up.userID, body),
 				}
 			},
-			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, wantBody, rr.Body.String())
 				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
-				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
 			},
 		},
 		{
@@ -403,38 +440,42 @@ func TestAddNote(t *testing.T) {
 			mockNSParams: func(up urlParams, body domain.NotePost) mockNotesStoreParams { return mockNotesStoreParams{} },
 			wantStatus:   http.StatusBadRequest,
 			wantBody:     "\n",
-			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
-				return mockLoggingParams{
-					method:    "Errorf",
-					arguments: []any{"Add: invalid userID %v", up.userID},
+			wantLogging: func(up urlParams, body domain.NotePost) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("Add: invalid userID %v", up.userID),
 				}
 			},
-			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, wantBody, rr.Body.String())
 				mNotesStore.AssertNotCalled(t, "AddNote")
-				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
 			},
 		},
 		{
-			name:         "AddNote invalid userID",
+			name:         "AddNote invalid userID negative number",
 			handler:      notesCtrl.Add,
 			urlParams:    urlParams{userID: "-1"},
 			body:         domain.NotePost{},
 			mockNSParams: func(up urlParams, body domain.NotePost) mockNotesStoreParams { return mockNotesStoreParams{} },
 			wantStatus:   http.StatusBadRequest,
 			wantBody:     "\n",
-			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
-				return mockLoggingParams{
-					method:    "Errorf",
-					arguments: []any{"Add: invalid userID %v", up.userID},
+			wantLogging: func(up urlParams, body domain.NotePost) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("Add: invalid userID %v", up.userID),
 				}
 			},
-			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, wantBody, rr.Body.String())
 				mNotesStore.AssertNotCalled(t, "AddNote")
-				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
 			},
 		},
 		{
@@ -452,24 +493,27 @@ func TestAddNote(t *testing.T) {
 			},
 			wantStatus: http.StatusBadRequest,
 			wantBody:   "\n",
-			wantLogging: func(up urlParams, body domain.NotePost) mockLoggingParams {
-				return mockLoggingParams{
-					method:    "Errorf",
-					arguments: []any{"AddNote: %w", errors.New("error notesStore.AddNote")},
+			wantLogging: func(up urlParams, body domain.NotePost) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("Add with userID %v and body %v", up.userID, body),
+					"error notesStore.AddNote",
 				}
 			},
-			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, wantBody, rr.Body.String())
 				mNotesStore.AssertNotCalled(t, "AddNote")
-				mLogger.AssertCalled(t, wL.method, wL.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
 			},
 		},
 	}
 
 	for _, tc := range testCases {
+		logBuf.Reset()
 		mNotesStore.Setup(tc.mockNSParams(tc.urlParams, tc.body))
-		mLogger.Setup(tc.wantLogging(tc.urlParams, tc.body))
 		req := setupRequest(t, "/users/{userID}/notes", tc.urlParams, mustEncode(t, tc.body))
 		rr := httptest.NewRecorder()
 		tc.handler(rr, req)
@@ -483,8 +527,6 @@ func TestAddNote(t *testing.T) {
 		)
 	}
 
-	logBuf := &bytes.Buffer{}
-	log.SetOutput(logBuf)
 	specialCases := []struct {
 		name         string
 		handler      http.HandlerFunc
