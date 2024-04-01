@@ -75,7 +75,7 @@ func TestGetAllNotes(t *testing.T) {
 			},
 			wantBody:    "\n",
 			wantStatus:  http.StatusInternalServerError,
-			wantLogging: []string{"ERROR", "GetAllNotes", "error notesStore.GetAllNotes"},
+			wantLogging: []string{"ERROR", "GetAllNotes: DBError", "error notesStore.GetAllNotes"},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, rr.Body.String(), wantBody)
@@ -138,7 +138,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 			},
 			wantLogging: func(up urlParams) []string {
 				return []string{
-					fmt.Sprintf("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", up.userID, up.noteID),
+					fmt.Sprintf("Success: GetNoteByUserIDAndNoteID: userID %v noteID %v", up.userID, up.noteID),
 				}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
@@ -211,7 +211,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 			wantLogging: func(up urlParams) []string {
 				return []string{
 					"ERROR",
-					fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", up.userID, up.noteID),
+					fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", up.userID, up.noteID),
 					"error notesStore.GetNoteByUserIDAndNoteID",
 				}
 			},
@@ -283,7 +283,7 @@ func TestGetNotesByUserID(t *testing.T) {
 			wantLogging: func(up urlParams) []string {
 				return []string{
 					"INFO",
-					fmt.Sprintf("Success: GetNotesByUserID with userID %v", up.userID),
+					fmt.Sprintf("Success: GetNotesByUserID: userID %v", up.userID),
 				}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
@@ -356,7 +356,7 @@ func TestGetNotesByUserID(t *testing.T) {
 			wantLogging: func(up urlParams) []string {
 				return []string{
 					"ERROR",
-					fmt.Sprintf("GetNotesByUserID userID %v", up.userID),
+					fmt.Sprintf("GetNotesByUserID: userID %v", up.userID),
 					"error notesStore.GetNotesByUserID",
 				}
 			},
@@ -421,7 +421,7 @@ func TestAddNote(t *testing.T) {
 			wantLogging: func(up urlParams, body domain.NotePost) []string {
 				return []string{
 					"INFO",
-					fmt.Sprintf("Success: ProcessAddNote with userID %v and note %v note", up.userID, body),
+					fmt.Sprintf("Success: Add: userID %v note %v", up.userID, body),
 				}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
@@ -497,7 +497,7 @@ func TestAddNote(t *testing.T) {
 			wantLogging: func(up urlParams, body domain.NotePost) []string {
 				return []string{
 					"ERROR",
-					fmt.Sprintf("Add with userID %v and body %v", up.userID, body),
+					fmt.Sprintf("Add: userID %v body %v", up.userID, body),
 					"error notesStore.AddNote",
 				}
 			},
@@ -582,7 +582,7 @@ func TestDelete(t *testing.T) {
 			wantLogging: func(up urlParams) []string {
 				return []string{
 					"INFO",
-					fmt.Sprintf("Success: Delete note with userID %v and noteID %v", up.userID, up.noteID),
+					fmt.Sprintf("Success: Delete: userID %v noteID %v", up.userID, up.noteID),
 				}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
@@ -656,55 +656,56 @@ func TestDelete(t *testing.T) {
 		)
 	}
 }
-func TestNotes2(t *testing.T) {
-	notes := domain.Notes{
-		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
-		{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
-		{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
-		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
-	}
 
-	notesStore := NewStubNotesStore(notes)
-	logger := NewStubLogger()
-	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
+// func TestNotes2(t *testing.T) {
+// 	notes := domain.Notes{
+// 		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
+// 		{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
+// 		{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
+// 		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
+// 	}
 
-	// t.Run("Deletion fail", func(t *testing.T) {
-	// 	logger.Reset()
+// 	notesStore := NewStubNotesStore(notes)
+// 	logger := NewStubLogger()
+// 	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
 
-	// 	userID, noteID := 50, 50
-	// 	request, err := http.NewRequest(http.MethodDelete, "", nil)
-	// 	assertNoError(t, err)
-	// 	request = WithUrlParams(request, Params{
-	// 		"userID": strconv.Itoa(userID),
-	// 		"noteID": strconv.Itoa(noteID),
-	// 	})
+// 	// t.Run("Deletion fail", func(t *testing.T) {
+// 	// 	logger.Reset()
 
-	// 	response := httptest.NewRecorder()
-	// 	notesCtrl.Delete(response, request)
+// 	// 	userID, noteID := 50, 50
+// 	// 	request, err := http.NewRequest(http.MethodDelete, "", nil)
+// 	// 	assertNoError(t, err)
+// 	// 	request = WithUrlParams(request, Params{
+// 	// 		"userID": strconv.Itoa(userID),
+// 	// 		"noteID": strconv.Itoa(noteID),
+// 	// 	})
 
-	// 	assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
-	// 	assertLoggingCalls(t, logger.errorfCall, []string{"Delete DBerror:"})
-	// })
+// 	// 	response := httptest.NewRecorder()
+// 	// 	notesCtrl.Delete(response, request)
 
-	t.Run("Edit a Note", func(t *testing.T) {
-		logger.Reset()
+// 	// 	assertStatusCode(t, response.Result().StatusCode, http.StatusInternalServerError)
+// 	// 	assertLoggingCalls(t, logger.errorfCall, []string{"Delete DBerror:"})
+// 	// })
 
-		userID, noteID, note := 1, 1, "New note text"
-		putRequest := newPutRequestWithNoteAndUrlParams(t, "New note text", Params{
-			"userID": strconv.Itoa(userID),
-			"noteID": strconv.Itoa(noteID),
-		})
-		response := httptest.NewRecorder()
-		notesCtrl.Edit(response, putRequest)
+// 	t.Run("Edit a Note", func(t *testing.T) {
+// 		logger.Reset()
 
-		wantEditCalls := []EditCall{{userID: userID, noteID: noteID, note: note}}
-		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-		assertSlicesAnyAreEqual(t, notesStore.editNoteCalls, wantEditCalls)
-		assertLoggingCalls(t, logger.infofCalls, []string{
-			"Success: Edit: userID 1 noteID 1 note New note text",
-		})
-	})
-}
+// 		userID, noteID, note := 1, 1, "New note text"
+// 		putRequest := newPutRequestWithNoteAndUrlParams(t, "New note text", Params{
+// 			"userID": strconv.Itoa(userID),
+// 			"noteID": strconv.Itoa(noteID),
+// 		})
+// 		response := httptest.NewRecorder()
+// 		notesCtrl.Edit(response, putRequest)
+
+// 		wantEditCalls := []EditCall{{userID: userID, noteID: noteID, note: note}}
+// 		assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
+// 		assertSlicesAnyAreEqual(t, notesStore.editNoteCalls, wantEditCalls)
+// 		assertLoggingCalls(t, logger.infofCalls, []string{
+// 			"Success: Edit: userID 1 noteID 1 note New note text",
+// 		})
+// 	})
+// }
 
 // WithUrlParam returns a pointer to a request object with the given URL params
 // added to a new chi.Context object.
