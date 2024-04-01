@@ -107,7 +107,9 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if handleBadRequest(w, err, nc.Logger, "GetNotesByUserID", "userID") {
+	if err != nil || userID < 0 {
+		http.Error(w, "", http.StatusBadRequest)
+		nc.Logger.Errorf("GetNotesByUserID: invalid userID %v", userID)
 		return
 	}
 

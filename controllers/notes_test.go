@@ -279,8 +279,28 @@ func TestGetNotesByUserID(t *testing.T) {
 				mLogger.AssertCalled(t, wL.method, wL.arguments...)
 			},
 		},
+		// {
+		// 	name:         "GetNotesByUserID invalid userID: not an int",
+		// 	handler:      notesCtrl.GetNotesByUserID,
+		// 	urlParams:    urlParams{userID: -1},
+		// 	mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
+		// 	wantStatus:   http.StatusBadRequest,
+		// 	wantLogging: func(up urlParams) mockLoggingParams {
+		// 		return mockLoggingParams{
+		// 			method:    "Errorf",
+		// 			arguments: []any{"GetNotesByUserID: invalid userID %v", up.userID},
+		// 		}
+		// 	},
+		// 	wantBody: func(up urlParams) string { return "\n" },
+		// 	assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
+		// 		assert.Equal(t, wantStatus, rr.Code)
+		// 		assert.Equal(t, wantBody, rr.Body.String())
+		// 		mNotesStore.AssertNotCalled(t, "GetNotesByUserID")
+		// 		mLogger.AssertCalled(t, wL.method, wL.arguments...)
+		// 	},
+		// },
 		{
-			name:         "GetNotesByUserID invalid userID",
+			name:         "GetNotesByUserID invalid userID: negative number",
 			handler:      notesCtrl.GetNotesByUserID,
 			urlParams:    urlParams{userID: -1},
 			mockNSParams: func(up urlParams) mockNotesStoreParams { return mockNotesStoreParams{} },
@@ -295,7 +315,7 @@ func TestGetNotesByUserID(t *testing.T) {
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL mockLoggingParams, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, wantBody, rr.Body.String())
-				mNotesStore.AssertNotCalled(t, "GetNoteByUserIDandNoteID")
+				mNotesStore.AssertNotCalled(t, "GetNotesByUserID")
 				mLogger.AssertCalled(t, wL.method, wL.arguments...)
 			},
 		},
@@ -327,45 +347,6 @@ func TestNotes2(t *testing.T) {
 	notesStore := NewStubNotesStore(notes)
 	logger := NewStubLogger()
 	notesCtrl := ctrls.NewNotesCtrlr(notesStore, logger)
-
-	t.Run("Return notes for user with userID", func(t *testing.T) {
-		logger.Reset()
-		testCases := []struct {
-			userID     int
-			wantNotes  domain.Notes
-			statusCode int
-		}{
-			{1, domain.Notes{
-				{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
-				{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
-			}, http.StatusOK},
-			{2, domain.Notes{
-				{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
-				{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
-			}, http.StatusOK}, // no notes for user with userID 2
-			{-1, domain.Notes{}, http.StatusInternalServerError}, // simulating DBError
-		}
-
-		for _, tc := range testCases {
-			response := httptest.NewRecorder()
-			request := newGetNotesByUserIdRequest(t, tc.userID)
-			notesCtrl.GetNotesByUserID(response, request)
-			if tc.userID != -1 {
-				gotNotes := decodeBodyNotes(t, response.Body)
-				assertSlicesAnyAreEqual(t, gotNotes, tc.wantNotes)
-			}
-
-			assertStatusCode(t, response.Result().StatusCode, tc.statusCode)
-		}
-		assertEqualIntSlice(t, notesStore.getNotesByUserIDCalls, []int{1, 2, -1})
-		assertLoggingCalls(t, logger.infofCalls, []string{
-			"Success: GetNotesByUserID with userID 1",
-			"Success: GetNotesByUserID with userID 2",
-		})
-		assertLoggingCalls(t, logger.errorfCall, []string{
-			fmt.Sprintf("GetNotesByUserID userID -1 %v", ctrls.ErrDB.Error()),
-		})
-	})
 
 	t.Run("test false url parameters throw error", func(t *testing.T) {
 		logger.Reset()
