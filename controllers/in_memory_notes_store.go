@@ -64,6 +64,7 @@ func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (domai
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
+	fmt.Println(i.notes)
 	var userNotes domain.Notes
 	for _, note := range i.notes {
 		if note.UserID == userID && note.NoteID == noteID {

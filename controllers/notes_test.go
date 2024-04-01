@@ -7,9 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"fmt"
@@ -29,8 +27,7 @@ type urlParams struct {
 
 func TestGetAllNotes(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	mLogger := &mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -90,7 +87,7 @@ func TestGetAllNotes(t *testing.T) {
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesStore.Setup(tc.mockNSParams)
-		req := setupRequest(t, "/users/notes", urlParams{}, &bytes.Buffer{})
+		req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
 		rr := httptest.NewRecorder()
 		notesCtrl.GetAllNotes(rr, req)
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging, tc.mockNSParams)
@@ -99,8 +96,7 @@ func TestGetAllNotes(t *testing.T) {
 
 func TestGetNoteByUserIDandNoteID(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	mLogger := &mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -229,7 +225,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesStore.Setup(tc.mockNSParams(tc.urlParams))
-		req := setupRequest(t, "/users/{userID}/notes/{noteID}", tc.urlParams, &bytes.Buffer{})
+		req := setupRequest(t, "GET", "/users/{userID}/notes/{noteID}", tc.urlParams, &bytes.Buffer{})
 		rr := httptest.NewRecorder()
 		tc.handler(rr, req)
 		tc.assertions(t,
@@ -243,8 +239,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 
 func TestGetNotesByUserID(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	mLogger := &mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -374,7 +369,7 @@ func TestGetNotesByUserID(t *testing.T) {
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesStore.Setup(tc.mockNSParams(tc.urlParams))
-		req := setupRequest(t, "/users/{userID}/notes", tc.urlParams, &bytes.Buffer{})
+		req := setupRequest(t, "GET", "/users/{userID}/notes", tc.urlParams, &bytes.Buffer{})
 		rr := httptest.NewRecorder()
 		tc.handler(rr, req)
 		tc.assertions(t,
@@ -388,8 +383,7 @@ func TestGetNotesByUserID(t *testing.T) {
 
 func TestAddNote(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	mLogger := &mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -535,7 +529,7 @@ func TestAddNote(t *testing.T) {
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesStore.Setup(tc.mockNSParams(tc.urlParams, tc.body))
-		req := setupRequest(t, "/users/{userID}/notes", tc.urlParams, tc.reqBody(tc.body))
+		req := setupRequest(t, "POST", "/users/{userID}/notes", tc.urlParams, tc.reqBody(tc.body))
 		rr := httptest.NewRecorder()
 		tc.handler(rr, req)
 		tc.assertions(
@@ -551,8 +545,7 @@ func TestAddNote(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	mLogger := &mockLogger{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore, mLogger)
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -643,7 +636,7 @@ func TestDelete(t *testing.T) {
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesStore.Setup(tc.mockNSParams(tc.urlParams))
-		req := setupRequest(t, "/users/{userID}/notes", tc.urlParams, &bytes.Buffer{})
+		req := setupRequest(t, "DELETE", "/users/{userID}/notes", tc.urlParams, &bytes.Buffer{})
 		rr := httptest.NewRecorder()
 		tc.handler(rr, req)
 		tc.assertions(
@@ -825,51 +818,6 @@ func assertStatusCode(t testing.TB, got, want int) {
 	}
 }
 
-func assertSlicesAnyAreEqual[T any](t testing.TB, gotSlice, wantSlice []T) {
-	t.Helper()
-	assertSlicesSameLength(t, gotSlice, wantSlice)
-	for _, want := range wantSlice {
-		found := false
-		for _, got := range gotSlice {
-			if reflect.DeepEqual(got, want) {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("want %v not found in gotSlice %v", want, gotSlice)
-		}
-	}
-}
-
-func assertLoggingCalls(t testing.TB, gotCalls, wantCalls []string) {
-	t.Helper()
-	for _, want := range wantCalls {
-		found := false
-		for _, got := range gotCalls {
-			if strings.HasPrefix(got, want) {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("want %v - wasn't found in gotCalls %v", want, gotCalls)
-		}
-	}
-}
-
-func assertGetAllNotesGotCalled(t testing.TB, allNotesGotCalled bool) {
-	t.Helper()
-	if !allNotesGotCalled {
-		t.Error("notesStore.AllNotes did not get called")
-	}
-}
-
-func assertEqualIntSlice(t testing.TB, got, want []int) {
-	t.Helper()
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf(`got = %v; want %v`, got, want)
-	}
-}
-
 func assertNoError(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
@@ -885,9 +833,9 @@ func mustEncode(t *testing.T, a any) *bytes.Buffer {
 	return buf
 }
 
-func setupRequest(t *testing.T, target string, up urlParams, body *bytes.Buffer) *http.Request {
+func setupRequest(t *testing.T, method, target string, up urlParams, body *bytes.Buffer) *http.Request {
 	t.Helper()
-	req := httptest.NewRequest("GET", target, body)
+	req := httptest.NewRequest(method, target, body)
 	return WithUrlParams(req, Params{
 		"userID": up.userID,
 		"noteID": up.noteID,

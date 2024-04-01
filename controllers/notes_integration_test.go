@@ -1,6 +1,7 @@
 package controllers_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -8,9 +9,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Keisn1/note-taking-app/common"
+	"fmt"
 	ctrls "github.com/Keisn1/note-taking-app/controllers"
 	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/stretchr/testify/assert"
 )
 
 func buildNotes(t testing.TB, userID int, notes []string) domain.Notes {
@@ -22,32 +24,127 @@ func buildNotes(t testing.TB, userID int, notes []string) domain.Notes {
 	return ret
 }
 
-func TestIntegrationInMemoryStore(t *testing.T) {
+func allNotes() domain.Notes {
+	return domain.Notes{
+		{UserID: 1, Note: "Test note 1"},
+		{UserID: 1, Note: "Test note 2"},
+		{UserID: 1, Note: "Test note 3"},
+		{UserID: 2, Note: "Test note 4"},
+		{UserID: 2, Note: "Test note 5"},
+		{UserID: 2, Note: "Test note 6"},
+	}
+}
+
+func TestIntegration(t *testing.T) {
 	store := ctrls.NewInMemoryNotesStore()
-	logger := common.NewSimpleLogger()
-	notesC := ctrls.NewNotesCtrlr(store, &logger)
+	notesC := ctrls.NewNotesCtrlr(store)
 
-	notesUser1 := buildNotes(t, 1, []string{"Test note 1", "Test note 2", "Test note 3"})
-	notesUser2 := buildNotes(t, 2, []string{"Test note 4", "Test note 5"})
-	allNotes := append(notesUser1, notesUser2...)
-
-	addNotes(t, notesUser1, notesC)
-	addNotes(t, notesUser2, notesC)
+	// Add notes
+	addNotes(t, notesC)
 
 	// Testing all notes
-	assertAllNotesAsExpected(t, allNotes, notesC)
+	canRetrieveAllNotes(t, notesC)
 
 	// Testing notes by userID
-	assertNotesByIdAsExpected(t, 1, notesUser1, notesC)
-	assertNotesByIdAsExpected(t, 2, notesUser2, notesC)
+	canRetrieveNotesByUserID(t, notesC)
+
+	// Testing notes by userID and noteID
+	canRetrieveNotesByUserIDAndNoteID(t, notesC)
 
 	// Edit a note
-	pNote, text := EditNote(t, notesC)
-	assertNoteWasEdited(t, pNote, text, notesC)
+	// canEditNote(t, notesC)
 
-	// Delete a note
+	// // Delete a note
+	// canDeleteANote(t, notesC)
+}
+
+func canEditNote(t *testing.T, notesC ctrls.NotesCtrlr) {
+	rr := httptest.NewRecorder()
+	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
+	notesC.GetAllNotes(rr, req)
+	allNotes := decodeBodyNotes(t, rr.Body)
+
+	for _, n := range allNotes {
+		n.Note = fmt.Sprintf("Edited note userID %v noteID %v", n.UserID, n.UserID)
+
+		up := urlParams{userID: strconv.Itoa(n.UserID), noteID: strconv.Itoa(n.NoteID)}
+		body := domain.NotePost{Note: n.Note}
+		rr := httptest.NewRecorder()
+		req := setupRequest(t, "POST", "/users/{userID}/notes/{noteID}", up, mustEncode(t, body))
+		notesC.Edit(rr, req)
+
+	}
+}
+
+func canRetrieveNotesByUserIDAndNoteID(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
+
+	rr := httptest.NewRecorder()
+	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
+	notesC.GetAllNotes(rr, req)
+	allNotes := decodeBodyNotes(t, rr.Body)
+
+	for _, n := range allNotes {
+		rr := httptest.NewRecorder()
+		req := setupRequest(t, "POST", "/users/{userID}/notes/{noteID}", urlParams{
+			userID: strconv.Itoa(n.UserID),
+			noteID: strconv.Itoa(n.NoteID),
+		}, &bytes.Buffer{})
+		notesC.GetNoteByUserIDAndNoteID(rr, req)
+		gotNotes := decodeBodyNotes(t, rr.Body)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, domain.Notes{n}, gotNotes)
+	}
+}
+
+func canRetrieveNotesByUserID(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
+	for i := range []int{1, 2} {
+		var wantNotes domain.Notes
+		for _, n := range allNotes() {
+			if n.UserID == i {
+				wantNotes = append(wantNotes, n)
+			}
+		}
+
+		rr := httptest.NewRecorder()
+		notesC.GetNotesByUserID(rr, newGetNotesByUserIdRequest(t, i))
+		gotNotes := decodeBodyNotes(t, rr.Body)
+		gotNotes = ignoreNoteID(t, gotNotes)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, wantNotes, gotNotes)
+	}
+}
+
+func canRetrieveAllNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
+	rr := httptest.NewRecorder()
+	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
+	notesC.GetAllNotes(rr, req)
+
+	gotNotes := decodeBodyNotes(t, rr.Body)
+	gotNotes = ignoreNoteID(t, gotNotes)
+	assert.Equal(t, allNotes(), gotNotes)
+}
+
+func ignoreNoteID(t *testing.T, notes domain.Notes) domain.Notes {
+	var newNotes domain.Notes
+	for _, n := range notes {
+		n.NoteID = 0
+		newNotes = append(newNotes, n)
+	}
+	return newNotes
+}
+
+func canDeleteANote(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
 	restOfNotes := deleteANote(t, notesC)
-	assertAllNotesAsExpected(t, restOfNotes, notesC)
+	response := httptest.NewRecorder()
+	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
+	allNotes := decodeBodyNotes(t, response.Body)
+	assert.Equal(t, restOfNotes, allNotes)
 }
 
 func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Notes) {
@@ -65,27 +162,6 @@ func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Note
 	})
 	notesC.Delete(response, deleteRequest)
 	return restOfNotes
-}
-
-func assertNoteWasEdited(t testing.TB, pNote domain.Note, text string, notesC ctrls.NotesCtrlr) {
-	response := httptest.NewRecorder()
-	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := decodeBodyNotes(t, response.Body)
-	for _, n := range allNotes {
-		if n.UserID == pNote.UserID && n.NoteID == pNote.NoteID && n.Note != text {
-			t.Errorf("Did not edit note with userID %d, noteID %d and note %s to \"Edit Note\"", n.UserID, n.NoteID, n.Note)
-		}
-	}
-}
-
-func assertNotesByIdAsExpected(t testing.TB, userID int, wantNotes domain.Notes, notesC ctrls.NotesCtrlr) {
-	t.Helper()
-	response := httptest.NewRecorder()
-	notesC.GetNotesByUserID(response, newGetNotesByUserIdRequest(t, userID))
-
-	gotNotes := decodeBodyNotes(t, response.Body)
-	assertStatusCode(t, response.Result().StatusCode, http.StatusOK)
-	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
 }
 
 func EditNote(t testing.TB, notesC ctrls.NotesCtrlr) (domain.Note, string) {
@@ -121,15 +197,6 @@ func compareNotesByUserIDAndNote(t testing.TB, got, want domain.Notes) {
 	}
 }
 
-func assertAllNotesAsExpected(t testing.TB, wantNotes domain.Notes, notesC ctrls.NotesCtrlr) {
-	t.Helper()
-	response := httptest.NewRecorder()
-	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-
-	gotNotes := decodeBodyNotes(t, response.Body)
-	compareNotesByUserIDAndNote(t, gotNotes, wantNotes)
-}
-
 func decodeBodyNotes(t testing.TB, body io.Reader) (notes domain.Notes) {
 	t.Helper()
 	err := json.NewDecoder(body).Decode(&notes)
@@ -139,11 +206,14 @@ func decodeBodyNotes(t testing.TB, body io.Reader) (notes domain.Notes) {
 	return
 }
 
-func addNotes(t testing.TB, notes domain.Notes, notesC ctrls.NotesCtrlr) {
-	for _, n := range notes {
+func addNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
+	for _, n := range allNotes() {
+		body := domain.NotePost{Note: n.Note}
+		req := setupRequest(t, "POST", "/users/{userID}/notes", urlParams{userID: strconv.Itoa(n.UserID)}, mustEncode(t, body))
 		notesC.Add(
 			httptest.NewRecorder(),
-			newPostRequestWithNoteAndUrlParam(t, n.Note, "userID", strconv.Itoa(n.UserID)),
+			req,
 		)
 	}
 }

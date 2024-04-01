@@ -53,36 +53,3 @@ func (mNS *mockNotesStore) Delete(userID, noteID int) error {
 	args := mNS.Called(userID, noteID)
 	return args.Error(0)
 }
-
-type mockLogger struct {
-	mock.Mock
-}
-
-type mockLoggingParams struct {
-	method    string
-	arguments []any
-}
-
-func (ml *mockLogger) Setup(lParams mockLoggingParams) {
-	ml.Reset()
-	ml.On(lParams.method, lParams.arguments...).Return(nil)
-}
-
-func (ml *mockLogger) Reset() {
-	ml.ExpectedCalls = []*mock.Call{}
-	ml.Calls = []mock.Call{}
-}
-
-func (ml *mockLogger) Infof(format string, args ...any) {
-	var arguments mock.Arguments
-	arguments = append(arguments, format)
-	arguments = append(arguments, args...)
-	ml.Called(arguments...)
-}
-
-func (ml *mockLogger) Errorf(format string, a ...any) {
-	var arguments mock.Arguments
-	arguments = append(arguments, format)
-	arguments = append(arguments, a...)
-	ml.Called(arguments...)
-}

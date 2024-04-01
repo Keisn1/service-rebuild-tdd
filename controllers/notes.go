@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,16 +13,11 @@ import (
 
 type NotesCtrlr struct {
 	NotesStore domain.NotesStore
-	Logger     domain.Logger
 }
 
-func NewNotesCtrlr(store domain.NotesStore, logger domain.Logger) NotesCtrlr {
-	return NotesCtrlr{NotesStore: store, Logger: logger}
+func NewNotesCtrlr(store domain.NotesStore) NotesCtrlr {
+	return NotesCtrlr{NotesStore: store}
 }
-
-var (
-	ErrDB = errors.New("ErrDB")
-)
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
