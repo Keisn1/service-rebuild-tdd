@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -78,47 +77,47 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
+	pUserID := chi.URLParam(r, "userID")
+
+	userID, err := strconv.Atoi(pUserID)
 	if handleBadRequest(w, err, nc.Logger, "ProcessAddNote", "userID") {
 		return
 	}
 
-	var body map[string]string
-	err = json.NewDecoder(r.Body).Decode(&body)
+	var np domain.NotePost
+	err = json.NewDecoder(r.Body).Decode(&np)
 	if handleBadRequest(w, err, nc.Logger, "ProcessAddNote", "json") {
 		return
 	}
 
-	note, ok := body["note"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		nc.Logger.Errorf("ProcessAddNote invalid body: %w", err)
-		return
-	}
+	// note, ok := body["note"]
+	// if !ok {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	nc.Logger.Errorf("ProcessAddNote invalid body: %w", err)
+	// 	return
+	// }
 
-	err = nc.NotesStore.AddNote(userID, note)
+	err = nc.NotesStore.AddNote(userID, np.Note)
 	if handleError(w, err, http.StatusConflict, nc.Logger, "ProcessAddNote", "DBerror") {
 		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
-	nc.Logger.Infof("Success: ProcessAddNote with userID %d and note %v", userID, note)
+	nc.Logger.Infof("Success: ProcessAddNote with userID %v and note %v note", userID, np)
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
-	pUserID := chi.URLParam(r, "userID")
-
-	userID, err := strconv.Atoi(pUserID)
+	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNotesByUserID: invalid userID %v", pUserID)
+		nc.Logger.Errorf("GetNotesByUserID: invalid userID %v", chi.URLParam(r, "userID"))
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNotesByUserID(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", pUserID, ErrDB.Error(), err)
+		nc.Logger.Errorf("GetNotesByUserID userID %v %v: %w", userID, ErrDB.Error(), err)
 		return
 	}
 
@@ -127,31 +126,28 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nc.Logger.Infof("Success: GetNotesByUserID with userID %v", pUserID)
+	nc.Logger.Infof("Success: GetNotesByUserID with userID %v", userID)
 }
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
-	pUserID, pNoteID := chi.URLParam(r, "userID"), chi.URLParam(r, "noteID")
-
-	userID, err := strconv.Atoi(pUserID)
+	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil || userID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid userID %v", pUserID)
+		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid userID %v", chi.URLParam(r, "userID"))
 		return
 	}
 
-	noteID, err := strconv.Atoi(pNoteID)
+	noteID, err := strconv.Atoi(chi.URLParam(r, "noteID"))
 	if err != nil || noteID < 0 {
 		http.Error(w, "", http.StatusBadRequest)
-		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid noteID %v", pNoteID)
+		nc.Logger.Errorf("GetNoteByUserIDandNoteID: invalid noteID %v", chi.URLParam(r, "noteID"))
 		return
 	}
 
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
 		http.Error(w, "", http.StatusNotFound)
-		msg := fmt.Sprintf("GetNoteByUserIDAndNoteID userID %v and noteID %v", pUserID, pNoteID)
-		nc.Logger.Errorf("%s: %w", msg, err)
+		nc.Logger.Errorf("GetNoteByUserIDAndNoteID userID %v and noteID %v: %w", userID, noteID, err)
 		return
 	}
 
@@ -160,7 +156,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", pUserID, pNoteID)
+	nc.Logger.Infof("Success: GetNoteByUserIDAndNoteID with userID %v and noteID %v", userID, noteID)
 }
 
 func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {

@@ -41,7 +41,8 @@ func (mNS *mockNotesStore) GetNotesByUserID(userID int) (domain.Notes, error) {
 }
 
 func (mNS *mockNotesStore) AddNote(userID int, note string) error {
-	return nil
+	args := mNS.Called(userID, note)
+	return args.Error(0)
 }
 
 func (mNS *mockNotesStore) EditNote(userID, noteID int, note string) error {
