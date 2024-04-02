@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -40,8 +41,8 @@ func (mNS *mockNotesStore) GetNotesByUserID(userID int) (domain.Notes, error) {
 	return args.Get(0).(domain.Notes), args.Error(1)
 }
 
-func (mNS *mockNotesStore) AddNote(userID int, note string) error {
-	args := mNS.Called(userID, note)
+func (mNS *mockNotesStore) AddNote(userID uuid.UUID, np domain.NotePost) error {
+	args := mNS.Called(userID, np)
 	return args.Error(0)
 }
 

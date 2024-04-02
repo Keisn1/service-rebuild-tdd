@@ -9,7 +9,12 @@ import (
 
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
+
+type contextUserIDKey int
+
+const UserIDKey contextUserIDKey = 1
 
 type NotesCtrlr struct {
 	NotesStore domain.NotesStore
@@ -82,22 +87,22 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if err != nil || userID < 0 {
-		logMsg := fmt.Sprintf("Add: invalid userID %v", chi.URLParam(r, "userID"))
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+	if !ok {
+		logMsg := "Add: invalid userID"
+		handleError(w, "", http.StatusBadRequest, logMsg)
 		return
 	}
 
 	var np domain.NotePost
-	err = json.NewDecoder(r.Body).Decode(&np)
+	err := json.NewDecoder(r.Body).Decode(&np)
 	if err != nil {
 		logMsg := "Add: invalid body"
 		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
 		return
 	}
 
-	err = nc.NotesStore.AddNote(userID, np.Note)
+	err = nc.NotesStore.AddNote(userID, np)
 	if err != nil {
 		logMsg := fmt.Sprintf("Add: userID %v body %v", userID, np)
 		handleError(w, "", http.StatusConflict, logMsg, "error", err)
@@ -106,7 +111,7 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusAccepted)
 	slog.Info(
-		fmt.Sprintf("Success: Add: userID %v note %v", userID, np),
+		fmt.Sprintf("Success: Add: userID %v body %v", userID, np),
 	)
 }
 
