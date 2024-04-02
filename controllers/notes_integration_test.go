@@ -150,9 +150,10 @@ func canRetrieveNotesByUserID(t *testing.T, notesC ctrls.NotesCtrlr) {
 		}
 
 		rr := httptest.NewRecorder()
-		notesC.GetNotesByUserID(rr, newGetNotesByUserIdRequest(t, i))
+		req := setupRequest(t, "GET", "/users/notes", urlParams{userID: strconv.Itoa(i)}, &bytes.Buffer{})
+		notesC.GetNotesByUserID(rr, req)
 		gotNotes := decodeBodyNotes(t, rr.Body)
-		gotNotes = ignoreNoteID(t, gotNotes)
+		gotNotes = setNoteIdZero(t, gotNotes)
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, wantNotes, gotNotes)
@@ -166,67 +167,17 @@ func canRetrieveAllNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
 	notesC.GetAllNotes(rr, req)
 
 	gotNotes := decodeBodyNotes(t, rr.Body)
-	gotNotes = ignoreNoteID(t, gotNotes)
+	gotNotes = setNoteIdZero(t, gotNotes)
 	assert.Equal(t, allNotes(), gotNotes)
 }
 
-func ignoreNoteID(t *testing.T, notes domain.Notes) domain.Notes {
+func setNoteIdZero(t *testing.T, notes domain.Notes) domain.Notes {
 	var newNotes domain.Notes
 	for _, n := range notes {
 		n.NoteID = 0
 		newNotes = append(newNotes, n)
 	}
 	return newNotes
-}
-
-func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Notes) {
-	t.Helper()
-	response := httptest.NewRecorder()
-	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := decodeBodyNotes(t, response.Body)
-	dNote, restOfNotes := allNotes[0], allNotes[1:]
-
-	deleteRequest, err := http.NewRequest(http.MethodDelete, "", nil)
-	assertNoError(t, err)
-	deleteRequest = WithUrlParams(deleteRequest, Params{
-		"userID": strconv.Itoa(dNote.UserID),
-		"noteID": strconv.Itoa(dNote.NoteID),
-	})
-	notesC.Delete(response, deleteRequest)
-	return restOfNotes
-}
-
-func EditNote(t testing.TB, notesC ctrls.NotesCtrlr) (domain.Note, string) {
-	// returns note that is being edited
-	response := httptest.NewRecorder()
-	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := decodeBodyNotes(t, response.Body)
-
-	note := allNotes[0]
-	notesC.Edit(httptest.NewRecorder(), newPutRequestWithNoteAndUrlParams(t, "Edit Note", Params{
-		"userID": strconv.Itoa(note.UserID),
-		"noteID": strconv.Itoa(note.NoteID),
-	}))
-	return note, "Edit Note"
-}
-
-// compareNotesByUserIDAndNote compares two slices of Notes by UserID and Note fields
-func compareNotesByUserIDAndNote(t testing.TB, got, want domain.Notes) {
-	t.Helper()
-	assertSlicesSameLength(t, got, want)
-
-	// Create a map for the wantNotes for quick lookups
-	for _, w := range want {
-		found := false
-		for _, g := range got {
-			if w.UserID == g.UserID && w.Note == g.Note {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("got %v not equal want %v", got, want)
-		}
-	}
 }
 
 func decodeBodyNotes(t testing.TB, body io.Reader) (notes domain.Notes) {
