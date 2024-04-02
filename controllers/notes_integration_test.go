@@ -52,10 +52,41 @@ func TestIntegration(t *testing.T) {
 	canRetrieveNotesByUserIDAndNoteID(t, notesC)
 
 	// Edit a note
-	// canEditNote(t, notesC)
+	canEditNote(t, notesC)
 
-	// // Delete a note
-	// canDeleteANote(t, notesC)
+	// Delete a note
+	canDeleteNotes(t, notesC)
+}
+
+func canDeleteNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
+
+	rr := httptest.NewRecorder()
+	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
+	notesC.GetAllNotes(rr, req)
+	allNotes := decodeBodyNotes(t, rr.Body)
+
+	for _, n := range allNotes {
+		up := urlParams{userID: strconv.Itoa(n.UserID), noteID: strconv.Itoa(n.NoteID)}
+		rr := httptest.NewRecorder()
+		req := setupRequest(t, "DELETE", "/users/{userID}/notes/{noteID}", up, &bytes.Buffer{})
+		notesC.Delete(rr, req)
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+
+		rr = httptest.NewRecorder()
+		req = setupRequest(t, "GET", "/users/{userID}/notes/{noteID}", up, &bytes.Buffer{})
+		notesC.GetNoteByUserIDAndNoteID(rr, req)
+
+		// gotNotes := decodeBodyNotes(t, rr.Body)
+		assert.Equal(t, http.StatusNotFound, rr.Code)
+	}
+
+	rr = httptest.NewRecorder()
+	req = setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
+	notesC.GetAllNotes(rr, req)
+	assert.Equal(t, http.StatusOK, rr.Code)
+	allNotes = decodeBodyNotes(t, rr.Body)
+	assert.Equal(t, 0, len(allNotes))
 }
 
 func canEditNote(t *testing.T, notesC ctrls.NotesCtrlr) {
@@ -65,14 +96,24 @@ func canEditNote(t *testing.T, notesC ctrls.NotesCtrlr) {
 	allNotes := decodeBodyNotes(t, rr.Body)
 
 	for _, n := range allNotes {
-		n.Note = fmt.Sprintf("Edited note userID %v noteID %v", n.UserID, n.UserID)
+		n.Note = fmt.Sprintf("Edited note userID %v noteID %v", n.UserID, n.NoteID)
 
+		// edit note
 		up := urlParams{userID: strconv.Itoa(n.UserID), noteID: strconv.Itoa(n.NoteID)}
 		body := domain.NotePost{Note: n.Note}
 		rr := httptest.NewRecorder()
 		req := setupRequest(t, "POST", "/users/{userID}/notes/{noteID}", up, mustEncode(t, body))
 		notesC.Edit(rr, req)
+		assert.Equal(t, http.StatusAccepted, rr.Code)
 
+		// test
+		rr = httptest.NewRecorder()
+		req = setupRequest(t, "GET", "/users/{userID}/notes/{noteID}", up, &bytes.Buffer{})
+		notesC.GetNoteByUserIDAndNoteID(rr, req)
+		gotNotes := decodeBodyNotes(t, rr.Body)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, domain.Notes{n}, gotNotes)
 	}
 }
 
@@ -136,15 +177,6 @@ func ignoreNoteID(t *testing.T, notes domain.Notes) domain.Notes {
 		newNotes = append(newNotes, n)
 	}
 	return newNotes
-}
-
-func canDeleteANote(t *testing.T, notesC ctrls.NotesCtrlr) {
-	t.Helper()
-	restOfNotes := deleteANote(t, notesC)
-	response := httptest.NewRecorder()
-	notesC.GetAllNotes(response, newGetAllNotesRequest(t))
-	allNotes := decodeBodyNotes(t, response.Body)
-	assert.Equal(t, restOfNotes, allNotes)
 }
 
 func deleteANote(t testing.TB, notesC ctrls.NotesCtrlr) (restOfNotes domain.Notes) {

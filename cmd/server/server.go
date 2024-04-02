@@ -37,7 +37,8 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Route("/users/", func(r chi.Router) {
-		r.Get("{userID}/notes", notesC.GetNotesByUserID)
+		r.Get("/notes", notesC.GetAllNotes)
+		r.Get("/{userID}/notes", notesC.GetNotesByUserID)
 		r.Get("/{userID}/notes/{noteID}", notesC.GetNoteByUserIDAndNoteID)
 		r.Post("/{userID}/notes", notesC.Add)
 		r.Put("/{userID}/notes/{noteID}", notesC.Edit)

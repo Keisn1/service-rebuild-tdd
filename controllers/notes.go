@@ -153,8 +153,15 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
 		logMsg := fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID)
-		handleError(w, "", http.StatusNotFound, logMsg, "error", err)
+		handleError(w, "", http.StatusInternalServerError, logMsg, "error", err)
 		return
+	}
+
+	if len(notes) == 0 {
+		logMsg := fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID)
+		handleError(w, "", http.StatusNotFound, logMsg, "error", "Not Found")
+		return
+
 	}
 
 	err = json.NewEncoder(w).Encode(notes)
