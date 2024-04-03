@@ -17,8 +17,8 @@ import (
 )
 
 func allNotes() domain.Notes {
-	uid1 := uuid.New()
-	uid2 := uuid.New()
+	uid1 := uuid.UUID([16]byte{1})
+	uid2 := uuid.UUID([16]byte{2})
 	return domain.Notes{
 		{UserID: uid1, Note: "Test note 1"},
 		{UserID: uid1, Note: "Test note 2"},
@@ -27,6 +27,13 @@ func allNotes() domain.Notes {
 		{UserID: uid2, Note: "Test note 5"},
 		{UserID: uid2, Note: "Test note 6"},
 	}
+}
+
+func stAllNotes(t *testing.T, notesC ctrls.NotesCtrlr) domain.Notes {
+	rr := httptest.NewRecorder()
+	req := setupRequest(t, "GET", "/notes", nil, "", &bytes.Buffer{})
+	notesC.GetAllNotes(rr, req)
+	return decodeBodyNotes(t, rr.Body)
 }
 
 func TestIntegration(t *testing.T) {
@@ -52,99 +59,32 @@ func TestIntegration(t *testing.T) {
 	canDeleteNotes(t, notesC)
 }
 
-func canDeleteNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
+func canRetrieveAllNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
 	t.Helper()
-
 	rr := httptest.NewRecorder()
 	req := setupRequest(t, "GET", "/users/notes", nil, "", &bytes.Buffer{})
 	notesC.GetAllNotes(rr, req)
-	allNotes := decodeBodyNotes(t, rr.Body)
+	gotNotes := decodeBodyNotes(t, rr.Body)
 
-	for _, n := range allNotes {
-		up := urlParams{userID: strconv.Itoa(n.UserID), noteID: strconv.Itoa(n.NoteID)}
-		rr := httptest.NewRecorder()
-		req := setupRequest(t, "DELETE", "/users/{userID}/notes/{noteID}", up, &bytes.Buffer{})
-		notesC.Delete(rr, req)
-		assert.Equal(t, http.StatusNoContent, rr.Code)
-
-		rr = httptest.NewRecorder()
-		req = setupRequest(t, "GET", "/users/{userID}/notes/{noteID}", up, &bytes.Buffer{})
-		notesC.GetNoteByUserIDAndNoteID(rr, req)
-
-		// gotNotes := decodeBodyNotes(t, rr.Body)
-		assert.Equal(t, http.StatusNotFound, rr.Code)
-	}
-
-	rr = httptest.NewRecorder()
-	req = setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
-	notesC.GetAllNotes(rr, req)
-	assert.Equal(t, http.StatusOK, rr.Code)
-	allNotes = decodeBodyNotes(t, rr.Body)
-	assert.Equal(t, 0, len(allNotes))
-}
-
-func canEditNote(t *testing.T, notesC ctrls.NotesCtrlr) {
-	rr := httptest.NewRecorder()
-	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
-	notesC.GetAllNotes(rr, req)
-	allNotes := decodeBodyNotes(t, rr.Body)
-
-	for _, n := range allNotes {
-		n.Note = fmt.Sprintf("Edited note userID %v noteID %v", n.UserID, n.NoteID)
-
-		// edit note
-		up := urlParams{userID: strconv.Itoa(n.UserID), noteID: strconv.Itoa(n.NoteID)}
-		body := domain.NotePost{Note: n.Note}
-		rr := httptest.NewRecorder()
-		req := setupRequest(t, "POST", "/users/{userID}/notes/{noteID}", up, mustEncode(t, body))
-		notesC.Edit(rr, req)
-		assert.Equal(t, http.StatusAccepted, rr.Code)
-
-		// test
-		rr = httptest.NewRecorder()
-		req = setupRequest(t, "GET", "/users/{userID}/notes/{noteID}", up, &bytes.Buffer{})
-		notesC.GetNoteByUserIDAndNoteID(rr, req)
-		gotNotes := decodeBodyNotes(t, rr.Body)
-
-		assert.Equal(t, http.StatusOK, rr.Code)
-		assert.Equal(t, domain.Notes{n}, gotNotes)
-	}
-}
-
-func canRetrieveNotesByUserIDAndNoteID(t *testing.T, notesC ctrls.NotesCtrlr) {
-	t.Helper()
-
-	rr := httptest.NewRecorder()
-	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
-	notesC.GetAllNotes(rr, req)
-	allNotes := decodeBodyNotes(t, rr.Body)
-
-	for _, n := range allNotes {
-		rr := httptest.NewRecorder()
-		req := setupRequest(t, "POST", "/users/{userID}/notes/{noteID}", urlParams{
-			userID: strconv.Itoa(n.UserID),
-			noteID: strconv.Itoa(n.NoteID),
-		}, &bytes.Buffer{})
-		notesC.GetNoteByUserIDAndNoteID(rr, req)
-		gotNotes := decodeBodyNotes(t, rr.Body)
-
-		assert.Equal(t, http.StatusOK, rr.Code)
-		assert.Equal(t, domain.Notes{n}, gotNotes)
-	}
+	gotNotes = setNoteIdZero(t, gotNotes)
+	assert.Equal(t, allNotes(), gotNotes)
 }
 
 func canRetrieveNotesByUserID(t *testing.T, notesC ctrls.NotesCtrlr) {
 	t.Helper()
-	for i := range []int{1, 2} {
+	allNotes()
+	uid1 := uuid.UUID([16]byte{1})
+	uid2 := uuid.UUID([16]byte{2})
+	for _, uid := range []uuid.UUID{uid1, uid2} {
 		var wantNotes domain.Notes
 		for _, n := range allNotes() {
-			if n.UserID == i {
+			if n.UserID == uid {
 				wantNotes = append(wantNotes, n)
 			}
 		}
 
 		rr := httptest.NewRecorder()
-		req := setupRequest(t, "GET", "/users/notes", urlParams{userID: strconv.Itoa(i)}, &bytes.Buffer{})
+		req := setupRequest(t, "GET", "/users/notes", uid, "", &bytes.Buffer{})
 		notesC.GetNotesByUserID(rr, req)
 		gotNotes := decodeBodyNotes(t, rr.Body)
 		gotNotes = setNoteIdZero(t, gotNotes)
@@ -154,17 +94,64 @@ func canRetrieveNotesByUserID(t *testing.T, notesC ctrls.NotesCtrlr) {
 	}
 }
 
-func canRetrieveAllNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
+func canRetrieveNotesByUserIDAndNoteID(t *testing.T, notesC ctrls.NotesCtrlr) {
 	t.Helper()
-	rr := httptest.NewRecorder()
-	req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
-	notesC.GetAllNotes(rr, req)
+	allNotes := stAllNotes(t, notesC)
 
-	gotNotes := decodeBodyNotes(t, rr.Body)
-	gotNotes = setNoteIdZero(t, gotNotes)
-	assert.Equal(t, allNotes(), gotNotes)
+	for _, n := range allNotes {
+		rr := httptest.NewRecorder()
+		req := setupRequest(t, "POST", "/users/notes/{noteID}", n.UserID, strconv.Itoa(n.NoteID), &bytes.Buffer{})
+		notesC.GetNoteByUserIDAndNoteID(rr, req)
+		gotNotes := decodeBodyNotes(t, rr.Body)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, domain.Notes{n}, gotNotes)
+	}
 }
 
+func canDeleteNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
+	t.Helper()
+
+	allNotes := stAllNotes(t, notesC)
+	for _, n := range allNotes {
+		rr := httptest.NewRecorder()
+		req := setupRequest(t, "DELETE", "/users/notes/{noteID}", n.UserID, strconv.Itoa(n.NoteID), &bytes.Buffer{})
+		notesC.Delete(rr, req)
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+
+		rr = httptest.NewRecorder()
+		req = setupRequest(t, "GET", "/users/notes/{noteID}", n.UserID, strconv.Itoa(n.NoteID), &bytes.Buffer{})
+		notesC.GetNoteByUserIDAndNoteID(rr, req)
+
+		// gotNotes := decodeBodyNotes(t, rr.Body)
+		assert.Equal(t, http.StatusNotFound, rr.Code)
+	}
+
+	allNotes = stAllNotes(t, notesC)
+	assert.Equal(t, 0, len(allNotes))
+}
+
+func canEditNote(t *testing.T, notesC ctrls.NotesCtrlr) {
+	allNotes := stAllNotes(t, notesC)
+
+	for _, n := range allNotes {
+		n.Note = fmt.Sprintf("Edited note userID %v noteID %v", n.UserID, n.NoteID)
+
+		// edit note
+		body := domain.NotePost{Note: n.Note}
+		rr := httptest.NewRecorder()
+		req := setupRequest(t, "POST", "/users/notes/{noteID}", n.UserID, strconv.Itoa(n.NoteID), mustEncode(t, body))
+		notesC.Edit(rr, req)
+		assert.Equal(t, http.StatusAccepted, rr.Code)
+
+		// test
+		rr = httptest.NewRecorder()
+		req = setupRequest(t, "GET", "/users/notes/{noteID}", n.UserID, strconv.Itoa(n.NoteID), &bytes.Buffer{})
+		notesC.GetNoteByUserIDAndNoteID(rr, req)
+		gotNotes := decodeBodyNotes(t, rr.Body)
+		assert.Equal(t, domain.Notes{n}, gotNotes)
+	}
+}
 func setNoteIdZero(t *testing.T, notes domain.Notes) domain.Notes {
 	var newNotes domain.Notes
 	for _, n := range notes {
@@ -187,7 +174,7 @@ func addNotes(t *testing.T, notesC ctrls.NotesCtrlr) {
 	t.Helper()
 	for _, n := range allNotes() {
 		body := domain.NotePost{Note: n.Note}
-		req := setupRequest(t, "POST", "/users/{userID}/notes", urlParams{userID: strconv.Itoa(n.UserID)}, mustEncode(t, body))
+		req := setupRequest(t, "POST", "/users/notes", n.UserID, strconv.Itoa(n.NoteID), mustEncode(t, body))
 		notesC.Add(
 			httptest.NewRecorder(),
 			req,
