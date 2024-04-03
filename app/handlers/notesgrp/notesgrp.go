@@ -1,4 +1,4 @@
-package controllers
+package notesgrp
 
 import (
 	"encoding/json"
@@ -8,24 +8,21 @@ import (
 	"strconv"
 
 	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/Keisn1/note-taking-app/foundation"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
-type contextUserIDKey int
-
-const UserIDKey contextUserIDKey = 1
-
-type NotesCtrlr struct {
+type Handlers struct {
 	NotesStore domain.NotesStore
 }
 
-func NewNotesCtrlr(store domain.NotesStore) NotesCtrlr {
-	return NotesCtrlr{NotesStore: store}
+func NewHandlers(store domain.NotesStore) Handlers {
+	return Handlers{NotesStore: store}
 }
 
-func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+func (nc *Handlers) Edit(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
 		logMsg := "Edit: invalid userID"
 		handleError(w, "", http.StatusBadRequest, logMsg)
@@ -60,8 +57,8 @@ func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+func (nc *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
 		logMsg := "Delete: invalid userID"
 		handleError(w, "", http.StatusBadRequest, logMsg)
@@ -86,8 +83,8 @@ func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
 	slog.Info(fmt.Sprintf("Success: Delete: userID %v noteID %v", userID, noteID))
 }
 
-func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+func (nc *Handlers) Add(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
 		logMsg := "Add: invalid userID"
 		handleError(w, "", http.StatusBadRequest, logMsg)
@@ -115,8 +112,8 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+func (nc *Handlers) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
 		logMsg := "GetNotesByUserID: invalid userID"
 		handleError(w, "", http.StatusBadRequest, logMsg)
@@ -140,8 +137,8 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 	slog.Info(fmt.Sprintf("Success: GetNotesByUserID: userID %v", userID))
 }
 
-func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+func (nc *Handlers) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
 		logMsg := "GetNoteByUserIDandNoteID: invalid userID"
 		handleError(w, "", http.StatusBadRequest, logMsg)
@@ -180,7 +177,7 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 	))
 }
 
-func (nc *NotesCtrlr) GetAllNotes(w http.ResponseWriter, r *http.Request) {
+func (nc *Handlers) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes, err := nc.NotesStore.GetAllNotes()
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)

@@ -1,4 +1,4 @@
-package controllers
+package notesgrp
 
 import (
 	"fmt"

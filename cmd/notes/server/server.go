@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Keisn1/note-taking-app/controllers"
+	"github.com/Keisn1/note-taking-app/app/handlers/notesgrp"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"log"
@@ -31,18 +31,17 @@ func main() {
 		log.Fatalf("Error loading environment variables: %v", err)
 	}
 
-	notesStore := controllers.NewInMemoryNotesStore()
-	notesC := &controllers.NotesCtrlr{NotesStore: notesStore}
-
+	notesStore := notesgrp.NewInMemoryNotesStore()
+	hdl := notesgrp.NewHandlers(notesStore)
 	r := chi.NewRouter()
 
 	r.Route("/users/", func(r chi.Router) {
-		r.Get("/notes", notesC.GetAllNotes)
-		r.Get("/{userID}/notes", notesC.GetNotesByUserID)
-		r.Get("/{userID}/notes/{noteID}", notesC.GetNoteByUserIDAndNoteID)
-		r.Post("/{userID}/notes", notesC.Add)
-		r.Put("/{userID}/notes/{noteID}", notesC.Edit)
-		r.Delete("/{userID}/notes/{noteID}", notesC.Delete)
+		r.Get("/notes", hdl.GetAllNotes)
+		r.Get("/{userID}/notes", hdl.GetNotesByUserID)
+		r.Get("/{userID}/notes/{noteID}", hdl.GetNoteByUserIDAndNoteID)
+		r.Post("/{userID}/notes", hdl.Add)
+		r.Put("/{userID}/notes/{noteID}", hdl.Edit)
+		r.Delete("/{userID}/notes/{noteID}", hdl.Delete)
 	})
 
 	log.Fatal(http.ListenAndServe(":"+cfg.Server.Address, r))

@@ -1,4 +1,4 @@
-package controllers_test
+package notesgrp_test
 
 import (
 	"bytes"
@@ -14,8 +14,9 @@ import (
 
 	"errors"
 
-	ctrls "github.com/Keisn1/note-taking-app/controllers"
+	"github.com/Keisn1/note-taking-app/app/handlers/notesgrp"
 	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/Keisn1/note-taking-app/foundation"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ import (
 
 func TestAddNote(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -136,14 +137,14 @@ func TestAddNote(t *testing.T) {
 		mNotesStore.Setup(tc.mNSP(tc.userID, tc.body))
 		req := setupRequest(t, "POST", "/users/notes", tc.userID, "", mustEncode(t, tc.body))
 		rr := httptest.NewRecorder()
-		notesCtrl.Add(rr, req)
+		hdl.Add(rr, req)
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging(tc.userID, tc.body), tc.mNSP(tc.userID, tc.body))
 	}
 }
 
 func TestGetAllNotes(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -204,14 +205,14 @@ func TestGetAllNotes(t *testing.T) {
 		mNotesStore.Setup(tc.mNSP)
 		req := setupRequest(t, "GET", "/notes", nil, "", &bytes.Buffer{})
 		rr := httptest.NewRecorder()
-		notesCtrl.GetAllNotes(rr, req)
+		hdl.GetAllNotes(rr, req)
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging, tc.mNSP)
 	}
 }
 
 func TestGetNotesByUserID(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -319,14 +320,14 @@ func TestGetNotesByUserID(t *testing.T) {
 		mNotesStore.Setup(tc.mNSP(tc.userID))
 		req := setupRequest(t, "GET", "/users/notes", tc.userID, "", &bytes.Buffer{})
 		rr := httptest.NewRecorder()
-		notesCtrl.GetNotesByUserID(rr, req)
+		hdl.GetNotesByUserID(rr, req)
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody(tc.userID), tc.wantLogging(tc.userID), tc.mNSP(tc.userID))
 	}
 }
 
 func TestGetNoteByUserIDandNoteID(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -516,7 +517,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 
 		req := setupRequest(t, "GET", "/users/notes/{noteID}", tc.userID, tc.noteID, &bytes.Buffer{})
 		rr := httptest.NewRecorder()
-		notesCtrl.GetNoteByUserIDAndNoteID(rr, req)
+		hdl.GetNoteByUserIDAndNoteID(rr, req)
 
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody(tc.userID, tc.noteID), tc.wantLogging(tc.userID, tc.noteID), tc.mNSP(tc.userID, tc.noteID))
 	}
@@ -524,7 +525,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	mNotesStore := &mockNotesStore{}
-	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
 
@@ -644,7 +645,7 @@ func TestDelete(t *testing.T) {
 
 		req := setupRequest(t, "DELETE", "/users/notes/{noteID}", tc.userID, tc.noteID, &bytes.Buffer{})
 		rr := httptest.NewRecorder()
-		notesCtrl.Delete(rr, req)
+		hdl.Delete(rr, req)
 
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging(tc.userID, tc.noteID), tc.mNSP(tc.userID, tc.noteID))
 	}
@@ -682,7 +683,7 @@ func mustAtoi(t *testing.T, s string) int {
 func setupRequest(t *testing.T, method, target string, userID any, noteID string, body *bytes.Buffer) *http.Request {
 	t.Helper()
 	req := httptest.NewRequest(method, target, body)
-	ctx := context.WithValue(req.Context(), ctrls.UserIDKey, userID)
+	ctx := context.WithValue(req.Context(), foundation.UserIDKey, userID)
 	req = req.WithContext(ctx)
 	return WithUrlParams(req, Params{
 		"noteID": noteID,

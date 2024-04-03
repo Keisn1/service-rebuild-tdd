@@ -1,4 +1,4 @@
-package controllers_test
+package notesgrp_test
 
 import (
 	"github.com/Keisn1/note-taking-app/domain"
