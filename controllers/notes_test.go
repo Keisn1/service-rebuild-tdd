@@ -145,74 +145,73 @@ func TestAddNote(t *testing.T) {
 	}
 }
 
-// func TestGetAllNotes(t *testing.T) {
-// 	mNotesStore := &mockNotesStore{}
-// 	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
-// 	logBuf := &bytes.Buffer{}
-// 	log.SetOutput(logBuf)
+func TestGetAllNotes(t *testing.T) {
+	mNotesStore := &mockNotesStore{}
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	logBuf := &bytes.Buffer{}
+	log.SetOutput(logBuf)
 
-// 	notes := domain.Notes{
-// 		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
-// 		{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
-// 		{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
-// 		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
-// 	}
-// 	testCases := []struct {
-// 		name         string
-// 		handler      http.HandlerFunc
-// 		mockNSParams mockNotesStoreParams
-// 		wantStatus   int
-// 		wantBody     string
-// 		wantLogging  []string
-// 		assertions   func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams)
-// 	}{
-// 		{
-// 			name:         "GetAllNotes Success",
-// 			handler:      notesCtrl.GetAllNotes,
-// 			mockNSParams: mockNotesStoreParams{method: "GetAllNotes", returnArguments: []any{notes, nil}},
-// 			wantStatus:   http.StatusOK,
-// 			wantBody:     mustEncode(t, notes).String(),
-// 			wantLogging:  []string{"Success: GetAllNotes"},
-// 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
-// 				assert.Equal(t, wantStatus, rr.Code)
-// 				assert.Equal(t, rr.Body.String(), wantBody)
-// 				for _, logMsg := range wL {
-// 					assert.Contains(t, logBuf.String(), logMsg)
-// 				}
-// 				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+	type testCase struct {
+		name        string
+		mNSP        mockNotesStoreParams
+		wantStatus  int
+		wantBody    string
+		wantLogging []string
+		assertions  func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams)
+	}
 
-// 			},
-// 		},
-// 		{
-// 			name:    "GetAllNotes Error DB",
-// 			handler: notesCtrl.GetAllNotes,
-// 			mockNSParams: mockNotesStoreParams{
-// 				method:          "GetAllNotes",
-// 				returnArguments: []any{domain.Notes{}, errors.New("error notesStore.GetAllNotes")},
-// 			},
-// 			wantBody:    "\n",
-// 			wantStatus:  http.StatusInternalServerError,
-// 			wantLogging: []string{"ERROR", "GetAllNotes: DBError", "error notesStore.GetAllNotes"},
-// 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
-// 				assert.Equal(t, wantStatus, rr.Code)
-// 				assert.Equal(t, rr.Body.String(), wantBody)
-// 				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
-// 				for _, logMsg := range wL {
-// 					assert.Contains(t, logBuf.String(), logMsg)
-// 				}
-// 			},
-// 		},
-// 	}
+	testNotes := domain.Notes{
+		{NoteID: 1, UserID: 1, Note: "Note 1 user 1"},
+		{NoteID: 2, UserID: 1, Note: "Note 2 user 1"},
+		{NoteID: 3, UserID: 2, Note: "Note 1 user 2"},
+		{NoteID: 4, UserID: 2, Note: "Note 2 user 2"},
+	}
+	testCases := []testCase{
 
-// 	for _, tc := range testCases {
-// 		logBuf.Reset()
-// 		mNotesStore.Setup(tc.mockNSParams)
-// 		req := setupRequest(t, "GET", "/users/notes", urlParams{}, &bytes.Buffer{})
-// 		rr := httptest.NewRecorder()
-// 		notesCtrl.GetAllNotes(rr, req)
-// 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging, tc.mockNSParams)
-// 	}
-// }
+		{
+			name:        "GetAllNotes Success",
+			mNSP:        mockNotesStoreParams{method: "GetAllNotes", returnArguments: []any{testNotes, nil}},
+			wantStatus:  http.StatusOK,
+			wantBody:    mustEncode(t, testNotes).String(),
+			wantLogging: []string{"Success: GetAllNotes"},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, rr.Body.String(), wantBody)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+			},
+		},
+		{
+			name: "GetAllNotes Error DB",
+			mNSP: mockNotesStoreParams{
+				method:          "GetAllNotes",
+				returnArguments: []any{domain.Notes{}, errors.New("error notesStore.GetAllNotes")},
+			},
+			wantBody:    "\n",
+			wantStatus:  http.StatusInternalServerError,
+			wantLogging: []string{"ERROR", "GetAllNotes: DBError", "error notesStore.GetAllNotes"},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, rr.Body.String(), wantBody)
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		logBuf.Reset()
+		mNotesStore.Setup(tc.mNSP)
+		req := httptest.NewRequest("GET", "/notes", nil)
+		rr := httptest.NewRecorder()
+		notesCtrl.GetAllNotes(rr, req)
+		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging, tc.mNSP)
+	}
+}
 
 // func TestGetNoteByUserIDandNoteID(t *testing.T) {
 // 	mNotesStore := &mockNotesStore{}
