@@ -116,10 +116,10 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if err != nil || userID < 0 {
-		logMsg := fmt.Sprintf("GetNotesByUserID: invalid userID %v", chi.URLParam(r, "userID"))
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+	if !ok {
+		logMsg := "GetNotesByUserID: invalid userID"
+		handleError(w, "", http.StatusBadRequest, logMsg)
 		return
 	}
 
@@ -141,10 +141,10 @@ func (nc *NotesCtrlr) GetNotesByUserID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if err != nil || userID < 0 {
-		logMsg := fmt.Sprintf("GetNoteByUserIDandNoteID: invalid userID %v", chi.URLParam(r, "userID"))
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+	if !ok {
+		logMsg := "GetNoteByUserIDandNoteID: invalid userID"
+		handleError(w, "", http.StatusBadRequest, logMsg)
 		return
 	}
 

@@ -31,12 +31,12 @@ func (mNS *mockNotesStore) GetAllNotes() (domain.Notes, error) {
 	return args.Get(0).(domain.Notes), args.Error(1)
 }
 
-func (mNS *mockNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (domain.Notes, error) {
+func (mNS *mockNotesStore) GetNoteByUserIDAndNoteID(userID uuid.UUID, noteID int) (domain.Notes, error) {
 	args := mNS.Called(userID, noteID)
 	return args.Get(0).(domain.Notes), args.Error(1)
 }
 
-func (mNS *mockNotesStore) GetNotesByUserID(userID int) (domain.Notes, error) {
+func (mNS *mockNotesStore) GetNotesByUserID(userID uuid.UUID) (domain.Notes, error) {
 	args := mNS.Called(userID)
 	return args.Get(0).(domain.Notes), args.Error(1)
 }
