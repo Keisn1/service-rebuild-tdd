@@ -8,5 +8,5 @@ type NotesStore interface {
 	GetNotesByUserID(userID uuid.UUID) (Notes, error)
 	AddNote(userID uuid.UUID, np NotePost) error
 	EditNote(userID, noteID int, note string) error
-	Delete(userID, noteID int) error
+	Delete(userID uuid.UUID, noteID int) error
 }

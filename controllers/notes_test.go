@@ -466,140 +466,224 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 				}
 			},
 		},
+
+		{
+			name:   "GetNoteByUserIDandNoteID DBError",
+			userID: uuid.New(),
+			noteID: "1",
+			mNSP: func(userID any, noteID string) mockNotesStoreParams {
+				uid := userID.(uuid.UUID)
+				nid := mustAtoi(t, noteID)
+				return mockNotesStoreParams{
+					method:    "GetNoteByUserIDAndNoteID",
+					arguments: []any{uid, nid},
+					returnArguments: []any{
+						domain.Notes{},
+						errors.New("error notesStore.GetNoteByUserIDAndNoteID"),
+					},
+				}
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   func(userID any, noteID string) string { return fmt.Sprintln("") },
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID),
+					"error notesStore.GetNoteByUserIDAndNoteID",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:   "GetNoteByUserIDandNoteID Not found if empty return from DB",
+			userID: uuid.New(),
+			noteID: "1",
+			mNSP: func(userID any, noteID string) mockNotesStoreParams {
+				uid := userID.(uuid.UUID)
+				nid := mustAtoi(t, noteID)
+				return mockNotesStoreParams{
+					method:          "GetNoteByUserIDAndNoteID",
+					arguments:       []any{uid, nid},
+					returnArguments: []any{domain.Notes{}, nil},
+				}
+			},
+			wantStatus: http.StatusNotFound,
+			wantBody:   func(userID any, noteID string) string { return fmt.Sprintln("") },
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"ERROR",
+					fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID),
+					"Not Found",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesStore.Setup(tc.mNSP(tc.userID, tc.noteID))
+
 		req := setupRequest(t, "GET", "/users/notes/{noteID}", tc.userID, tc.noteID)
 		rr := httptest.NewRecorder()
 		notesCtrl.GetNoteByUserIDAndNoteID(rr, req)
+
 		tc.assertions(t, rr, tc.wantStatus, tc.wantBody(tc.userID, tc.noteID), tc.wantLogging(tc.userID, tc.noteID), tc.mNSP(tc.userID, tc.noteID))
 	}
-
 }
 
-// 		{
-// 			name:      "GetNoteByUserIDandNoteID DBError",
-// 			handler:   notesCtrl.GetNoteByUserIDAndNoteID,
-// 			urlParams: urlParams{userID: "1", noteID: "1"},
-// 			mockNSParams: func(up urlParams) mockNotesStoreParams {
-// 				userID, noteID := mustConvUrlParamsToInt(t, up)
-// 				return mockNotesStoreParams{
-// 					method:          "GetNoteByUserIDAndNoteID",
-// 					arguments:       []any{userID, noteID},
-// 					returnArguments: []any{domain.Notes{}, errors.New("error notesStore.GetNoteByUserIDAndNoteID")},
-// 				}
-// 			},
-// 			wantStatus: http.StatusInternalServerError,
-// 			wantBody:   func(up urlParams) string { return "\n" },
-// 			wantLogging: func(up urlParams) []string {
-// 				return []string{
-// 					"ERROR",
-// 					fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", up.userID, up.noteID),
-// 					"error notesStore.GetNoteByUserIDAndNoteID",
-// 				}
-// 			},
-// 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
-// 				assert.Equal(t, wantStatus, rr.Code)
-// 				assert.Equal(t, wantBody, rr.Body.String())
-// 				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
-// 				for _, logMsg := range wL {
-// 					assert.Contains(t, logBuf.String(), logMsg)
-// 				}
-// 			},
-// 		},
-// 		{
-// 			name:      "GetNoteByUserIDandNoteID Not found if empty return from DB",
-// 			handler:   notesCtrl.GetNoteByUserIDAndNoteID,
-// 			urlParams: urlParams{userID: "1", noteID: "1"},
-// 			mockNSParams: func(up urlParams) mockNotesStoreParams {
-// 				userID, noteID := mustConvUrlParamsToInt(t, up)
-// 				return mockNotesStoreParams{
-// 					method:          "GetNoteByUserIDAndNoteID",
-// 					arguments:       []any{userID, noteID},
-// 					returnArguments: []any{domain.Notes{}, nil},
-// 				}
-// 			},
-// 			wantStatus: http.StatusNotFound,
-// 			wantBody:   func(up urlParams) string { return "\n" },
-// 			wantLogging: func(up urlParams) []string {
-// 				return []string{
-// 					"ERROR",
-// 					fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", up.userID, up.noteID),
-// 					"Not Found",
-// 				}
-// 			},
-// 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
-// 				assert.Equal(t, wantStatus, rr.Code)
-// 				assert.Equal(t, wantBody, rr.Body.String())
-// 				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
-// 				for _, logMsg := range wL {
-// 					assert.Contains(t, logBuf.String(), logMsg)
-// 				}
-// 			},
-// 		},
-// 	}
+func TestDelete(t *testing.T) {
+	mNotesStore := &mockNotesStore{}
+	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
+	logBuf := &bytes.Buffer{}
+	log.SetOutput(logBuf)
 
-// 	for _, tc := range testCases {
-// 		logBuf.Reset()
-// 		mNotesStore.Setup(tc.mockNSParams(tc.urlParams))
-// 		req := setupRequest(t, "GET", "/users/{userID}/notes/{noteID}", tc.urlParams, &bytes.Buffer{})
-// 		rr := httptest.NewRecorder()
-// 		tc.handler(rr, req)
-// 		tc.assertions(t,
-// 			rr,
-// 			tc.wantStatus,
-// 			tc.wantBody(tc.urlParams),
-// 			tc.wantLogging(tc.urlParams),
-// 			tc.mockNSParams(tc.urlParams))
-// 	}
-// }
+	type testCase struct {
+		name        string
+		userID      any
+		noteID      string
+		mNSP        func(userID any, noteID string) mockNotesStoreParams
+		wantStatus  int
+		wantBody    string
+		wantLogging func(userID any, noteID string) []string
+		assertions  func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams)
+	}
 
-// func TestDelete(t *testing.T) {
-// 	mNotesStore := &mockNotesStore{}
-// 	notesCtrl := ctrls.NewNotesCtrlr(mNotesStore)
-// 	logBuf := &bytes.Buffer{}
-// 	log.SetOutput(logBuf)
+	setupRequest := func(t *testing.T, method, target string, userID any, noteID string) *http.Request {
+		t.Helper()
+		req := httptest.NewRequest(method, target, nil)
+		ctx := context.WithValue(req.Context(), ctrls.UserIDKey, userID)
+		req = req.WithContext(ctx)
+		return WithUrlParams(req, Params{
+			"noteID": noteID,
+		})
+	}
 
-// 	testCases := []struct {
-// 		name         string
-// 		handler      http.HandlerFunc
-// 		urlParams    urlParams
-// 		mockNSParams func(urlP urlParams) mockNotesStoreParams
-// 		wantStatus   int
-// 		wantBody     string
-// 		wantLogging  func(urlParams) []string
-// 		assertions   func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams)
-// 	}{
-// 		{
-// 			name:      "Success Deletion",
-// 			handler:   notesCtrl.Delete,
-// 			urlParams: urlParams{userID: "1", noteID: "1"},
-// 			mockNSParams: func(up urlParams) mockNotesStoreParams {
-// 				userID, noteID := mustConvUrlParamsToInt(t, up)
-// 				return mockNotesStoreParams{
-// 					method:          "Delete",
-// 					arguments:       []any{userID, noteID},
-// 					returnArguments: []any{nil},
-// 				}
-// 			},
-// 			wantStatus: http.StatusNoContent,
-// 			wantLogging: func(up urlParams) []string {
-// 				return []string{
-// 					"INFO",
-// 					fmt.Sprintf("Success: Delete: userID %v noteID %v", up.userID, up.noteID),
-// 				}
-// 			},
-// 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
-// 				assert.Equal(t, wantStatus, rr.Code)
-// 				assert.Equal(t, wantBody, rr.Body.String())
-// 				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
-// 				for _, logMsg := range wL {
-// 					assert.Contains(t, logBuf.String(), logMsg)
-// 				}
-// 			},
-// 		},
+	testCases := []testCase{
+		{
+			name:   "Success Deletion",
+			userID: uuid.New(),
+			noteID: "1",
+			mNSP: func(userID any, noteID string) mockNotesStoreParams {
+				uid := userID.(uuid.UUID)
+				nid := mustAtoi(t, noteID)
+				return mockNotesStoreParams{
+					method:          "Delete",
+					arguments:       []any{uid, nid},
+					returnArguments: []any{nil},
+				}
+			},
+			wantStatus: http.StatusNoContent,
+			wantBody:   "",
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"INFO",
+					fmt.Sprintf("Success: Delete: userID %v noteID %v", userID, noteID),
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertCalled(t, callAssertion.method, callAssertion.arguments...)
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:       "Delete invalid userID",
+			userID:     "invalid userID",
+			noteID:     "1",
+			mNSP:       func(userID any, noteID string) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus: http.StatusBadRequest,
+			wantBody:   fmt.Sprintln(""),
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"ERROR",
+					"Delete: invalid userID",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "Delete")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:       "Delete invalid noteID",
+			userID:     uuid.New(),
+			noteID:     "-1",
+			mNSP:       func(userID any, noteID string) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus: http.StatusBadRequest,
+			wantBody:   fmt.Sprintln(""),
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"ERROR",
+					"Delete: invalid noteID",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "Delete")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:       "Delete invalid noteID",
+			userID:     uuid.New(),
+			noteID:     "invalid noteID",
+			mNSP:       func(userID any, noteID string) mockNotesStoreParams { return mockNotesStoreParams{} },
+			wantStatus: http.StatusBadRequest,
+			wantBody:   fmt.Sprintln(""),
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"ERROR",
+					"Delete: invalid noteID",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "Delete")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		logBuf.Reset()
+		mNotesStore.Setup(tc.mNSP(tc.userID, tc.noteID))
+
+		req := setupRequest(t, "DELETE", "/users/notes/{noteID}", tc.userID, tc.noteID)
+		rr := httptest.NewRecorder()
+		notesCtrl.Delete(rr, req)
+
+		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging(tc.userID, tc.noteID), tc.mNSP(tc.userID, tc.noteID))
+	}
+}
+
 // 		{
 // 			name:         "Delete invalid userID",
 // 			handler:      notesCtrl.Delete,

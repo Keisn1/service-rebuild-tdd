@@ -61,10 +61,10 @@ func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nc *NotesCtrlr) Delete(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if err != nil || userID < 0 {
-		logMsg := fmt.Sprintf("Delete: invalid userID %v", chi.URLParam(r, "userID"))
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+	if !ok {
+		logMsg := "Delete: invalid userID"
+		handleError(w, "", http.StatusBadRequest, logMsg)
 		return
 	}
 
@@ -166,7 +166,6 @@ func (nc *NotesCtrlr) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Re
 		logMsg := fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID)
 		handleError(w, "", http.StatusNotFound, logMsg, "error", "Not Found")
 		return
-
 	}
 
 	err = json.NewEncoder(w).Encode(notes)

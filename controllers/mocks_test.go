@@ -50,7 +50,7 @@ func (mNS *mockNotesStore) EditNote(userID, noteID int, note string) error {
 	return nil
 }
 
-func (mNS *mockNotesStore) Delete(userID, noteID int) error {
+func (mNS *mockNotesStore) Delete(userID uuid.UUID, noteID int) error {
 	args := mNS.Called(userID, noteID)
 	return args.Error(0)
 }
