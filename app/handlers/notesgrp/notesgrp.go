@@ -39,15 +39,14 @@ func (nc *Handlers) Edit(w http.ResponseWriter, r *http.Request) {
 	var np domain.NotePost
 	err = json.NewDecoder(r.Body).Decode(&np)
 	if err != nil {
-		logMsg := "Add: invalid body:"
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+		handleError(w, "", http.StatusBadRequest, "Add: invalid body", "error", err)
 		return
 	}
 
 	err = nc.NotesStore.EditNote(userID, noteID, np.Note)
 	if err != nil {
 		logMsg := fmt.Sprintf("Edit: userID %v noteID %v body %v", userID, noteID, np)
-		handleError(w, "", http.StatusConflict, logMsg, "error", err)
+		handleError(w, "", http.StatusConflict, logMsg)
 		return
 	}
 
@@ -60,8 +59,7 @@ func (nc *Handlers) Edit(w http.ResponseWriter, r *http.Request) {
 func (nc *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
-		logMsg := "Delete: invalid userID"
-		handleError(w, "", http.StatusBadRequest, logMsg)
+		handleError(w, "", http.StatusBadRequest, "Delete: invalid userID")
 		return
 	}
 
@@ -74,8 +72,7 @@ func (nc *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err = nc.NotesStore.Delete(userID, noteID)
 	if err != nil {
-		logMsg := fmt.Sprintf("Delete: userID %v and noteID %v", userID, noteID)
-		handleError(w, "", http.StatusNotFound, logMsg, "error", err)
+		handleError(w, "", http.StatusInternalServerError, "Delete: DBError")
 		return
 	}
 
@@ -86,16 +83,14 @@ func (nc *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 func (nc *Handlers) Add(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
-		logMsg := "Add: invalid userID"
-		handleError(w, "", http.StatusBadRequest, logMsg)
+		handleError(w, "", http.StatusBadRequest, "Add: invalid userID")
 		return
 	}
 
 	var np domain.NotePost
 	err := json.NewDecoder(r.Body).Decode(&np)
 	if err != nil {
-		logMsg := "Add: invalid body"
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+		handleError(w, "", http.StatusBadRequest, "Add: invalid body", "error", err)
 		return
 	}
 
@@ -155,7 +150,7 @@ func (nc *Handlers) GetNoteByUserIDAndNoteID(w http.ResponseWriter, r *http.Requ
 	notes, err := nc.NotesStore.GetNoteByUserIDAndNoteID(userID, noteID)
 	if err != nil {
 		logMsg := fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID)
-		handleError(w, "", http.StatusInternalServerError, logMsg, "error", err)
+		handleError(w, "", http.StatusInternalServerError, logMsg)
 		return
 	}
 
@@ -181,14 +176,13 @@ func (nc *Handlers) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes, err := nc.NotesStore.GetAllNotes()
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
-		slog.Error("GetAllNotes: DBError", "error", err)
+		slog.Error("GetAllNotes: DBError")
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(notes)
 	if err != nil {
-		logMsg := "GetAllNotes: json encoding error"
-		handleError(w, "", http.StatusInternalServerError, logMsg, "error", err)
+		handleError(w, "", http.StatusInternalServerError, "GetAllNotes: json encoding error", "error", err)
 		return
 	}
 

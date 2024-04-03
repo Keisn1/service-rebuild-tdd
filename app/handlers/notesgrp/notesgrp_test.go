@@ -188,7 +188,7 @@ func TestGetAllNotes(t *testing.T) {
 			},
 			wantBody:    fmt.Sprintln(""),
 			wantStatus:  http.StatusInternalServerError,
-			wantLogging: []string{"ERROR", "GetAllNotes: DBError", "error notesStore.GetAllNotes"},
+			wantLogging: []string{"ERROR", "GetAllNotes: DBError"},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
 				assert.Equal(t, rr.Body.String(), wantBody)
@@ -466,7 +466,6 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 				return []string{
 					"ERROR",
 					fmt.Sprintf("GetNoteByUserIDAndNoteID: userID %v noteID %v", userID, noteID),
-					"error notesStore.GetNoteByUserIDAndNoteID",
 				}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams) {
@@ -626,6 +625,36 @@ func TestDelete(t *testing.T) {
 				return []string{
 					"ERROR",
 					"Delete: invalid noteID",
+				}
+			},
+			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams) {
+				assert.Equal(t, wantStatus, rr.Code)
+				assert.Equal(t, wantBody, rr.Body.String())
+				mNotesStore.AssertNotCalled(t, "Delete")
+				for _, logMsg := range wL {
+					assert.Contains(t, logBuf.String(), logMsg)
+				}
+			},
+		},
+		{
+			name:   "Delete DBError",
+			userID: uuid.New(),
+			noteID: "1",
+			mNSP: func(userID any, noteID string) mockNotesStoreParams {
+				uid := userID.(uuid.UUID)
+				nid := mustAtoi(t, noteID)
+				return mockNotesStoreParams{
+					method:          "Delete",
+					arguments:       []any{uid, nid},
+					returnArguments: []any{errors.New("error notesStore.Delete")},
+				}
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   fmt.Sprintln(""),
+			wantLogging: func(userID any, noteID string) []string {
+				return []string{
+					"ERROR",
+					"Delete: DBError",
 				}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams) {
