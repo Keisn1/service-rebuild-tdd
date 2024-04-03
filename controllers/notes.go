@@ -25,10 +25,10 @@ func NewNotesCtrlr(store domain.NotesStore) NotesCtrlr {
 }
 
 func (nc *NotesCtrlr) Edit(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
-	if err != nil || userID < 0 {
-		logMsg := fmt.Sprintf("Edit: invalid userID %v", chi.URLParam(r, "userID"))
-		handleError(w, "", http.StatusBadRequest, logMsg, "error", err)
+	userID, ok := r.Context().Value(UserIDKey).(uuid.UUID)
+	if !ok {
+		logMsg := "Edit: invalid userID"
+		handleError(w, "", http.StatusBadRequest, logMsg)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (nc *NotesCtrlr) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = nc.NotesStore.AddNote(userID, np)
+	err = nc.NotesStore.AddNote(userID, np.Note)
 	if err != nil {
 		logMsg := fmt.Sprintf("Add: userID %v body %v", userID, np)
 		handleError(w, "", http.StatusConflict, logMsg, "error", err)

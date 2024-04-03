@@ -41,12 +41,12 @@ func (mNS *mockNotesStore) GetNotesByUserID(userID uuid.UUID) (domain.Notes, err
 	return args.Get(0).(domain.Notes), args.Error(1)
 }
 
-func (mNS *mockNotesStore) AddNote(userID uuid.UUID, np domain.NotePost) error {
-	args := mNS.Called(userID, np)
+func (mNS *mockNotesStore) AddNote(userID uuid.UUID, note string) error {
+	args := mNS.Called(userID, note)
 	return args.Error(0)
 }
 
-func (mNS *mockNotesStore) EditNote(userID, noteID int, note string) error {
+func (mNS *mockNotesStore) EditNote(userID uuid.UUID, noteID int, note string) error {
 	return nil
 }
 

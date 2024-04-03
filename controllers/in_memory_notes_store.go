@@ -1,103 +1,105 @@
 package controllers
 
-// import (
-// 	"fmt"
-// 	"github.com/Keisn1/note-taking-app/domain"
-// 	"sync"
-// )
+import (
+	"fmt"
+	"sync"
 
-// type InMemoryNotesStore struct {
-// 	notes domain.Notes
-// 	lock  sync.RWMutex
-// }
+	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/google/uuid"
+)
 
-// func NewInMemoryNotesStore() *InMemoryNotesStore {
-// 	return &InMemoryNotesStore{
-// 		notes: domain.Notes{},
-// 		lock:  sync.RWMutex{},
-// 	}
-// }
+type InMemoryNotesStore struct {
+	notes domain.Notes
+	lock  sync.RWMutex
+}
 
-// func (i *InMemoryNotesStore) Delete(userID, noteID int) error {
-// 	i.lock.Lock()
-// 	defer i.lock.Unlock()
+func NewInMemoryNotesStore() *InMemoryNotesStore {
+	return &InMemoryNotesStore{
+		notes: domain.Notes{},
+		lock:  sync.RWMutex{},
+	}
+}
 
-// 	// Find the index of the note with the given userID and noteID
-// 	index := -1
-// 	for idx, note := range i.notes {
-// 		if note.UserID == userID && note.NoteID == noteID {
-// 			index = idx
-// 			break
-// 		}
-// 	}
+func (i *InMemoryNotesStore) Delete(userID uuid.UUID, noteID int) error {
+	i.lock.Lock()
+	defer i.lock.Unlock()
 
-// 	// If the note is not found, return an error
-// 	if index == -1 {
-// 		return fmt.Errorf("note with UserID %d and NoteID %d not found", userID, noteID)
-// 	}
+	// Find the index of the note with the given userID and noteID
+	index := -1
+	for idx, note := range i.notes {
+		if note.UserID == userID && note.NoteID == noteID {
+			index = idx
+			break
+		}
+	}
 
-// 	// Delete the note by slicing it out of the slice
-// 	i.notes = append(i.notes[:index], i.notes[index+1:]...)
+	// If the note is not found, return an error
+	if index == -1 {
+		return fmt.Errorf("note with UserID %d and NoteID %d not found", userID, noteID)
+	}
 
-// 	return nil
-// }
+	// Delete the note by slicing it out of the slice
+	i.notes = append(i.notes[:index], i.notes[index+1:]...)
 
-// // Update edits the note with the given userID and noteID with the new content
-// func (i *InMemoryNotesStore) EditNote(userID, noteID int, newNote string) error {
-// 	i.lock.Lock()
-// 	defer i.lock.Unlock()
+	return nil
+}
 
-// 	// Find the note with the given userID and noteID
-// 	for idx, note := range i.notes {
-// 		if note.UserID == userID && note.NoteID == noteID {
-// 			// Update the note with the new content
-// 			i.notes[idx].Note = newNote
-// 			return nil
-// 		}
-// 	}
+// Update edits the note with the given userID and noteID with the new content
+func (i *InMemoryNotesStore) EditNote(userID uuid.UUID, noteID int, newNote string) error {
+	i.lock.Lock()
+	defer i.lock.Unlock()
 
-// 	// If the note is not found, return an error
-// 	return fmt.Errorf("note with UserID %d and NoteID %d not found", userID, noteID)
-// }
+	// Find the note with the given userID and noteID
+	for idx, note := range i.notes {
+		if note.UserID == userID && note.NoteID == noteID {
+			// Update the note with the new content
+			i.notes[idx].Note = newNote
+			return nil
+		}
+	}
 
-// func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID, noteID int) (domain.Notes, error) {
-// 	i.lock.Lock()
-// 	defer i.lock.Unlock()
+	// If the note is not found, return an error
+	return fmt.Errorf("note with UserID %d and NoteID %d not found", userID, noteID)
+}
 
-// 	fmt.Println(i.notes)
-// 	var userNotes domain.Notes
-// 	for _, note := range i.notes {
-// 		if note.UserID == userID && note.NoteID == noteID {
-// 			userNotes = append(userNotes, note)
-// 		}
-// 	}
-// 	return userNotes, nil
-// }
+func (i *InMemoryNotesStore) GetNoteByUserIDAndNoteID(userID uuid.UUID, noteID int) (domain.Notes, error) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
 
-// func (i *InMemoryNotesStore) GetNotesByUserID(userID int) (domain.Notes, error) {
-// 	i.lock.Lock()
-// 	defer i.lock.Unlock()
+	fmt.Println(i.notes)
+	var userNotes domain.Notes
+	for _, note := range i.notes {
+		if note.UserID == userID && note.NoteID == noteID {
+			userNotes = append(userNotes, note)
+		}
+	}
+	return userNotes, nil
+}
 
-// 	var userNotes domain.Notes
-// 	for _, note := range i.notes {
-// 		if note.UserID == userID {
-// 			userNotes = append(userNotes, note)
-// 		}
-// 	}
-// 	return userNotes, nil
-// }
+func (i *InMemoryNotesStore) GetNotesByUserID(userID uuid.UUID) (domain.Notes, error) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
 
-// func (i *InMemoryNotesStore) GetAllNotes() (domain.Notes, error) {
-// 	i.lock.Lock()
-// 	defer i.lock.Unlock()
-// 	return i.notes, nil
-// }
+	var userNotes domain.Notes
+	for _, note := range i.notes {
+		if note.UserID == userID {
+			userNotes = append(userNotes, note)
+		}
+	}
+	return userNotes, nil
+}
 
-// func (i *InMemoryNotesStore) AddNote(userID int, note string) error {
-// 	i.lock.Lock()
-// 	defer i.lock.Unlock()
-// 	noteID := len(i.notes) + 1
-// 	newNote := domain.Note{NoteID: noteID, UserID: userID, Note: note}
-// 	i.notes = append(i.notes, newNote)
-// 	return nil
-// }
+func (i *InMemoryNotesStore) GetAllNotes() (domain.Notes, error) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	return i.notes, nil
+}
+
+func (i *InMemoryNotesStore) AddNote(userID uuid.UUID, note string) error {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	noteID := len(i.notes) + 1
+	newNote := domain.Note{NoteID: noteID, UserID: userID, Note: note}
+	i.notes = append(i.notes, newNote)
+	return nil
+}
