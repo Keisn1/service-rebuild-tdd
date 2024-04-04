@@ -6,7 +6,7 @@ import (
 )
 
 type UserNoteRepository interface {
-	GetNoteByID(noteID uuid.UUID) usernote.UserNote
+	GetNoteByID(noteID uuid.UUID) (usernote.UserNote, error)
 }
 
 type Service struct {
@@ -31,5 +31,9 @@ func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
 }
 
 func (s Service) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
-	return s.usernotes.GetNoteByID(nID), nil
+	n, err := s.usernotes.GetNoteByID(nID)
+	if err != nil {
+		return usernote.UserNote{}, err
+	}
+	return n, nil
 }

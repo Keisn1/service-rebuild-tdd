@@ -13,8 +13,8 @@ type StubUserNoteRepository struct {
 	usernotes map[uuid.UUID]usernote.UserNote
 }
 
-func (sUNR *StubUserNoteRepository) GetNoteByID(nID uuid.UUID) usernote.UserNote {
-	return sUNR.usernotes[nID]
+func (sUNR *StubUserNoteRepository) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
+	return sUNR.usernotes[nID], nil
 }
 
 func TestNotes(t *testing.T) {
@@ -34,16 +34,19 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Return note for noteID", func(t *testing.T) {
 		want := note1
-		got, _ := s.GetNoteByID(nID1)
+		got, err := s.GetNoteByID(nID1)
 		assert.Equal(t, want, got)
+		assert.NoError(t, err)
 
 		want = note2
 		got, _ = s.GetNoteByID(nID2)
 		assert.Equal(t, want, got)
+		assert.NoError(t, err)
 	})
 
 	t.Run("Return Error for missing note", func(t *testing.T) {
-		_, err := s.GetNoteByID(nID1)
+		nIDx := uuid.UUID([16]byte{100})
+		_, err := s.GetNoteByID(nIDx)
 		assert.Error(t, err)
 	})
 }
