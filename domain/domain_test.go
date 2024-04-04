@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain"
@@ -14,7 +15,11 @@ type StubUserNoteRepository struct {
 }
 
 func (sUNR *StubUserNoteRepository) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
-	return sUNR.usernotes[nID], nil
+	n, ok := sUNR.usernotes[nID]
+	if !ok {
+		return usernote.UserNote{}, errors.New("error")
+	}
+	return n, nil
 }
 
 func TestNotes(t *testing.T) {
@@ -39,7 +44,7 @@ func TestNotes(t *testing.T) {
 		assert.NoError(t, err)
 
 		want = note2
-		got, _ = s.GetNoteByID(nID2)
+		got, err = s.GetNoteByID(nID2)
 		assert.Equal(t, want, got)
 		assert.NoError(t, err)
 	})
