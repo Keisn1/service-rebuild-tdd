@@ -30,6 +30,6 @@ func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
 	}
 }
 
-func (s Service) GetNoteByID(nID uuid.UUID) usernote.UserNote {
-	return s.usernotes.GetNoteByID(nID)
+func (s Service) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
+	return s.usernotes.GetNoteByID(nID), nil
 }

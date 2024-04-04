@@ -1,7 +1,6 @@
 package domain_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain"
@@ -35,14 +34,12 @@ func TestNotes(t *testing.T) {
 
 	t.Run("Return note for noteID", func(t *testing.T) {
 		want := note1
-		got := s.GetNoteByID(nID1)
-		assert.Equal(t, want, got)
+		got, _ := s.GetNoteByID(nID1)
 		assert.Equal(t, want, got)
 
 		want = note2
-		got = s.GetNoteByID(nID2)
-		assert.EqualValues(t, want, got)
-		fmt.Println(u.usernotes)
+		got, _ = s.GetNoteByID(nID2)
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("Return Error for missing note", func(t *testing.T) {
