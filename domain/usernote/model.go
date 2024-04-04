@@ -17,6 +17,14 @@ func NewUserNote(title, content string, uID uuid.UUID) UserNote {
 	}
 }
 
+func (u UserNote) GetTitle() entities.Title {
+	return u.note.Title
+}
+
+func (u UserNote) GetContent() entities.Content {
+	return u.note.Content
+}
+
 func (u UserNote) GetID() uuid.UUID {
 	return u.note.ID
 }

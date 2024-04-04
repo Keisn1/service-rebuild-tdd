@@ -1,11 +1,11 @@
 package domain_test
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/Keisn1/note-taking-app/domain/entities"
 	"github.com/Keisn1/note-taking-app/domain/usernote"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +18,7 @@ type StubUserNoteRepository struct {
 func (sUNR *StubUserNoteRepository) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
 	n, ok := sUNR.usernotes[nID]
 	if !ok {
-		return usernote.UserNote{}, errors.New("error")
+		return usernote.UserNote{}, fmt.Errorf("Note note found")
 	}
 	return n, nil
 }
@@ -99,5 +99,12 @@ func TestService(t *testing.T) {
 		uID := uuid.UUID([16]byte{1})
 		got, err := s.Create(uID, "title", "content")
 		assert.NoError(t, err)
+		assert.Equal(t, got.GetUserID(), uID)
+		assert.Equal(t, entities.Title("title"), got.GetTitle())
+		assert.Equal(t, entities.Content("content"), got.GetContent())
+
+		_, err = s.QueryByID(got.GetID())
+		assert.NoError(t, err)
+
 	})
 }
