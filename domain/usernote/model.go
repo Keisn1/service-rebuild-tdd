@@ -16,3 +16,11 @@ func NewUserNote(nID uuid.UUID, title, content string, uID uuid.UUID) UserNote {
 		user: &entities.Person{ID: uID},
 	}
 }
+
+func (u UserNote) GetID() uuid.UUID {
+	return u.note.ID
+}
+
+func (u UserNote) GetUserID() uuid.UUID {
+	return u.user.ID
+}

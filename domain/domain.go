@@ -1,12 +1,15 @@
 package domain
 
 import (
+	"fmt"
+
 	"github.com/Keisn1/note-taking-app/domain/usernote"
 	"github.com/google/uuid"
 )
 
 type UserNoteRepository interface {
 	GetNoteByID(noteID uuid.UUID) (usernote.UserNote, error)
+	GetNotesByUserID(userID uuid.UUID) ([]usernote.UserNote, error)
 }
 
 type Service struct {
@@ -30,10 +33,15 @@ func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
 	}
 }
 
-func (s Service) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
+func (s Service) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {
 	n, err := s.usernotes.GetNoteByID(nID)
 	if err != nil {
-		return usernote.UserNote{}, err
+		return usernote.UserNote{}, fmt.Errorf("querybyid: noteID[%s]: %w", nID, err)
 	}
 	return n, nil
+}
+
+func (s Service) QueryByUserID(uID uuid.UUID) ([]usernote.UserNote, error) {
+	notes, err := s.usernotes.GetNotesByUserID(uID)
+	return notes, err
 }

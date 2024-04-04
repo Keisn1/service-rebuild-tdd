@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"fmt"
+	"github.com/Keisn1/note-taking-app/app/api"
 	"github.com/Keisn1/note-taking-app/app/handlers/notesgrp"
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/google/uuid"
@@ -138,7 +139,7 @@ func canEditNote(t *testing.T, hdl notesgrp.Handlers) {
 		n.Note = fmt.Sprintf("Edited note userID %v noteID %v", n.UserID, n.NoteID)
 
 		// edit note
-		body := domain.NotePost{Note: n.Note}
+		body := api.NotePost{Note: n.Note}
 		rr := httptest.NewRecorder()
 		req := setupRequest(t, "POST", "/users/notes/{noteID}", n.UserID, strconv.Itoa(n.NoteID), mustEncode(t, body))
 		hdl.Edit(rr, req)
@@ -173,7 +174,7 @@ func decodeBodyNotes(t testing.TB, body io.Reader) (notes domain.Notes) {
 func addNotes(t *testing.T, hdl notesgrp.Handlers) {
 	t.Helper()
 	for _, n := range allNotes() {
-		body := domain.NotePost{Note: n.Note}
+		body := api.NotePost{Note: n.Note}
 		req := setupRequest(t, "POST", "/users/notes", n.UserID, strconv.Itoa(n.NoteID), mustEncode(t, body))
 		hdl.Add(
 			httptest.NewRecorder(),

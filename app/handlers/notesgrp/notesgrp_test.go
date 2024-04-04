@@ -14,6 +14,7 @@ import (
 
 	"errors"
 
+	"github.com/Keisn1/note-taking-app/app/api"
 	"github.com/Keisn1/note-taking-app/app/handlers/notesgrp"
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/Keisn1/note-taking-app/foundation"
@@ -43,9 +44,9 @@ func TestAddNote(t *testing.T) {
 		{
 			name:   "Add Success",
 			userID: uuid.New(),
-			body:   domain.NotePost{Note: "Test note"},
+			body:   api.NotePost{Note: "Test note"},
 			mNSP: func(userID any, body any) mockNotesStoreParams {
-				np := body.(domain.NotePost)
+				np := body.(api.NotePost)
 				return mockNotesStoreParams{method: "AddNote", arguments: []any{userID, np.Note}, returnArguments: []any{nil}}
 			},
 			wantStatus: http.StatusAccepted,
@@ -67,7 +68,7 @@ func TestAddNote(t *testing.T) {
 		{
 			name:        "Add: Invalid userID",
 			userID:      "invalid userID",
-			body:        domain.NotePost{Note: "Test note"},
+			body:        api.NotePost{Note: "Test note"},
 			mNSP:        func(userID any, body any) mockNotesStoreParams { return mockNotesStoreParams{} },
 			wantStatus:  http.StatusBadRequest,
 			wantBody:    fmt.Sprintln(""),
@@ -84,9 +85,9 @@ func TestAddNote(t *testing.T) {
 		{
 			name:   "Add DBError",
 			userID: uuid.New(),
-			body:   domain.NotePost{Note: "Test note"},
+			body:   api.NotePost{Note: "Test note"},
 			mNSP: func(userID any, body any) mockNotesStoreParams {
-				np := body.(domain.NotePost)
+				np := body.(api.NotePost)
 				return mockNotesStoreParams{
 					method:          "AddNote",
 					arguments:       []any{userID, np.Note},
