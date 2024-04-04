@@ -1,13 +1,11 @@
 package domain_test
 
 import (
-	"testing"
-
 	"github.com/Keisn1/note-taking-app/domain"
-	"github.com/Keisn1/note-taking-app/domain/entities"
 	"github.com/Keisn1/note-taking-app/domain/usernote"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestNotes(t *testing.T) {
@@ -21,12 +19,14 @@ func TestNotes(t *testing.T) {
 
 	// 	assert.Equal(t, wantNote, gotNote)
 	// })
+	ns := domain.NoteService{}
+
 	t.Run("Return note for noteID", func(t *testing.T) {
 		nID := uuid.UUID([16]byte{1})
 		uID := uuid.UUID([16]byte{2})
 		want := usernote.NewUserNote(nID, "title1", "content1", uID)
 
-		got := domain.GetNoteByID(nID)
+		got := ns.GetNoteByID(nID)
 		assert.Equal(t, want, got)
 
 		// noteID = uuid.UUID([16]byte{2})
