@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Keisn1/note-taking-app/app/api"
 	"github.com/Keisn1/note-taking-app/domain"
 	"github.com/Keisn1/note-taking-app/foundation"
 	"github.com/go-chi/chi/v5"
@@ -36,7 +37,7 @@ func (nc *Handlers) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var np domain.NotePost
+	var np api.NotePost
 	err = json.NewDecoder(r.Body).Decode(&np)
 	if err != nil {
 		handleError(w, "", http.StatusBadRequest, "Add: invalid body", "error", err)
@@ -87,7 +88,7 @@ func (nc *Handlers) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var np domain.NotePost
+	var np api.NotePost
 	err := json.NewDecoder(r.Body).Decode(&np)
 	if err != nil {
 		handleError(w, "", http.StatusBadRequest, "Add: invalid body", "error", err)

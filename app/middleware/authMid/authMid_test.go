@@ -1,4 +1,4 @@
-package authMid
+package authMid_test
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Keisn1/note-taking-app/app/middleware/authMid"
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	log.SetOutput(&logBuf)
 
 	mockAuth := new(MockAuth)
-	jwtMidHandler := NewJwtMidHandler(mockAuth)
+	jwtMidHandler := authMid.NewJwtMidHandler(mockAuth)
 	handler := jwtMidHandler(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }),
 	)

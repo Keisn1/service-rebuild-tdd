@@ -1,4 +1,4 @@
-package domain
+package api
 
 type UrlParams struct {
 	NoteID int
