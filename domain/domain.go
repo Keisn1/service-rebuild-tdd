@@ -5,28 +5,31 @@ import (
 	"github.com/google/uuid"
 )
 
-type NoteService struct{}
+type UserNoteRepository interface {
+	GetNoteByID(noteID uuid.UUID) usernote.UserNote
+}
 
-// type NoteRepository interface {
-// 	GetNoteByID(noteID uuid.UUID) Note
-// }
+type Service struct {
+	usernotes UserNoteRepository
+}
 
-func (ns NoteService) GetNoteByID(nID uuid.UUID) usernote.UserNote {
-
-	if nID == uuid.UUID([16]byte{1}) {
-		return usernote.NewUserNote(nID, "", "", uuid.UUID([16]byte{2}))
+func NewService(cfgs ...ServiceConfig) Service {
+	s := Service{}
+	for _, cfg := range cfgs {
+		cfg(&s)
 	}
+	return s
+}
 
-	if nID == uuid.UUID([16]byte{3}) {
-		return usernote.NewUserNote(nID, "", "", uuid.UUID([16]byte{4}))
+type ServiceConfig func(*Service) error
+
+func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
+	return func(s *Service) error {
+		s.usernotes = u
+		return nil
 	}
-	return usernote.UserNote{}
-	// if noteID == uuid.UUID([16]byte{2}) {
-	// 	return Note{
-	// 		ID:      noteID,
-	// 		Title:   "title2",
-	// 		Content: "content2",
-	// 	}
-	// }
-	// return Note{}
+}
+
+func (s Service) GetNoteByID(nID uuid.UUID) usernote.UserNote {
+	return s.usernotes.GetNoteByID(nID)
 }
