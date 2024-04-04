@@ -97,7 +97,7 @@ func TestService(t *testing.T) {
 
 	t.Run("Add a note", func(t *testing.T) {
 		uID := uuid.UUID([16]byte{1})
-		_, err := s.Create("title", "content", uID)
+		got, err := s.Create(uID, "title", "content")
 		assert.NoError(t, err)
 	})
 }

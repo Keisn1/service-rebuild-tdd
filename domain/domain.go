@@ -33,6 +33,10 @@ func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
 	}
 }
 
+func (s Service) Create(uID uuid.UUID, title, content string) (usernote.UserNote, error) {
+	return usernote.UserNote{}, nil
+}
+
 func (s Service) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {
 	n, err := s.usernotes.GetNoteByID(nID)
 	if err != nil {
