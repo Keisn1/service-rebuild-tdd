@@ -10,6 +10,7 @@ import (
 type UserNoteRepository interface {
 	GetNoteByID(noteID uuid.UUID) (usernote.UserNote, error)
 	GetNotesByUserID(userID uuid.UUID) ([]usernote.UserNote, error)
+	Create(userID uuid.UUID, title, content string) (usernote.UserNote, error)
 }
 
 type Service struct {
@@ -34,8 +35,8 @@ func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
 }
 
 func (s Service) Create(uID uuid.UUID, title, content string) (usernote.UserNote, error) {
-	u := usernote.NewUserNote(title, content, uID)
-	return u, nil
+	u, err := s.usernotes.Create(uID, title, content)
+	return u, err
 }
 
 func (s Service) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {

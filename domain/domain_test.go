@@ -15,6 +15,12 @@ type StubUserNoteRepository struct {
 	usernotes map[uuid.UUID]usernote.UserNote
 }
 
+func (sUNR *StubUserNoteRepository) Create(uID uuid.UUID, title, content string) (usernote.UserNote, error) {
+	u := usernote.NewUserNote(title, content, uID)
+	sUNR.usernotes[u.GetID()] = u
+	return u, nil
+}
+
 func (sUNR *StubUserNoteRepository) GetNoteByID(nID uuid.UUID) (usernote.UserNote, error) {
 	n, ok := sUNR.usernotes[nID]
 	if !ok {
@@ -103,8 +109,9 @@ func TestService(t *testing.T) {
 		assert.Equal(t, entities.Title("title"), got.GetTitle())
 		assert.Equal(t, entities.Content("content"), got.GetContent())
 
-		_, err = s.QueryByID(got.GetID())
+		want := got
+		got, err = s.QueryByID(got.GetID())
 		assert.NoError(t, err)
-
+		assert.Equal(t, got, want)
 	})
 }
