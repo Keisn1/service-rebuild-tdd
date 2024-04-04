@@ -49,9 +49,9 @@ func TestNotes(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("Return Error for missing note", func(t *testing.T) {
+	t.Run("Return ErrorNoteNotFound for missing note", func(t *testing.T) {
 		nIDx := uuid.UUID([16]byte{100})
 		_, err := s.GetNoteByID(nIDx)
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrNoteNotFound)
 	})
 }
