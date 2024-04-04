@@ -43,5 +43,8 @@ func (s Service) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {
 
 func (s Service) QueryByUserID(uID uuid.UUID) ([]usernote.UserNote, error) {
 	notes, err := s.usernotes.GetNotesByUserID(uID)
+	if err != nil {
+		return nil, fmt.Errorf("querybyuserid: userID[%s]: %w", uID, err)
+	}
 	return notes, err
 }

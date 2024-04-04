@@ -30,22 +30,25 @@ func (sUNR *StubUserNoteRepository) GetNotesByUserID(uID uuid.UUID) ([]usernote.
 			ret = append(ret, n)
 		}
 	}
+	if len(ret) == 0 {
+		return nil, fmt.Errorf("No note found for userID[%s]", uID)
+	}
 	return ret, nil
 }
 
 func TestService(t *testing.T) {
 	uID1 := uuid.UUID([16]byte{1})
-	nID1 := uuid.UUID([16]byte{2})
-	nID2 := uuid.UUID([16]byte{3})
+	uID2 := uuid.UUID([16]byte{2})
 
-	uID2 := uuid.UUID([16]byte{4})
-	nID3 := uuid.UUID([16]byte{5})
-	nID4 := uuid.UUID([16]byte{6})
+	note1 := usernote.NewUserNote("", "", uID1)
+	note2 := usernote.NewUserNote("", "", uID1)
+	note3 := usernote.NewUserNote("", "", uID2)
+	note4 := usernote.NewUserNote("", "", uID2)
 
-	note1 := usernote.NewUserNote(nID1, "", "", uID1)
-	note2 := usernote.NewUserNote(nID2, "", "", uID1)
-	note3 := usernote.NewUserNote(nID3, "", "", uID2)
-	note4 := usernote.NewUserNote(nID4, "", "", uID2)
+	nID1 := note1.GetID()
+	nID2 := note2.GetID()
+	nID3 := note3.GetID()
+	nID4 := note4.GetID()
 
 	u := &StubUserNoteRepository{
 		usernotes: map[uuid.UUID]usernote.UserNote{
@@ -85,11 +88,16 @@ func TestService(t *testing.T) {
 		assert.Equal(t, wantNotes, gotNotes)
 	})
 
-	t.Run("Return empty notes if no notes found for user with UserID", func(t *testing.T) {
+	t.Run("Return error if no notes found for userID", func(t *testing.T) {
 		uIDx := uuid.UUID([16]byte{100})
-		wantNotes := []usernote.UserNote{}
-		gotNotes, err := s.QueryByUserID(uIDx)
+		_, err := s.QueryByUserID(uIDx)
+		expectedErrorSubString := fmt.Sprintf("querybyuserid: userID[%s]", uIDx)
+		assert.ErrorContains(t, err, expectedErrorSubString)
+	})
+
+	t.Run("Add a note", func(t *testing.T) {
+		uID := uuid.UUID([16]byte{1})
+		_, err := s.Create("title", "content", uID)
 		assert.NoError(t, err)
-		assert.Equal(t, wantNotes, gotNotes)
 	})
 }

@@ -10,9 +10,9 @@ type UserNote struct {
 	user *entities.Person
 }
 
-func NewUserNote(nID uuid.UUID, title, content string, uID uuid.UUID) UserNote {
+func NewUserNote(title, content string, uID uuid.UUID) UserNote {
 	return UserNote{
-		note: entities.NewNote(nID, title, content),
+		note: entities.NewNote(uuid.New(), title, content),
 		user: &entities.Person{ID: uID},
 	}
 }
