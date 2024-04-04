@@ -13,33 +13,33 @@ type UserNoteRepository interface {
 	Create(userID uuid.UUID, title, content string) (usernote.UserNote, error)
 }
 
-type Service struct {
+type UserNoteService struct {
 	usernotes UserNoteRepository
 }
 
-func NewService(cfgs ...ServiceConfig) Service {
-	s := Service{}
+func NewUserNoteService(cfgs ...ServiceConfig) UserNoteService {
+	s := UserNoteService{}
 	for _, cfg := range cfgs {
 		cfg(&s)
 	}
 	return s
 }
 
-type ServiceConfig func(*Service) error
+type ServiceConfig func(*UserNoteService) error
 
 func WithUserNoteRepository(u UserNoteRepository) ServiceConfig {
-	return func(s *Service) error {
+	return func(s *UserNoteService) error {
 		s.usernotes = u
 		return nil
 	}
 }
 
-func (s Service) Create(uID uuid.UUID, title, content string) (usernote.UserNote, error) {
+func (s UserNoteService) Create(uID uuid.UUID, title, content string) (usernote.UserNote, error) {
 	u, err := s.usernotes.Create(uID, title, content)
 	return u, err
 }
 
-func (s Service) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {
+func (s UserNoteService) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {
 	n, err := s.usernotes.GetNoteByID(nID)
 	if err != nil {
 		return usernote.UserNote{}, fmt.Errorf("querybyid: noteID[%s]: %w", nID, err)
@@ -47,7 +47,7 @@ func (s Service) QueryByID(nID uuid.UUID) (usernote.UserNote, error) {
 	return n, nil
 }
 
-func (s Service) QueryByUserID(uID uuid.UUID) ([]usernote.UserNote, error) {
+func (s UserNoteService) QueryByUserID(uID uuid.UUID) ([]usernote.UserNote, error) {
 	notes, err := s.usernotes.GetNotesByUserID(uID)
 	if err != nil {
 		return nil, fmt.Errorf("querybyuserid: userID[%s]: %w", uID, err)
