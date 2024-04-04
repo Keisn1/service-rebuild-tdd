@@ -12,15 +12,15 @@ type NoteService struct{}
 // }
 
 func (ns NoteService) GetNoteByID(nID uuid.UUID) usernote.UserNote {
-	return usernote.NewUserNote(nID, "title1", "content1", uuid.UUID([16]byte{2}))
-	// if noteID == uuid.UUID([16]byte{1}) {
-	// 	return Note{
-	// 		ID:      noteID,
-	// 		Title:   "title1",
-	// 		Content: "content1",
-	// 	}
-	// }
 
+	if nID == uuid.UUID([16]byte{1}) {
+		return usernote.NewUserNote(nID, "", "", uuid.UUID([16]byte{2}))
+	}
+
+	if nID == uuid.UUID([16]byte{3}) {
+		return usernote.NewUserNote(nID, "", "", uuid.UUID([16]byte{4}))
+	}
+	return usernote.UserNote{}
 	// if noteID == uuid.UUID([16]byte{2}) {
 	// 	return Note{
 	// 		ID:      noteID,
