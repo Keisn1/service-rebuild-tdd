@@ -28,8 +28,18 @@ func WithUserNoteRepository(u usernote.UserNoteRepository) ServiceConfig {
 	}
 }
 
+func userPresent(userID uuid.UUID) bool {
+	ids := map[uuid.UUID]struct{}{
+		uuid.UUID([16]byte{1}): {},
+	}
+	if _, ok := ids[userID]; !ok {
+		return false
+	}
+	return true
+}
+
 func (s UserNoteService) Create(userID uuid.UUID, title, content string) (usernote.UserNote, error) {
-	if userID == uuid.UUID([16]byte{100}) {
+	if !userPresent(userID) {
 		return usernote.UserNote{}, fmt.Errorf("Create: userID[%s]", userID)
 	}
 	u, err := s.usernotes.Create(userID, title, content)
