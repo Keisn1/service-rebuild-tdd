@@ -3,15 +3,17 @@ package usernoteSvc
 import (
 	"fmt"
 
+	"github.com/Keisn1/note-taking-app/domain/user"
 	"github.com/Keisn1/note-taking-app/domain/usernote"
 	"github.com/google/uuid"
 )
 
 type UserNoteService struct {
 	usernotes usernote.UserNoteRepository
+	users     user.UserRepository
 }
 
-func NewUserNoteService(cfgs ...ServiceConfig) UserNoteService {
+func NewUserNoteService(cfgs ...UserNoteServiceConfig) UserNoteService {
 	s := UserNoteService{}
 	for _, cfg := range cfgs {
 		cfg(&s)
@@ -19,27 +21,25 @@ func NewUserNoteService(cfgs ...ServiceConfig) UserNoteService {
 	return s
 }
 
-type ServiceConfig func(*UserNoteService) error
+type UserNoteServiceConfig func(*UserNoteService) error
 
-func WithUserNoteRepository(u usernote.UserNoteRepository) ServiceConfig {
+func WithUserNoteRepository(u usernote.UserNoteRepository) UserNoteServiceConfig {
 	return func(s *UserNoteService) error {
 		s.usernotes = u
 		return nil
 	}
 }
 
-func userPresent(userID uuid.UUID) bool {
-	ids := map[uuid.UUID]struct{}{
-		uuid.UUID([16]byte{1}): {},
+func WithUserRepository(u user.UserRepository) UserNoteServiceConfig {
+	return func(s *UserNoteService) error {
+		s.users = u
+		return nil
 	}
-	if _, ok := ids[userID]; !ok {
-		return false
-	}
-	return true
 }
 
 func (s UserNoteService) Create(userID uuid.UUID, title, content string) (usernote.UserNote, error) {
-	if !userPresent(userID) {
+	_, err := s.users.GetUserByID(userID)
+	if err != nil {
 		return usernote.UserNote{}, fmt.Errorf("Create: userID[%s]", userID)
 	}
 	u, err := s.usernotes.Create(userID, title, content)

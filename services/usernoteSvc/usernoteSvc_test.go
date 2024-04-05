@@ -5,46 +5,18 @@ import (
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/entities"
+	"github.com/Keisn1/note-taking-app/domain/user"
 	"github.com/Keisn1/note-taking-app/domain/usernote"
 	"github.com/Keisn1/note-taking-app/services/usernoteSvc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-type StubUserNoteRepository struct {
-	usernotes map[uuid.UUID]usernote.UserNote
-}
-
-func (sUNR *StubUserNoteRepository) Create(userID uuid.UUID, title, content string) (usernote.UserNote, error) {
-	u := usernote.NewUserNote(title, content, userID)
-	sUNR.usernotes[u.GetID()] = u
-	return u, nil
-}
-
-func (sUNR *StubUserNoteRepository) GetNoteByID(noteID uuid.UUID) (usernote.UserNote, error) {
-	n, ok := sUNR.usernotes[noteID]
-	if !ok {
-		return usernote.UserNote{}, fmt.Errorf("Note note found")
-	}
-	return n, nil
-}
-
-func (sUNR *StubUserNoteRepository) GetNotesByUserID(userID uuid.UUID) ([]usernote.UserNote, error) {
-	var ret []usernote.UserNote
-	for _, n := range sUNR.usernotes {
-		if n.GetUserID() == userID {
-			ret = append(ret, n)
-		}
-	}
-	if len(ret) == 0 {
-		return nil, fmt.Errorf("No note found for userID[%s]", userID)
-	}
-	return ret, nil
-}
-
 func TestService(t *testing.T) {
-	userID1 := uuid.UUID([16]byte{1})
-	userID2 := uuid.UUID([16]byte{2})
+	usr1 := user.NewUser("", "")
+	usr2 := user.NewUser("", "")
+	userID1 := usr1.GetID()
+	userID2 := usr2.GetID()
 
 	note1 := usernote.NewUserNote("", "", userID1)
 	note2 := usernote.NewUserNote("", "", userID1)
@@ -56,12 +28,18 @@ func TestService(t *testing.T) {
 	noteID3 := note3.GetID()
 	noteID4 := note4.GetID()
 
-	u := &StubUserNoteRepository{
+	un := &StubUserNoteRepository{
 		usernotes: map[uuid.UUID]usernote.UserNote{
 			noteID1: note1, noteID2: note2, noteID3: note3, noteID4: note4,
 		},
 	}
-	s := usernoteSvc.NewUserNoteService(usernoteSvc.WithUserNoteRepository(u))
+
+	u := &StubUserRepository{users: map[uuid.UUID]user.User{
+		usr1.GetID(): usr1,
+		usr2.GetID(): usr2,
+	}}
+
+	s := usernoteSvc.NewUserNoteService(usernoteSvc.WithUserNoteRepository(un), usernoteSvc.WithUserRepository(u))
 
 	t.Run("Get note by noteID", func(t *testing.T) {
 		want := note1
@@ -102,24 +80,9 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("Add a note", func(t *testing.T) {
-		userID := uuid.UUID([16]byte{1})
-		got, err := s.Create(userID, "title", "content")
+		got, err := s.Create(userID1, "title", "content")
 		assert.NoError(t, err)
-		assert.Equal(t, got.GetUserID(), userID)
-		assert.Equal(t, entities.Title("title"), got.GetTitle())
-		assert.Equal(t, entities.Content("content"), got.GetContent())
-
-		want := got
-		got, err = s.QueryByID(got.GetID())
-		assert.NoError(t, err)
-		assert.Equal(t, got, want)
-	})
-
-	t.Run("Add a note", func(t *testing.T) {
-		userID := uuid.UUID([16]byte{1})
-		got, err := s.Create(userID, "title", "content")
-		assert.NoError(t, err)
-		assert.Equal(t, got.GetUserID(), userID)
+		assert.Equal(t, got.GetUserID(), userID1)
 		assert.Equal(t, entities.Title("title"), got.GetTitle())
 		assert.Equal(t, entities.Content("content"), got.GetContent())
 
