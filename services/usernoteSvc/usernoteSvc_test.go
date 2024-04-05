@@ -29,7 +29,7 @@ func TestService(t *testing.T) {
 	noteID4 := note4.GetID()
 
 	un := &StubUserNoteRepository{
-		usernotes: map[uuid.UUID]usernote.UserNote{
+		Usernotes: map[uuid.UUID]usernote.UserNote{
 			noteID1: note1, noteID2: note2, noteID3: note3, noteID4: note4,
 		},
 	}
@@ -106,19 +106,31 @@ func TestService(t *testing.T) {
 	t.Run("Edit a title of a note", func(t *testing.T) {
 		noteID := noteID1
 
+		un.EditWasCalled = false
+		note, err := s.QueryByID(noteID)
+		assert.NoError(t, err)
+		formerTitle := note.GetTitle()
+		formerContent := note.GetContent()
+
 		got, err := s.Edit(noteID, "title", "content")
 		assert.NoError(t, err)
 		assert.Equal(t, got.GetID(), noteID)
 		assert.Equal(t, got.GetTitle(), entities.Title("title"))
 		assert.Equal(t, got.GetContent(), entities.Content("content"))
 
-		fmt.Println(&got)
-		t.Fatal()
+		if !un.EditWasCalled {
+			got, err := s.QueryByID(noteID)
+			assert.NoError(t, err)
+			assert.Equal(t, got.GetTitle(), formerTitle)
+			assert.Equal(t, got.GetContent(), formerContent)
+		}
 
-		got, err = s.QueryByID(noteID)
-		assert.NoError(t, err)
-		assert.Equal(t, got.GetID(), noteID)
-		assert.Equal(t, got.GetTitle(), entities.Title("title"))
-		assert.Equal(t, got.GetContent(), entities.Content("content"))
+		// got2, err := s.QueryByID(noteID)
+		// assert.NoError(t, err)
+		// assert.NotEqual(t, &got1, &got2)
+		// assert.Equal(t, got.GetID(), noteID)
+		// assert.Equal(t, got.GetTitle(), entities.Title("title"))
+		// assert.Equal(t, got.GetContent(), entities.Content("content"))
 	})
+
 }

@@ -21,17 +21,18 @@ func (sUR *StubUserRepository) GetUserByID(userID uuid.UUID) (user.User, error) 
 }
 
 type StubUserNoteRepository struct {
-	usernotes map[uuid.UUID]usernote.UserNote
+	Usernotes     map[uuid.UUID]usernote.UserNote
+	EditWasCalled bool
 }
 
 func (sUNR *StubUserNoteRepository) Create(userID uuid.UUID, title, content string) (usernote.UserNote, error) {
 	u := usernote.NewUserNote(title, content, userID)
-	sUNR.usernotes[u.GetID()] = u
+	sUNR.Usernotes[u.GetID()] = u
 	return u, nil
 }
 
 func (sUNR *StubUserNoteRepository) GetNoteByID(noteID uuid.UUID) (usernote.UserNote, error) {
-	n, ok := sUNR.usernotes[noteID]
+	n, ok := sUNR.Usernotes[noteID]
 	if !ok {
 		return usernote.UserNote{}, fmt.Errorf("Note note found")
 	}
@@ -40,7 +41,7 @@ func (sUNR *StubUserNoteRepository) GetNoteByID(noteID uuid.UUID) (usernote.User
 
 func (sUNR *StubUserNoteRepository) GetNotesByUserID(userID uuid.UUID) ([]usernote.UserNote, error) {
 	var ret []usernote.UserNote
-	for _, n := range sUNR.usernotes {
+	for _, n := range sUNR.Usernotes {
 		if n.GetUserID() == userID {
 			ret = append(ret, n)
 		}
