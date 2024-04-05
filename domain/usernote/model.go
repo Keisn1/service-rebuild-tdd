@@ -25,8 +25,16 @@ func (u UserNote) GetTitle() entities.Title {
 	return u.note.Title
 }
 
+func (u UserNote) SetTitle(title string) {
+	u.note.Title = entities.Title(title)
+}
+
 func (u UserNote) GetContent() entities.Content {
 	return u.note.Content
+}
+
+func (u UserNote) SetContent(content string) {
+	u.note.Content = entities.Content(content)
 }
 
 func (u UserNote) GetID() uuid.UUID {

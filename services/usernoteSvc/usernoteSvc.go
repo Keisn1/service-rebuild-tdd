@@ -37,6 +37,13 @@ func WithUserRepository(u user.UserRepository) UserNoteServiceConfig {
 	}
 }
 
+func (s UserNoteService) Edit(noteID uuid.UUID, title, content string) (usernote.UserNote, error) {
+	n, _ := s.usernotes.GetNoteByID(noteID)
+	n.SetTitle(title)
+	n.SetContent(content)
+	return n, nil
+}
+
 func (s UserNoteService) Create(userID uuid.UUID, title, content string) (usernote.UserNote, error) {
 	_, err := s.users.GetUserByID(userID)
 	if err != nil {
