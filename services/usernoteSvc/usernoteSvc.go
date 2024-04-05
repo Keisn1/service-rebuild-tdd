@@ -43,6 +43,9 @@ func (s UserNoteService) Create(userID uuid.UUID, title, content string) (userno
 		return usernote.UserNote{}, fmt.Errorf("Create: userID[%s]", userID)
 	}
 	u, err := s.usernotes.Create(userID, title, content)
+	if err != nil {
+		return usernote.UserNote{}, fmt.Errorf("Create: userID[%s]", userID)
+	}
 	return u, err
 }
 

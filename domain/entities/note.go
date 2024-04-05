@@ -11,11 +11,3 @@ type Note struct {
 type Title string
 
 type Content string
-
-func NewNote(id uuid.UUID, title, content string) *Note {
-	return &Note{
-		ID:      id,
-		Title:   Title(title),
-		Content: Content(content),
-	}
-}

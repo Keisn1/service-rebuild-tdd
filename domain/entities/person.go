@@ -1,13 +1,15 @@
 package entities
 
-import "github.com/google/uuid"
+import (
+	"net/mail"
+
+	"github.com/google/uuid"
+)
 
 type Person struct {
 	ID    uuid.UUID
 	Name  Username
-	Email Email
+	Email mail.Address
 }
 
 type Username string
-
-type Email string

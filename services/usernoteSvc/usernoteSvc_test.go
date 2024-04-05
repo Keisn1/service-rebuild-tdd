@@ -42,17 +42,18 @@ func TestService(t *testing.T) {
 	s := usernoteSvc.NewUserNoteService(usernoteSvc.WithUserNoteRepository(un), usernoteSvc.WithUserRepository(u))
 
 	t.Run("Get note by noteID", func(t *testing.T) {
+		noteID := noteID1
 		want := note1
-		got, err := s.QueryByID(noteID1)
+		got, err := s.QueryByID(noteID)
 		assert.NoError(t, err)
 		assert.Equal(t, want, got)
 
+		noteID = noteID2
 		want = note2
-		got, err = s.QueryByID(noteID2)
+		got, err = s.QueryByID(noteID)
 		assert.Equal(t, want, got)
 		assert.NoError(t, err)
 	})
-
 	t.Run("Return error for missing note", func(t *testing.T) {
 		noteIDx := uuid.UUID([16]byte{100})
 		_, err := s.QueryByID(noteIDx)
@@ -61,13 +62,15 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("Return notes by UserID", func(t *testing.T) {
+		userID := userID1
 		wantNotes := []usernote.UserNote{note1, note2}
-		gotNotes, err := s.QueryByUserID(userID1)
+		gotNotes, err := s.QueryByUserID(userID)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, wantNotes, gotNotes)
 
+		userID = userID2
 		wantNotes = []usernote.UserNote{note3, note4}
-		gotNotes, err = s.QueryByUserID(userID2)
+		gotNotes, err = s.QueryByUserID(userID)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, wantNotes, gotNotes)
 	})
@@ -79,8 +82,9 @@ func TestService(t *testing.T) {
 		assert.ErrorContains(t, err, expectedErrorSubString)
 	})
 
-	t.Run("Add a note", func(t *testing.T) {
-		got, err := s.Create(userID1, "title", "content")
+	t.Run("Create a note", func(t *testing.T) {
+		userID := userID1
+		got, err := s.Create(userID, "title", "content")
 		assert.NoError(t, err)
 		assert.Equal(t, got.GetUserID(), userID1)
 		assert.Equal(t, entities.Title("title"), got.GetTitle())
@@ -92,10 +96,17 @@ func TestService(t *testing.T) {
 		assert.Equal(t, got, want)
 	})
 
-	t.Run("When User can not be retrieved, then Add throws error", func(t *testing.T) {
+	t.Run("When User can not be retrieved, then the note can not be created", func(t *testing.T) {
 		userIDx := uuid.UUID([16]byte{100})
 		_, err := s.Create(userIDx, "title", "content")
 		expectedErrorSubString := fmt.Sprintf("Create: userID[%s]", userIDx)
 		assert.ErrorContains(t, err, expectedErrorSubString)
 	})
+
+	t.Run("Edit a title of a note", func(t *testing.T) {
+		noteID := noteID1
+		_, err := s.Edit(noteID, "title")
+		assert.NoError(t, err)
+	})
+
 }

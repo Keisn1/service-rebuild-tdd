@@ -12,7 +12,11 @@ type UserNote struct {
 
 func NewUserNote(title, content string, userID uuid.UUID) UserNote {
 	return UserNote{
-		note: entities.NewNote(uuid.New(), title, content),
+		note: &entities.Note{
+			ID:      uuid.New(),
+			Title:   entities.Title(title),
+			Content: entities.Content(content),
+		},
 		user: &entities.Person{ID: userID},
 	}
 }
