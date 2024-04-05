@@ -105,7 +105,17 @@ func TestService(t *testing.T) {
 
 	t.Run("Edit a title of a note", func(t *testing.T) {
 		noteID := noteID1
+
 		got, err := s.Edit(noteID, "title", "content")
+		assert.NoError(t, err)
+		assert.Equal(t, got.GetID(), noteID)
+		assert.Equal(t, got.GetTitle(), entities.Title("title"))
+		assert.Equal(t, got.GetContent(), entities.Content("content"))
+
+		fmt.Println(&got)
+		t.Fatal()
+
+		got, err = s.QueryByID(noteID)
 		assert.NoError(t, err)
 		assert.Equal(t, got.GetID(), noteID)
 		assert.Equal(t, got.GetTitle(), entities.Title("title"))
