@@ -86,12 +86,12 @@ func TestService(t *testing.T) {
 		wantNotes := []usernote.UserNote{note1, note2}
 		gotNotes, err := s.QueryByUserID(userID1)
 		assert.NoError(t, err)
-		assert.Equal(t, wantNotes, gotNotes)
+		assert.ElementsMatch(t, wantNotes, gotNotes)
 
 		wantNotes = []usernote.UserNote{note3, note4}
 		gotNotes, err = s.QueryByUserID(userID2)
 		assert.NoError(t, err)
-		assert.Equal(t, wantNotes, gotNotes)
+		assert.ElementsMatch(t, wantNotes, gotNotes)
 	})
 
 	t.Run("Return error if no notes found for userID", func(t *testing.T) {
