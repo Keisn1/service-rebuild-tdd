@@ -9,8 +9,36 @@ import (
 )
 
 func TestNotes(t *testing.T) {
+
+	t.Run("I can update the title of a note, and the note is being returned", func(t *testing.T) {
+		notesR, err := svc.NewNotesRepo(fixtureNotes())
+		assert.NoError(t, err)
+		type testCase struct {
+			noteID   uuid.UUID
+			newTitle string
+			want     svc.Note
+		}
+
+		testCases := []testCase{
+			{
+				noteID:   uuid.UUID{1},
+				newTitle: "New title",
+				want: svc.Note{
+					NoteID:  uuid.UUID{1},
+					Title:   "New title",
+					Content: "robs 1st note content",
+					UserID:  uuid.UUID{1},
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			got := notesR.Update(tc.noteID, tc.newTitle)
+			assert.Equal(t, tc.want, got)
+		}
+	})
 	t.Run("I can get a note by its ID", func(t *testing.T) {
-		nRepo, err := svc.NewNotesRepo(fixtureNotes())
+		notesR, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		type testCase struct {
 			noteID uuid.UUID
@@ -29,13 +57,13 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := nRepo.GetNoteByID(tc.noteID)
+			got := notesR.GetNoteByID(tc.noteID)
 			assert.Equal(t, tc.want, got)
 		}
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
-		nRepo, err := svc.NewNotesRepo(fixtureNotes())
+		notesR, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		type testCase struct {
 			userID uuid.UUID
@@ -58,7 +86,7 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := nRepo.GetNotesByUserID(tc.userID)
+			got := notesR.GetNotesByUserID(tc.userID)
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
