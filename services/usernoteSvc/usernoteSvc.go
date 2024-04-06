@@ -11,34 +11,22 @@ type Note struct {
 	Content string
 }
 
-func GetNotesByUserID(userID uuid.UUID) []Note {
-	u := uuid.UUID{1}
-	if userID == u {
-		return []Note{
-			{
-				UserID:  uuid.UUID{1},
-				Title:   "robs 1st note",
-				Content: "robs 1st note content",
-			},
-			{
-				UserID:  uuid.UUID{1},
-				Title:   "robs 2nd note",
-				Content: "robs 2nd note content",
-			},
-		}
-	} else {
-		return []Note{
-			{
-				UserID:  uuid.UUID{2},
-				Title:   "annas 1st note",
-				Content: "annas 1st note content",
-			},
-			{
-				UserID:  uuid.UUID{2},
-				Title:   "annas 2nd note",
-				Content: "annas 2nd note content",
-			},
-		}
+type notesRepo struct {
+	notes []Note
+}
 
+func NewNotesRepo(notes []Note) notesRepo {
+	var nR notesRepo
+	nR.notes = notes
+	return nR
+}
+
+func (nR notesRepo) GetNotesByUserID(userID uuid.UUID) []Note {
+	var ret []Note
+	for _, n := range nR.notes {
+		if n.UserID == userID {
+			ret = append(ret, n)
+		}
 	}
+	return ret
 }
