@@ -3,6 +3,7 @@ package usernoteSvc_test
 import (
 	"testing"
 
+	"github.com/Keisn1/note-taking-app/domain/note"
 	svc "github.com/Keisn1/note-taking-app/services/usernoteSvc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,7 @@ import (
 
 func TestNotes(t *testing.T) {
 	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
-		notesR, err := svc.NewNotesRepo(fixtureNotes())
+		notesR, err := note.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
 
@@ -18,22 +19,23 @@ func TestNotes(t *testing.T) {
 		_, err = notesS.Update(noteID, "some title")
 		assert.ErrorContains(t, err, "update: ")
 	})
+
 	t.Run("Given a note present in the system, I can update its title", func(t *testing.T) {
-		notesR, err := svc.NewNotesRepo(fixtureNotes())
+		notesR, err := note.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
 
 		type testCase struct {
 			noteID   uuid.UUID
 			newTitle string
-			want     svc.Note
+			want     note.Note
 		}
 
 		testCases := []testCase{
 			{
 				noteID:   uuid.UUID{1},
 				newTitle: "New title",
-				want: svc.Note{
+				want: note.Note{
 					NoteID:  uuid.UUID{1},
 					Title:   "New title",
 					Content: "robs 1st note content",
@@ -50,17 +52,18 @@ func TestNotes(t *testing.T) {
 			assert.Equal(t, tc.want, got)
 		}
 	})
+
 	t.Run("I can get a note by its ID", func(t *testing.T) {
-		notesR, err := svc.NewNotesRepo(fixtureNotes())
+		notesR, err := note.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		type testCase struct {
 			noteID uuid.UUID
-			want   svc.Note
+			want   note.Note
 		}
 
 		testCases := []testCase{
 			{
-				noteID: uuid.UUID{1}, want: svc.Note{
+				noteID: uuid.UUID{1}, want: note.Note{
 					NoteID:  uuid.UUID{1},
 					Title:   "robs 1st note",
 					Content: "robs 1st note content",
@@ -76,22 +79,22 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
-		notesR, err := svc.NewNotesRepo(fixtureNotes())
+		notesR, err := note.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		type testCase struct {
 			userID uuid.UUID
-			want   []svc.Note
+			want   []note.Note
 		}
 
 		testCases := []testCase{
 			{userID: uuid.UUID{1},
-				want: []svc.Note{
+				want: []note.Note{
 					{UserID: uuid.UUID{1}, Title: "robs 1st note", Content: "robs 1st note content"},
 					{UserID: uuid.UUID{1}, Title: "robs 2nd note", Content: "robs 2nd note content"},
 				},
 			},
 			{userID: uuid.UUID{2},
-				want: []svc.Note{
+				want: []note.Note{
 					{UserID: uuid.UUID{2}, Title: "annas 1st note", Content: "annas 1st note content"},
 					{UserID: uuid.UUID{2}, Title: "annas 2nd note", Content: "annas 2nd note content"},
 				},
@@ -105,7 +108,7 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("When initialising NewNotesRepo, every note needs to have a different noteID", func(t *testing.T) {
-		notes := []svc.Note{
+		notes := []note.Note{
 			{
 				NoteID:  uuid.UUID{},
 				UserID:  uuid.UUID{2},
@@ -119,13 +122,13 @@ func TestNotes(t *testing.T) {
 				Content: "annas 2nd note content",
 			},
 		}
-		_, err := svc.NewNotesRepo(notes)
+		_, err := note.NewNotesRepo(notes)
 		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteID")
 	})
 }
 
-func fixtureNotes() []svc.Note {
-	return []svc.Note{
+func fixtureNotes() []note.Note {
+	return []note.Note{
 		{
 			NoteID:  uuid.UUID{1},
 			UserID:  uuid.UUID{1},
