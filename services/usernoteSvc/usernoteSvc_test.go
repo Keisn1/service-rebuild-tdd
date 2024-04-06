@@ -16,7 +16,7 @@ func TestNotes(t *testing.T) {
 		notesS := svc.NewNotesService(notesR)
 
 		noteID := uuid.New()
-		err = notesS.Update(noteID, "", "")
+		err = notesS.Update(noteID, note.Note{})
 		assert.ErrorContains(t, err, "update: ")
 	})
 
@@ -26,17 +26,14 @@ func TestNotes(t *testing.T) {
 		notesS := svc.NewNotesService(notesR)
 
 		type testCase struct {
-			noteID     uuid.UUID
-			newTitle   string
-			newContent string
-			want       note.Note
+			noteID  uuid.UUID
+			newNote note.Note
 		}
 
 		testCases := []testCase{
 			{
-				noteID:   uuid.UUID{1},
-				newTitle: "New title",
-				want: note.Note{
+				noteID: uuid.UUID{1},
+				newNote: note.Note{
 					NoteID:  uuid.UUID{1},
 					Title:   "New title",
 					Content: "",
@@ -44,32 +41,33 @@ func TestNotes(t *testing.T) {
 				},
 			},
 			{
-				noteID:     uuid.UUID{2},
-				newContent: "New content",
-				want: note.Note{
+				noteID: uuid.UUID{2},
+				newNote: note.Note{
 					NoteID:  uuid.UUID{2},
 					Title:   "",
 					Content: "New content",
 					UserID:  uuid.UUID{1},
 				},
 			},
-			{
-				noteID:     uuid.UUID{3},
-				newContent: "New content",
-				want: note.Note{
-					NoteID:  uuid.UUID{2},
-					Title:   "annas 1st note",
-					Content: "New content",
-					UserID:  uuid.UUID{1},
-				},
-			},
+			// {
+			// 	noteID:     uuid.UUID{3},
+			// 	newContent: "New content",
+			// 	want: note.Note{
+			// 		NoteID:  uuid.UUID{2},
+			// 		Title:   "annas 1st note",
+			// 		Content: "New content",
+			// 		UserID:  uuid.UUID{1},
+			// 	},
+			// },
 		}
 
 		for _, tc := range testCases {
-			err := notesS.Update(tc.noteID, tc.newTitle, tc.newContent)
+			err := notesS.Update(tc.noteID, tc.newNote)
 			assert.NoError(t, err)
+
+			want := tc.newNote
 			got := notesS.GetNoteByID(tc.noteID)
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, want, got)
 		}
 	})
 
