@@ -10,8 +10,11 @@ import (
 
 func TestNotes(t *testing.T) {
 	t.Run("I can get a note by its ID", func(t *testing.T) {
-		unRepo, err := svc.NewNotesRepo(fixtureNotes())
+		nRepo, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
+
+		nService := svc.NewNoteService(nRepo)
+
 		type testCase struct {
 			noteID uuid.UUID
 			userID uuid.UUID
@@ -42,7 +45,7 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, _ := unRepo.GetNoteByID(tc.noteID, tc.userID)
+			got, _ := nService.GetNoteByID(tc.noteID, tc.userID)
 			assert.Equal(t, tc.want, got)
 		}
 	})
@@ -50,21 +53,21 @@ func TestNotes(t *testing.T) {
 	t.Run("I can only get a note by its ID if I'm the owner", func(t *testing.T) {
 		userID := uuid.UUID{100}
 		noteID := uuid.UUID{1}
-		unRepo, err := svc.NewNotesRepo([]svc.Note{{
+		nRepo, err := svc.NewNotesRepo([]svc.Note{{
 			NoteID:  uuid.UUID{1},
 			UserID:  uuid.UUID{1},
 			Title:   "robs 1st note",
 			Content: "robs 1st note content",
 		}})
+		nService := svc.NewNoteService(nRepo)
 
 		assert.NoError(t, err)
-		_, err = unRepo.GetNoteByID(noteID, userID)
+		_, err = nService.GetNoteByID(noteID, userID)
 		assert.Error(t, err, "getNoteByID: user unauthorized")
-
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
-		unRepo, err := svc.NewNotesRepo(fixtureNotes())
+		nRepo, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		type testCase struct {
 			userID uuid.UUID
@@ -87,8 +90,8 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := unRepo.GetNotesByUserID(tc.userID)
-			assert.Equal(t, tc.want, got)
+			got := nRepo.GetNotesByUserID(tc.userID)
+			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
 

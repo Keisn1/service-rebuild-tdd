@@ -4,6 +4,7 @@
 package usernoteSvc
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -15,14 +16,14 @@ type Note struct {
 	UserID  uuid.UUID
 }
 
-type notesRepo struct {
+type NotesRepo struct {
 	notes map[uuid.UUID]Note
 }
 
-func NewNotesRepo(notes []Note) (notesRepo, error) {
-	var nR notesRepo
+func NewNotesRepo(notes []Note) (NotesRepo, error) {
+	var nR NotesRepo
 	if err := noDuplicate(notes); err != nil {
-		return notesRepo{}, fmt.Errorf("newNotesRepo: %w", err)
+		return NotesRepo{}, fmt.Errorf("newNotesRepo: %w", err)
 	}
 
 	nR.notes = make(map[uuid.UUID]Note)
@@ -32,19 +33,38 @@ func NewNotesRepo(notes []Note) (notesRepo, error) {
 	return nR, nil
 }
 
-func (nR notesRepo) GetNoteByID(noteID uuid.UUID, userID uuid.UUID) (Note, error) {
-	for _, n := range nR.notes {
-		if n.NoteID == noteID {
-			if n.UserID != userID {
-				return Note{}, fmt.Errorf("getNoteByID: user unauthorized")
-			}
-			return n, nil
+type NoteService struct {
+	notes NotesRepo
+}
+
+func NewNoteService(nRepo NotesRepo) NoteService {
+	return NoteService{
+		notes: nRepo,
+	}
+}
+
+func (ns NoteService) GetNoteByID(noteID uuid.UUID, userID uuid.UUID) (Note, error) {
+	n, _ := ns.notes.GetNoteByID(noteID, userID)
+
+	if n.NoteID == noteID {
+		if n.UserID != userID {
+			return Note{}, fmt.Errorf("getNoteByID: user unauthorized")
 		}
+		return n, nil
 	}
 	return Note{}, nil
 }
 
-func (nR notesRepo) GetNotesByUserID(userID uuid.UUID) []Note {
+func (nR NotesRepo) GetNoteByID(noteID uuid.UUID, userID uuid.UUID) (Note, error) {
+	for _, n := range nR.notes {
+		if n.NoteID == noteID {
+			return n, nil
+		}
+	}
+	return Note{}, errors.New("")
+}
+
+func (nR NotesRepo) GetNotesByUserID(userID uuid.UUID) []Note {
 	var ret []Note
 	for _, n := range nR.notes {
 		if n.UserID == userID {
