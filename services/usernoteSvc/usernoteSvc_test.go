@@ -14,7 +14,7 @@ func TestNotes(t *testing.T) {
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
 
-		noteID := uuid.UUID{100}
+		noteID := uuid.New()
 		_, err = notesS.Update(noteID, "some title")
 		assert.ErrorContains(t, err, "update: ")
 	})
