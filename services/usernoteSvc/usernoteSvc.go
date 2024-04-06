@@ -6,9 +6,10 @@ package usernoteSvc
 import "github.com/google/uuid"
 
 type Note struct {
-	UserID  uuid.UUID
+	NoteID  uuid.UUID
 	Title   string
 	Content string
+	UserID  uuid.UUID
 }
 
 type notesRepo struct {
@@ -21,6 +22,9 @@ func NewNotesRepo(notes []Note) notesRepo {
 	return nR
 }
 
+func (nR notesRepo) GetNoteByID(noteID uuid.UUID) Note {
+	return Note{}
+}
 func (nR notesRepo) GetNotesByUserID(userID uuid.UUID) []Note {
 	var ret []Note
 	for _, n := range nR.notes {
