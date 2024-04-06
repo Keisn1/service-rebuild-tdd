@@ -30,9 +30,10 @@ func NewNotesRepo(notes []Note) (NoteRepo, error) {
 	return nR, nil
 }
 
-func (nR NoteRepo) Update(noteID uuid.UUID, newTitle string) error {
+func (nR NoteRepo) Update(noteID uuid.UUID, newTitle, newContent string) error {
 	if n, ok := nR.notes[noteID]; ok {
 		n.Title = newTitle
+		n.Content = newContent
 		nR.notes[noteID] = n
 		return nil
 	}

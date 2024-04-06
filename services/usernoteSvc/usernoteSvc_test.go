@@ -16,7 +16,7 @@ func TestNotes(t *testing.T) {
 		notesS := svc.NewNotesService(notesR)
 
 		noteID := uuid.New()
-		err = notesS.Update(noteID, "some title")
+		err = notesS.Update(noteID, "", "")
 		assert.ErrorContains(t, err, "update: ")
 	})
 
@@ -39,7 +39,7 @@ func TestNotes(t *testing.T) {
 				want: note.Note{
 					NoteID:  uuid.UUID{1},
 					Title:   "New title",
-					Content: "robs 1st note content",
+					Content: "",
 					UserID:  uuid.UUID{1},
 				},
 			},
@@ -47,8 +47,8 @@ func TestNotes(t *testing.T) {
 				noteID:     uuid.UUID{2},
 				newContent: "New content",
 				want: note.Note{
-					NoteID:  uuid.UUID{1},
-					Title:   "robs 2nd note",
+					NoteID:  uuid.UUID{2},
+					Title:   "",
 					Content: "New content",
 					UserID:  uuid.UUID{1},
 				},

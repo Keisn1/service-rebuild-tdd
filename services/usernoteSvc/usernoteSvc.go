@@ -18,9 +18,9 @@ func NewNotesService(nR note.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
-func (ns NotesService) Update(noteID uuid.UUID, title string) error {
+func (ns NotesService) Update(noteID uuid.UUID, title, content string) error {
 	// TODO: anything calling into the service, shall already talk the language of the service => Notes
-	err := ns.notes.Update(noteID, title)
+	err := ns.notes.Update(noteID, title, content)
 	if err != nil {
 		return fmt.Errorf("update: %w", err)
 	}
