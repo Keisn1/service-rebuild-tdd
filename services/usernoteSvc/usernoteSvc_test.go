@@ -9,6 +9,20 @@ import (
 )
 
 func TestNotes(t *testing.T) {
+
+	t.Run("I can get a note of a its ID", func(t *testing.T) {
+		unRepo := usernoteSvc.NewNotesRepo(fixtureNotes())
+		noteID := 1
+		got := unRepo.GetNoteByNoteID(noteID)
+		want := Note{
+			NoteID:  1,
+			Title:   "robs 1st note",
+			Content: "robs 1st content",
+			UserID:  uuid.UUID{1},
+		}
+		assert.Equal(t, want, got)
+	})
+
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
 		unRepo := usernoteSvc.NewNotesRepo(fixtureNotes())
 		type testCase struct {
