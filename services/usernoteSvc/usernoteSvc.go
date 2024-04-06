@@ -48,7 +48,6 @@ func (nR notesRepo) GetNotesByUserID(userID uuid.UUID) []Note {
 	var ret []Note
 	for _, n := range nR.notes {
 		if n.UserID == userID {
-			n.NoteID = uuid.UUID{0}
 			ret = append(ret, n)
 		}
 	}
