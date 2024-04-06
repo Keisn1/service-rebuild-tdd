@@ -18,22 +18,22 @@ func NewNotesService(nR note.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
-func (ns NotesService) Update(note, newNote note.Note) error {
+func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
 	// TODO: anything calling into the service, shall already talk the language of the service => Notes
 
-	if !newNote.GetTitle().IsEmpty() {
-		note.GetTitle().Set(newNote.GetTitle().Get())
+	if !newN.GetTitle().IsEmpty() {
+		n.SetTitle(newN.GetTitle().Get())
 	}
 
-	if !newNote.GetContent().IsEmpty() {
-		note.GetContent().Set(newNote.GetContent().Get())
+	if !newN.GetContent().IsEmpty() {
+		n.SetContent(newN.GetContent().Get())
 	}
 
-	err := ns.notes.Update(note)
+	err := ns.notes.Update(n)
 	if err != nil {
-		return fmt.Errorf("update: %w", err)
+		return note.Note{}, fmt.Errorf("update: %w", err)
 	}
-	return nil
+	return n, nil
 }
 
 func (nS NotesService) GetNoteByID(noteID uuid.UUID) note.Note {

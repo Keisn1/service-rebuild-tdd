@@ -10,12 +10,22 @@ import (
 )
 
 func TestNotes(t *testing.T) {
+	// t.Run("I can create a new note", func(t *testing.T) {
+	// 	notesR, err := note.NewNotesRepo(fixtureNotes())
+	// 	assert.NoError(t, err)
+	// 	notesS := svc.NewNotesService(notesR)
+
+	// 	note := note.NewNote(uuid.UUID{}, "new note title", "new note content", uuid.New())
+	// 	notesS.Create(note)
+
+	// })
+
 	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
 		notesR, err := note.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
 
-		err = notesS.Update(note.Note{}, note.Note{})
+		_, err = notesS.Update(note.Note{}, note.Note{})
 		assert.ErrorContains(t, err, "update: ")
 	})
 
@@ -60,11 +70,12 @@ func TestNotes(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				err := notesS.Update(tc.currNote, tc.updateNote)
+				n, err := notesS.Update(tc.currNote, tc.updateNote)
 				assert.NoError(t, err)
+				assert.Equal(t, tc.want, n) // assert that the right note was sent back
 
 				got := notesS.GetNoteByID(tc.currNote.GetID())
-				assert.Equal(t, tc.want, got)
+				assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})
 		}
 	})

@@ -26,7 +26,11 @@ func (n *Note) SetID(id uuid.UUID) { n.noteID = id }
 
 func (n *Note) GetTitle() Title { return n.title }
 
+func (n *Note) SetTitle(title string) { n.title.Set(title) }
+
 func (n *Note) GetContent() Content { return n.content }
+
+func (n *Note) SetContent(content string) { n.content.Set(content) }
 
 func (n *Note) GetUserID() uuid.UUID { return n.userID }
 

@@ -22,6 +22,11 @@ func TestNote(t *testing.T) {
 		n.SetID(newNoteID)
 		assert.Equal(t, newNoteID, n.GetID())
 
+		n.SetTitle("new title")
+		assert.Equal(t, "new title", n.GetTitle().Get())
+
+		n.SetContent("new content")
+		assert.Equal(t, "new content", n.GetContent().Get())
 	})
 
 	t.Run("I can set a title and get a title", func(t *testing.T) {
