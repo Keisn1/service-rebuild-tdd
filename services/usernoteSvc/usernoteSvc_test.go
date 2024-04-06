@@ -25,5 +25,21 @@ func TestGet(t *testing.T) {
 
 		got := usernoteSvc.GetNotesByUserID(uuid.UUID{1})
 		assert.ElementsMatch(t, want, got)
+
+		want = []usernoteSvc.Note{
+			{
+				UserID:  uuid.UUID{2},
+				Title:   "annas 1st note",
+				Content: "annas 1st note content",
+			},
+			{
+				UserID:  uuid.UUID{2},
+				Title:   "annas 2nd note",
+				Content: "annas 2nd note content",
+			},
+		}
+
+		got = usernoteSvc.GetNotesByUserID(uuid.UUID{2})
+		assert.ElementsMatch(t, want, got)
 	})
 }
