@@ -36,9 +36,7 @@ func TestNotes(t *testing.T) {
 
 		testCases := []testCase{
 			{
-				noteID: uuid.UUID{1},
-				userID: uuid.UUID{1},
-				want: svc.Note{
+				noteID: uuid.UUID{1}, want: svc.Note{
 					NoteID:  uuid.UUID{1},
 					Title:   "robs 1st note",
 					Content: "robs 1st note content",
