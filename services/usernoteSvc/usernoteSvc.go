@@ -32,6 +32,13 @@ func NewNotesRepo(notes []Note) (notesRepo, error) {
 	return nR, nil
 }
 
+func (nR notesRepo) Update(noteID uuid.UUID, newTitle string) Note {
+	n := nR.notes[noteID]
+	n.Title = newTitle
+	nR.notes[noteID] = n
+	return n
+}
+
 func (nR notesRepo) GetNoteByID(noteID uuid.UUID) Note {
 	for _, n := range nR.notes {
 		if n.NoteID == noteID {
