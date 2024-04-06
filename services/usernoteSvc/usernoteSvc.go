@@ -26,12 +26,12 @@ func NewNotesService(nR notesRepo) NotesService {
 }
 
 func (ns NotesService) Update(noteID uuid.UUID, title string) (Note, error) {
-	ns.notes.Update(noteID, title)
-	n := ns.notes.GetNoteByID(noteID)
-	ux := uuid.UUID{100}
-	if noteID == ux {
+	if _, ok := ns.notes.notes[noteID]; !ok {
 		return Note{}, errors.New("update: ")
 	}
+
+	ns.notes.Update(noteID, title)
+	n := ns.notes.GetNoteByID(noteID)
 	return n, nil
 }
 
