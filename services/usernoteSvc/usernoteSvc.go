@@ -4,6 +4,7 @@
 package usernoteSvc
 
 import "github.com/google/uuid"
+import "errors"
 
 type Note struct {
 	NoteID  uuid.UUID
@@ -16,10 +17,17 @@ type notesRepo struct {
 	notes []Note
 }
 
-func NewNotesRepo(notes []Note) notesRepo {
+func NewNotesRepo(notes []Note) (notesRepo, error) {
 	var nR notesRepo
+	noteIDSet := make(map[uuid.UUID]struct{})
+	for _, n := range notes {
+		if _, ok := noteIDSet[n.NoteID]; ok {
+			return notesRepo{}, errors.New("newNotesRepo: duplicate noteID")
+		}
+		noteIDSet[n.NoteID] = struct{}{}
+	}
 	nR.notes = notes
-	return nR
+	return nR, nil
 }
 
 func (nR notesRepo) GetNoteByID(noteID uuid.UUID) Note {

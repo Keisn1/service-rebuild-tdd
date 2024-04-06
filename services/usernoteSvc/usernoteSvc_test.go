@@ -24,12 +24,13 @@ func TestNotes(t *testing.T) {
 				Content: "annas 2nd note content",
 			},
 		}
-		err := svc.NewNotesRepo(notes)
-		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteid")
+		_, err := svc.NewNotesRepo(notes)
+		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteID")
 	})
 
 	t.Run("I can get a note by its ID", func(t *testing.T) {
-		unRepo := svc.NewNotesRepo(fixtureNotes())
+		unRepo, err := svc.NewNotesRepo(fixtureNotes())
+		assert.NoError(t, err)
 		type testCase struct {
 			noteID uuid.UUID
 			want   svc.Note
@@ -53,7 +54,8 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
-		unRepo := svc.NewNotesRepo(fixtureNotes())
+		unRepo, err := svc.NewNotesRepo(fixtureNotes())
+		assert.NoError(t, err)
 		type testCase struct {
 			userID uuid.UUID
 			want   []svc.Note
@@ -90,16 +92,20 @@ func fixtureNotes() []svc.Note {
 			Content: "robs 1st note content",
 		},
 		{
+
+			NoteID:  uuid.UUID{2},
 			UserID:  uuid.UUID{1},
 			Title:   "robs 2nd note",
 			Content: "robs 2nd note content",
 		},
 		{
+			NoteID:  uuid.UUID{3},
 			UserID:  uuid.UUID{2},
 			Title:   "annas 1st note",
 			Content: "annas 1st note content",
 		},
 		{
+			NoteID:  uuid.UUID{4},
 			UserID:  uuid.UUID{2},
 			Title:   "annas 2nd note",
 			Content: "annas 2nd note content",
