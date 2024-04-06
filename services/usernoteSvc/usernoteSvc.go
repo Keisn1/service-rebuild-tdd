@@ -23,10 +23,10 @@ func NewNotesService(nR notesRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
-func (ns NotesService) Update(noteID uuid.UUID, title string) Note {
+func (ns NotesService) Update(noteID uuid.UUID, title string) (Note, error) {
 	ns.notes.Update(noteID, title)
 	n := ns.notes.GetNoteByID(noteID)
-	return n
+	return n, nil
 }
 
 type notesRepo struct {

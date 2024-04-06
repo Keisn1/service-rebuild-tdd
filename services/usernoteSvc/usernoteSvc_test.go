@@ -9,11 +9,18 @@ import (
 )
 
 func TestNotes(t *testing.T) {
+	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
+		notesR, err := svc.NewNotesRepo(fixtureNotes())
+		assert.NoError(t, err)
+		notesS := svc.NewNotesService(notesR)
 
+		noteID := uuid.UUID{100}
+		_, err = notesS.Update(noteID, "some title")
+		assert.ErrorContains(t, err, "update: noteID [%s]")
+	})
 	t.Run("Given a note present in the system, I can update its title", func(t *testing.T) {
 		notesR, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
-
 		notesS := svc.NewNotesService(notesR)
 
 		type testCase struct {
@@ -36,7 +43,7 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := notesS.Update(tc.noteID, tc.newTitle)
+			got, _ := notesS.Update(tc.noteID, tc.newTitle)
 			assert.Equal(t, tc.want, got)
 
 			got = notesR.GetNoteByID(tc.noteID)
