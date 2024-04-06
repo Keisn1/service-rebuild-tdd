@@ -26,28 +26,31 @@ func TestNotes(t *testing.T) {
 		notesS := svc.NewNotesService(notesR)
 
 		type testCase struct {
-			noteID  uuid.UUID
-			newNote note.Note
+			name       string
+			noteID     uuid.UUID
+			updateNote note.Note
+			want       note.Note
 		}
 
 		testCases := []testCase{
 			{
-				noteID: uuid.UUID{1},
-				newNote: note.Note{
-					NoteID:  uuid.UUID{1},
-					Title:   "New title",
-					Content: "",
-					UserID:  uuid.UUID{1},
-				},
+				name:       "New Title, new 0 character content, update of both (title and content) expected",
+				noteID:     uuid.UUID{1},
+				updateNote: note.NewNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
+				want:       note.NewNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
 			},
 			{
-				noteID: uuid.UUID{2},
-				newNote: note.Note{
-					NoteID:  uuid.UUID{2},
-					Title:   "",
-					Content: "New content",
-					UserID:  uuid.UUID{1},
-				},
+				name:       "New Title, empty content, therefore no update",
+				noteID:     uuid.UUID{2},
+				updateNote: note.NewNote(uuid.UUID{2}, note.NewTitle("New title"), note.Content{}, uuid.UUID{1}),
+				want:       note.NewNote(uuid.UUID{2}, note.NewTitle("New title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+			},
+			{
+
+				name:       "New 0 character title, new content, update of both (title and content) expected",
+				noteID:     uuid.UUID{3},
+				updateNote: note.NewNote(uuid.UUID{2}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
+				want:       note.NewNote(uuid.UUID{2}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
 			},
 			// {
 			// 	noteID:     uuid.UUID{3},
@@ -62,12 +65,13 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			err := notesS.Update(tc.noteID, tc.newNote)
-			assert.NoError(t, err)
+			t.Run(tc.name, func(t *testing.T) {
+				err := notesS.Update(tc.noteID, tc.updateNote)
+				assert.NoError(t, err)
 
-			want := tc.newNote
-			got := notesS.GetNoteByID(tc.noteID)
-			assert.Equal(t, want, got)
+				got := notesS.GetNoteByID(tc.noteID)
+				assert.Equal(t, tc.want, got)
+			})
 		}
 	})
 
@@ -80,14 +84,8 @@ func TestNotes(t *testing.T) {
 		}
 
 		testCases := []testCase{
-			{
-				noteID: uuid.UUID{1}, want: note.Note{
-					NoteID:  uuid.UUID{1},
-					Title:   "robs 1st note",
-					Content: "robs 1st note content",
-					UserID:  uuid.UUID{1},
-				},
-			},
+			{noteID: uuid.UUID{1}, want: note.NewNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})},
+			{noteID: uuid.UUID{3}, want: note.NewNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2})},
 		}
 
 		for _, tc := range testCases {
@@ -105,16 +103,18 @@ func TestNotes(t *testing.T) {
 		}
 
 		testCases := []testCase{
-			{userID: uuid.UUID{1},
+			{
+				userID: uuid.UUID{1},
 				want: []note.Note{
-					{UserID: uuid.UUID{1}, Title: "robs 1st note", Content: "robs 1st note content"},
-					{UserID: uuid.UUID{1}, Title: "robs 2nd note", Content: "robs 2nd note content"},
+					note.NewNote(uuid.UUID{}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+					note.NewNote(uuid.UUID{}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
 				},
 			},
-			{userID: uuid.UUID{2},
+			{
+				userID: uuid.UUID{2},
 				want: []note.Note{
-					{UserID: uuid.UUID{2}, Title: "annas 1st note", Content: "annas 1st note content"},
-					{UserID: uuid.UUID{2}, Title: "annas 2nd note", Content: "annas 2nd note content"},
+					note.NewNote(uuid.UUID{}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+					note.NewNote(uuid.UUID{}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 				},
 			},
 		}
@@ -127,18 +127,8 @@ func TestNotes(t *testing.T) {
 
 	t.Run("When initialising NewNotesRepo, every note needs to have a different noteID", func(t *testing.T) {
 		notes := []note.Note{
-			{
-				NoteID:  uuid.UUID{},
-				UserID:  uuid.UUID{2},
-				Title:   "annas 1st note",
-				Content: "annas 1st note content",
-			},
-			{
-				NoteID:  uuid.UUID{},
-				UserID:  uuid.UUID{2},
-				Title:   "annas 2nd note",
-				Content: "annas 2nd note content",
-			},
+			note.NewNote(uuid.UUID{}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+			note.NewNote(uuid.UUID{}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 		}
 		_, err := note.NewNotesRepo(notes)
 		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteID")
@@ -147,30 +137,9 @@ func TestNotes(t *testing.T) {
 
 func fixtureNotes() []note.Note {
 	return []note.Note{
-		{
-			NoteID:  uuid.UUID{1},
-			UserID:  uuid.UUID{1},
-			Title:   "robs 1st note",
-			Content: "robs 1st note content",
-		},
-		{
-
-			NoteID:  uuid.UUID{2},
-			UserID:  uuid.UUID{1},
-			Title:   "robs 2nd note",
-			Content: "robs 2nd note content",
-		},
-		{
-			NoteID:  uuid.UUID{3},
-			UserID:  uuid.UUID{2},
-			Title:   "annas 1st note",
-			Content: "annas 1st note content",
-		},
-		{
-			NoteID:  uuid.UUID{4},
-			UserID:  uuid.UUID{2},
-			Title:   "annas 2nd note",
-			Content: "annas 2nd note content",
-		},
+		note.NewNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+		note.NewNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+		note.NewNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+		note.NewNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 	}
 }
