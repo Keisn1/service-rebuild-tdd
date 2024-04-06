@@ -9,8 +9,7 @@ import (
 )
 
 func TestNotes(t *testing.T) {
-
-	t.Run("I can get a note of a its ID", func(t *testing.T) {
+	t.Run("I can get a note by its ID", func(t *testing.T) {
 		unRepo := svc.NewNotesRepo(fixtureNotes())
 		noteID := uuid.UUID{1}
 		got := unRepo.GetNoteByID(noteID)
