@@ -24,9 +24,9 @@ func NewNotesRepo(notes []Note) (NoteRepo, error) {
 	return nR, nil
 }
 
-func (nR NoteRepo) Update(noteID uuid.UUID, newNote Note) error {
-	if _, ok := nR.notes[noteID]; ok {
-		nR.notes[noteID] = newNote
+func (nR NoteRepo) Update(note Note) error {
+	if _, ok := nR.notes[note.GetID()]; ok {
+		nR.notes[note.GetID()] = note
 		return nil
 	}
 	return errors.New("")
