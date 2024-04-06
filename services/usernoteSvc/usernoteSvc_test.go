@@ -20,15 +20,16 @@ func TestNotes(t *testing.T) {
 		assert.ErrorContains(t, err, "update: ")
 	})
 
-	t.Run("Given a note present in the system, I can update its title", func(t *testing.T) {
+	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
 		notesR, err := note.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
 
 		type testCase struct {
-			noteID   uuid.UUID
-			newTitle string
-			want     note.Note
+			noteID     uuid.UUID
+			newTitle   string
+			newContent string
+			want       note.Note
 		}
 
 		testCases := []testCase{
@@ -42,10 +43,21 @@ func TestNotes(t *testing.T) {
 					UserID:  uuid.UUID{1},
 				},
 			},
+			{
+				noteID:     uuid.UUID{2},
+				newContent: "New content",
+				want: note.Note{
+					NoteID:  uuid.UUID{1},
+					Title:   "robs 2nd note",
+					Content: "New content",
+					UserID:  uuid.UUID{1},
+				},
+			},
 		}
 
 		for _, tc := range testCases {
-			_ = notesS.Update(tc.noteID, tc.newTitle)
+			err := notesS.Update(tc.noteID, tc.newTitle, tc.newContent)
+			assert.NoError(t, err)
 			got := notesS.GetNoteByID(tc.noteID)
 			assert.Equal(t, tc.want, got)
 		}
