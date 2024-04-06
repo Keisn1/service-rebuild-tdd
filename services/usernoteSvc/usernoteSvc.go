@@ -35,6 +35,9 @@ func NewNotesRepo(notes []Note) (notesRepo, error) {
 func (nR notesRepo) GetNoteByID(noteID uuid.UUID, userID uuid.UUID) (Note, error) {
 	for _, n := range nR.notes {
 		if n.NoteID == noteID {
+			if n.UserID != userID {
+				return Note{}, fmt.Errorf("getNoteByID: user unauthorized")
+			}
 			return n, nil
 		}
 	}
