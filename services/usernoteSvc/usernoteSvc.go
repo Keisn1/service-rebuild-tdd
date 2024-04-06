@@ -15,6 +15,20 @@ type Note struct {
 	UserID  uuid.UUID
 }
 
+type NotesService struct {
+	notes notesRepo
+}
+
+func NewNotesService(nR notesRepo) NotesService {
+	return NotesService{notes: nR}
+}
+
+func (ns NotesService) Update(noteID uuid.UUID, title string) Note {
+	ns.notes.Update(noteID, title)
+	n := ns.notes.GetNoteByID(noteID)
+	return n
+}
+
 type notesRepo struct {
 	notes map[uuid.UUID]Note
 }
@@ -32,11 +46,10 @@ func NewNotesRepo(notes []Note) (notesRepo, error) {
 	return nR, nil
 }
 
-func (nR notesRepo) Update(noteID uuid.UUID, newTitle string) Note {
+func (nR notesRepo) Update(noteID uuid.UUID, newTitle string) {
 	n := nR.notes[noteID]
 	n.Title = newTitle
 	nR.notes[noteID] = n
-	return n
 }
 
 func (nR notesRepo) GetNoteByID(noteID uuid.UUID) Note {
