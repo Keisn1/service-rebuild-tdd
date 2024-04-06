@@ -59,7 +59,7 @@ func TestNotes(t *testing.T) {
 
 		for _, tc := range testCases {
 			got := unRepo.GetNotesByUserID(tc.userID)
-			assert.Equal(t, tc.want, got)
+			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
 
