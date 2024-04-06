@@ -11,10 +11,18 @@ type Note struct {
 	Content string
 }
 
-func GetNoteByUserID(userID uuid.UUID) Note {
-	return Note{
-		UserID:  userID,
-		Title:   "robs note",
-		Content: "robs note content",
+func GetNotesByUserID(userID uuid.UUID) []Note {
+	return []Note{
+		{
+			UserID:  uuid.UUID{1},
+			Title:   "robs 1st note",
+			Content: "robs 1st note content",
+		},
+		{
+			UserID:  uuid.UUID{1},
+			Title:   "robs 2nd note",
+			Content: "robs 2nd note content",
+		},
 	}
+
 }
