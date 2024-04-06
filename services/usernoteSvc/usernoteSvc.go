@@ -3,16 +3,18 @@
 // make changes persistent by calling data/store layer
 package usernoteSvc
 
+import "github.com/google/uuid"
+
 type Note struct {
-	Owner    string
-	NoteName string
-	NoteText string
+	UserID  uuid.UUID
+	Title   string
+	Content string
 }
 
-func GetNoteByName(name string) Note {
+func GetNoteByUserID(userID uuid.UUID) Note {
 	return Note{
-		Owner:    "rob",
-		NoteName: "robs note",
-		NoteText: "robs note text",
+		UserID:  userID,
+		Title:   "robs note",
+		Content: "robs note content",
 	}
 }

@@ -1,20 +1,22 @@
 package usernoteSvc_test
 
 import (
-	"github.com/Keisn1/note-taking-app/services/usernoteSvc"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/Keisn1/note-taking-app/services/usernoteSvc"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGet(t *testing.T) {
-	t.Run("Get robs notes", func(t *testing.T) {
+	t.Run("Get note by UserID", func(t *testing.T) {
 		want := usernoteSvc.Note{
-			Owner:    "rob",
-			NoteName: "robs note",
-			NoteText: "robs note text",
+			UserID:  uuid.UUID{1},
+			Title:   "robs note",
+			Content: "robs note content",
 		}
 
-		got := usernoteSvc.GetNoteByName("rob")
+		got := usernoteSvc.GetNoteByUserID(uuid.UUID{1})
 		assert.Equal(t, want, got)
 	})
 }
