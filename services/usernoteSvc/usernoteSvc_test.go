@@ -16,7 +16,7 @@ func TestNotes(t *testing.T) {
 		notesS := svc.NewNotesService(notesR)
 
 		noteID := uuid.New()
-		_, err = notesS.Update(noteID, "some title")
+		err = notesS.Update(noteID, "some title")
 		assert.ErrorContains(t, err, "update: ")
 	})
 
@@ -45,10 +45,8 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, _ := notesS.Update(tc.noteID, tc.newTitle)
-			assert.Equal(t, tc.want, got)
-
-			got = notesR.GetNoteByID(tc.noteID)
+			_ = notesS.Update(tc.noteID, tc.newTitle)
+			got := notesS.GetNoteByID(tc.noteID)
 			assert.Equal(t, tc.want, got)
 		}
 	})

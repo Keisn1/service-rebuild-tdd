@@ -1,6 +1,7 @@
 package note
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -29,10 +30,13 @@ func NewNotesRepo(notes []Note) (NoteRepo, error) {
 	return nR, nil
 }
 
-func (nR NoteRepo) Update(noteID uuid.UUID, newTitle string) {
-	n := nR.notes[noteID]
-	n.Title = newTitle
-	nR.notes[noteID] = n
+func (nR NoteRepo) Update(noteID uuid.UUID, newTitle string) error {
+	if n, ok := nR.notes[noteID]; ok {
+		n.Title = newTitle
+		nR.notes[noteID] = n
+		return nil
+	}
+	return errors.New("")
 }
 
 func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) Note {

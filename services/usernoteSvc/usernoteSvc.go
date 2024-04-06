@@ -4,7 +4,7 @@
 package usernoteSvc
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
 	"github.com/google/uuid"
@@ -18,17 +18,13 @@ func NewNotesService(nR note.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
-func (ns NotesService) Update(noteID uuid.UUID, title string) (note.Note, error) {
+func (ns NotesService) Update(noteID uuid.UUID, title string) error {
 	// TODO: anything calling into the service, shall already talk the language of the service => Notes
-	n := ns.notes.GetNoteByID(noteID)
-	x := note.Note{}
-	if n == x {
-		return note.Note{}, errors.New("update: ")
+	err := ns.notes.Update(noteID, title)
+	if err != nil {
+		return fmt.Errorf("update: %w", err)
 	}
-
-	ns.notes.Update(noteID, title)
-	n.Title = title
-	return n, nil
+	return nil
 }
 
 func (nS NotesService) GetNoteByID(noteID uuid.UUID) note.Note {
