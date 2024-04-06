@@ -9,25 +9,6 @@ import (
 )
 
 func TestNotes(t *testing.T) {
-	t.Run("When initialising NewNotesRepo, every note needs to have a different noteID", func(t *testing.T) {
-		notes := []svc.Note{
-			{
-				NoteID:  uuid.UUID{},
-				UserID:  uuid.UUID{2},
-				Title:   "annas 1st note",
-				Content: "annas 1st note content",
-			},
-			{
-				NoteID:  uuid.UUID{},
-				UserID:  uuid.UUID{2},
-				Title:   "annas 2nd note",
-				Content: "annas 2nd note content",
-			},
-		}
-		_, err := svc.NewNotesRepo(notes)
-		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteID")
-	})
-
 	t.Run("I can get a note by its ID", func(t *testing.T) {
 		unRepo, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
@@ -80,6 +61,25 @@ func TestNotes(t *testing.T) {
 			got := unRepo.GetNotesByUserID(tc.userID)
 			assert.Equal(t, tc.want, got)
 		}
+	})
+
+	t.Run("When initialising NewNotesRepo, every note needs to have a different noteID", func(t *testing.T) {
+		notes := []svc.Note{
+			{
+				NoteID:  uuid.UUID{},
+				UserID:  uuid.UUID{2},
+				Title:   "annas 1st note",
+				Content: "annas 1st note content",
+			},
+			{
+				NoteID:  uuid.UUID{},
+				UserID:  uuid.UUID{2},
+				Title:   "annas 2nd note",
+				Content: "annas 2nd note content",
+			},
+		}
+		_, err := svc.NewNotesRepo(notes)
+		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteID")
 	})
 }
 
