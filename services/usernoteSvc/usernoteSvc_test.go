@@ -17,7 +17,7 @@ func TestNotes(t *testing.T) {
 		want := svc.Note{
 			NoteID:  uuid.UUID{1},
 			Title:   "robs 1st note",
-			Content: "robs 1st content",
+			Content: "robs 1st note content",
 			UserID:  uuid.UUID{1},
 		}
 		assert.Equal(t, want, got)
@@ -55,6 +55,7 @@ func TestNotes(t *testing.T) {
 func fixtureNotes() []svc.Note {
 	return []svc.Note{
 		{
+			NoteID:  uuid.UUID{1},
 			UserID:  uuid.UUID{1},
 			Title:   "robs 1st note",
 			Content: "robs 1st note content",
