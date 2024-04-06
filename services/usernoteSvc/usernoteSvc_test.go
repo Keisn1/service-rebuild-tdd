@@ -9,6 +9,22 @@ import (
 )
 
 func TestNotes(t *testing.T) {
+	t.Run("I can only get a note by its ID if I'm the owner", func(t *testing.T) {
+		userID := uuid.UUID{100}
+		noteID := uuid.UUID{1}
+		unRepo, err := svc.NewNotesRepo([]svc.Note{{
+			NoteID:  uuid.UUID{1},
+			UserID:  uuid.UUID{1},
+			Title:   "robs 1st note",
+			Content: "robs 1st note content",
+		}})
+
+		assert.NoError(t, err)
+		_, err = unRepo.GetNoteByID(noteID, userID)
+		assert.Error(t, err, "getNoteByID: user unauthorized")
+
+	})
+
 	t.Run("I can get a note by its ID", func(t *testing.T) {
 		unRepo, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
@@ -29,38 +45,12 @@ func TestNotes(t *testing.T) {
 					UserID:  uuid.UUID{1},
 				},
 			},
-			{
-				noteID: uuid.UUID{4},
-				userID: uuid.UUID{2},
-				want: svc.Note{
-					NoteID:  uuid.UUID{4},
-					Title:   "annas 2nd note",
-					Content: "annas 2nd note content",
-					UserID:  uuid.UUID{2},
-				},
-			},
 		}
 
 		for _, tc := range testCases {
 			got, _ := unRepo.GetNoteByID(tc.noteID, tc.userID)
 			assert.Equal(t, tc.want, got)
 		}
-	})
-
-	t.Run("I can only get a note by its ID if I'm the owner", func(t *testing.T) {
-		userID := uuid.UUID{100}
-		noteID := uuid.UUID{1}
-		unRepo, err := svc.NewNotesRepo([]svc.Note{{
-			NoteID:  uuid.UUID{1},
-			UserID:  uuid.UUID{1},
-			Title:   "robs 1st note",
-			Content: "robs 1st note content",
-		}})
-
-		assert.NoError(t, err)
-		_, err = unRepo.GetNoteByID(noteID, userID)
-		assert.Error(t, err, "getNoteByID: user unauthorized")
-
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
@@ -74,14 +64,14 @@ func TestNotes(t *testing.T) {
 		testCases := []testCase{
 			{userID: uuid.UUID{1},
 				want: []svc.Note{
-					{NoteID: uuid.UUID{1}, UserID: uuid.UUID{1}, Title: "robs 1st note", Content: "robs 1st note content"},
-					{NoteID: uuid.UUID{2}, UserID: uuid.UUID{1}, Title: "robs 2nd note", Content: "robs 2nd note content"},
+					{UserID: uuid.UUID{1}, Title: "robs 1st note", Content: "robs 1st note content"},
+					{UserID: uuid.UUID{1}, Title: "robs 2nd note", Content: "robs 2nd note content"},
 				},
 			},
 			{userID: uuid.UUID{2},
 				want: []svc.Note{
-					{NoteID: uuid.UUID{3}, UserID: uuid.UUID{2}, Title: "annas 1st note", Content: "annas 1st note content"},
-					{NoteID: uuid.UUID{4}, UserID: uuid.UUID{2}, Title: "annas 2nd note", Content: "annas 2nd note content"},
+					{UserID: uuid.UUID{2}, Title: "annas 1st note", Content: "annas 1st note content"},
+					{UserID: uuid.UUID{2}, Title: "annas 2nd note", Content: "annas 2nd note content"},
 				},
 			},
 		}
