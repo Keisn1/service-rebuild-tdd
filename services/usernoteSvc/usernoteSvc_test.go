@@ -53,6 +53,16 @@ func TestNotes(t *testing.T) {
 					UserID:  uuid.UUID{1},
 				},
 			},
+			{
+				noteID:     uuid.UUID{3},
+				newContent: "New content",
+				want: note.Note{
+					NoteID:  uuid.UUID{2},
+					Title:   "annas 1st note",
+					Content: "New content",
+					UserID:  uuid.UUID{1},
+				},
+			},
 		}
 
 		for _, tc := range testCases {
