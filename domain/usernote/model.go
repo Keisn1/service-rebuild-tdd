@@ -1,46 +1,50 @@
 package usernote
 
 import (
-	"github.com/Keisn1/note-taking-app/domain/entities"
+	ents "github.com/Keisn1/note-taking-app/domain/entities"
 	"github.com/google/uuid"
 )
 
 type UserNote struct {
-	note *entities.Note
-	user *entities.Person
+	note   *ents.Note
+	userID ents.UserID
 }
 
 func NewUserNote(title, content string, userID uuid.UUID) UserNote {
 	return UserNote{
-		note: &entities.Note{
-			ID:      uuid.New(),
-			Title:   entities.Title(title),
-			Content: entities.Content(content),
+		note: &ents.Note{
+			ID:      ents.NoteID(uuid.New()),
+			Title:   ents.Title(title),
+			Content: ents.Content(content),
 		},
-		user: &entities.Person{ID: userID},
+		userID: ents.UserID(userID),
 	}
 }
 
-func (u UserNote) GetTitle() entities.Title {
+func (u UserNote) GetTitle() ents.Title {
 	return u.note.Title
 }
 
 func (u UserNote) SetTitle(title string) {
-	u.note.Title = entities.Title(title)
+	u.note.Title = ents.Title(title)
 }
 
-func (u UserNote) GetContent() entities.Content {
+func (u UserNote) GetContent() ents.Content {
 	return u.note.Content
 }
 
 func (u UserNote) SetContent(content string) {
-	u.note.Content = entities.Content(content)
+	u.note.Content = ents.Content(content)
 }
 
-func (u UserNote) GetID() uuid.UUID {
+func (u UserNote) GetID() ents.NoteID {
 	return u.note.ID
 }
 
-func (u UserNote) GetUserID() uuid.UUID {
-	return u.user.ID
+func (u UserNote) SetID(noteID uuid.UUID) {
+	u.note.ID = ents.NoteID(noteID)
+}
+
+func (u UserNote) GetUserID() ents.UserID {
+	return u.userID
 }

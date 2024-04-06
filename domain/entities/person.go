@@ -7,9 +7,11 @@ import (
 )
 
 type Person struct {
-	ID    uuid.UUID
+	ID    UserID
 	Name  Username
 	Email mail.Address
 }
+
+type UserID uuid.UUID
 
 type Username string
