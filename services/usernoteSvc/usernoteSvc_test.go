@@ -9,28 +9,11 @@ import (
 )
 
 func TestNotes(t *testing.T) {
-	t.Run("I can only get a note by its ID if I'm the owner", func(t *testing.T) {
-		userID := uuid.UUID{100}
-		noteID := uuid.UUID{1}
-		unRepo, err := svc.NewNotesRepo([]svc.Note{{
-			NoteID:  uuid.UUID{1},
-			UserID:  uuid.UUID{1},
-			Title:   "robs 1st note",
-			Content: "robs 1st note content",
-		}})
-
-		assert.NoError(t, err)
-		_, err = unRepo.GetNoteByID(noteID, userID)
-		assert.Error(t, err, "getNoteByID: user unauthorized")
-
-	})
-
 	t.Run("I can get a note by its ID", func(t *testing.T) {
 		unRepo, err := svc.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		type testCase struct {
 			noteID uuid.UUID
-			userID uuid.UUID
 			want   svc.Note
 		}
 
@@ -46,7 +29,7 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, _ := unRepo.GetNoteByID(tc.noteID, tc.userID)
+			got := unRepo.GetNoteByID(tc.noteID)
 			assert.Equal(t, tc.want, got)
 		}
 	})

@@ -32,13 +32,13 @@ func NewNotesRepo(notes []Note) (notesRepo, error) {
 	return nR, nil
 }
 
-func (nR notesRepo) GetNoteByID(noteID uuid.UUID, userID uuid.UUID) (Note, error) {
+func (nR notesRepo) GetNoteByID(noteID uuid.UUID) Note {
 	for _, n := range nR.notes {
 		if n.NoteID == noteID {
-			return n, nil
+			return n
 		}
 	}
-	return Note{}, nil
+	return Note{}
 }
 
 func (nR notesRepo) GetNotesByUserID(userID uuid.UUID) []Note {
