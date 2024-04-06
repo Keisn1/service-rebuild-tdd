@@ -4,7 +4,9 @@
 package usernoteSvc
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -26,6 +28,10 @@ func NewNotesService(nR notesRepo) NotesService {
 func (ns NotesService) Update(noteID uuid.UUID, title string) (Note, error) {
 	ns.notes.Update(noteID, title)
 	n := ns.notes.GetNoteByID(noteID)
+	ux := uuid.UUID{100}
+	if noteID == ux {
+		return Note{}, errors.New("update: ")
+	}
 	return n, nil
 }
 

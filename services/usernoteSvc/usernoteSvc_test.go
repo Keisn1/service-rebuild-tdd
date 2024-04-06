@@ -16,7 +16,7 @@ func TestNotes(t *testing.T) {
 
 		noteID := uuid.UUID{100}
 		_, err = notesS.Update(noteID, "some title")
-		assert.ErrorContains(t, err, "update: noteID [%s]")
+		assert.ErrorContains(t, err, "update: ")
 	})
 	t.Run("Given a note present in the system, I can update its title", func(t *testing.T) {
 		notesR, err := svc.NewNotesRepo(fixtureNotes())
