@@ -20,7 +20,8 @@ func TestNotes(t *testing.T) {
 		assert.Equal(t, "new note title", note.GetTitle().Get())
 		assert.Equal(t, "new note content", note.GetContent().Get())
 
-		got := notesS.GetNoteByID(note.GetID())
+		got, err := notesS.GetNoteByID(note.GetID())
+		assert.NoError(t, err)
 		assert.Equal(t, note, got)
 	})
 
@@ -76,7 +77,8 @@ func TestNotes(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, n) // assert that the right note was sent back
 
-				got := notesS.GetNoteByID(tc.currNote.GetID())
+				got, err := notesS.GetNoteByID(tc.currNote.GetID())
+				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})
 		}
@@ -95,7 +97,8 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := notesS.GetNoteByID(tc.noteID)
+			got, err := notesS.GetNoteByID(tc.noteID)
+			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		}
 	})
@@ -125,7 +128,8 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := notesS.GetNotesByUserID(tc.userID)
+			got, err := notesS.GetNotesByUserID(tc.userID)
+			assert.NoError(t, err)
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})

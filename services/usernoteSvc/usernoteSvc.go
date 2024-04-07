@@ -40,10 +40,10 @@ func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
 	return n, nil
 }
 
-func (nS NotesService) GetNoteByID(noteID uuid.UUID) note.Note {
-	return nS.notes.GetNoteByID(noteID)
+func (nS NotesService) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+	return nS.notes.GetNoteByID(noteID), nil
 }
 
-func (nS NotesService) GetNotesByUserID(userID uuid.UUID) []note.Note {
-	return nS.notes.GetNotesByUserID(userID)
+func (nS NotesService) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
+	return nS.notes.GetNotesByUserID(userID), nil
 }
