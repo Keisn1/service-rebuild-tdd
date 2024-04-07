@@ -18,8 +18,16 @@ func NewNotesService(nR note.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
-func (ns NotesService) Create(n note.Note) (note.Note, error) {
-	n.SetID(uuid.New())
+func (ns NotesService) Delete(noteID uuid.UUID) error {
+	err := ns.notes.Delete(noteID)
+	if err != nil {
+		return fmt.Errorf("delete: [%s]", noteID)
+	}
+	return nil
+}
+
+func (ns NotesService) Create(nN note.NewNote) (note.Note, error) {
+	n := note.MakeNoteFromNewNote(nN)
 	ns.notes.Create(n)
 	return n, nil
 }
@@ -43,7 +51,7 @@ func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
 func (nS NotesService) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	n, err := nS.notes.GetNoteByID(noteID)
 	if err != nil {
-		return note.Note{}, fmt.Errorf("getNoteByID: %s: %w", noteID, err)
+		return note.Note{}, fmt.Errorf("getNoteByID: [%s]: %w", noteID, err)
 	}
 	return n, nil
 }
@@ -51,7 +59,7 @@ func (nS NotesService) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 func (nS NotesService) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	notes, err := nS.notes.GetNotesByUserID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("getNoteByUserID: %s: %w", userID, err)
+		return nil, fmt.Errorf("getNoteByUserID: [%s]: %w", userID, err)
 	}
 	return notes, nil
 }

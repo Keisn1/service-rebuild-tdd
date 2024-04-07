@@ -24,6 +24,15 @@ func NewNotesRepo(notes []Note) (NoteRepo, error) {
 	return nR, nil
 }
 
+func (nR NoteRepo) Delete(noteID uuid.UUID) error {
+	if _, ok := nR.notes[noteID]; ok {
+		delete(nR.notes, noteID)
+		return nil
+	}
+	return fmt.Errorf("delete: not found [%s]", noteID)
+
+}
+
 func (nR NoteRepo) Create(n Note) {
 	nR.notes[n.GetID()] = n
 }

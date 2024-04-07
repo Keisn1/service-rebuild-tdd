@@ -11,9 +11,32 @@ type Note struct {
 	userID  uuid.UUID
 }
 
-func NewNote(noteID uuid.UUID, title Title, content Content, userID uuid.UUID) Note {
+type NewNote struct {
+	title   Title
+	content Content
+	userID  uuid.UUID
+}
+
+func MakeNote(noteID uuid.UUID, title Title, content Content, userID uuid.UUID) Note {
 	return Note{
 		noteID:  noteID,
+		title:   title,
+		content: content,
+		userID:  userID,
+	}
+}
+
+func MakeNoteFromNewNote(nN NewNote) Note {
+	return Note{
+		noteID:  uuid.New(),
+		title:   nN.title,
+		content: nN.content,
+		userID:  nN.userID,
+	}
+}
+
+func MakeNewNote(title Title, content Content, userID uuid.UUID) NewNote {
+	return NewNote{
 		title:   title,
 		content: content,
 		userID:  userID,

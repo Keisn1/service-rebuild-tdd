@@ -11,7 +11,7 @@ import (
 func TestNote(t *testing.T) {
 	t.Run("I can create a new note and access their fields via getter and setter", func(t *testing.T) {
 		noteID, userID := uuid.New(), uuid.New()
-		n := note.NewNote(noteID, note.NewTitle("title"), note.NewContent("content"), userID)
+		n := note.MakeNote(noteID, note.NewTitle("title"), note.NewContent("content"), userID)
 
 		assert.Equal(t, noteID, n.GetID())
 		assert.Equal(t, note.NewTitle("title"), n.GetTitle())
