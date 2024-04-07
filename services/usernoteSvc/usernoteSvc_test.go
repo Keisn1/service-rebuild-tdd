@@ -1,6 +1,7 @@
 package usernoteSvc_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
@@ -84,6 +85,13 @@ func TestNotes(t *testing.T) {
 		}
 	})
 
+	t.Run("GetNoteByID return error on missing note", func(t *testing.T) {
+		notesS := Setup(t, fixtureNotes())
+		noteID := uuid.New()
+		_, err := notesS.GetNoteByID(noteID)
+		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: %s", noteID).Error())
+	})
+
 	t.Run("I can get a note by its ID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		type testCase struct {
@@ -101,6 +109,13 @@ func TestNotes(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		}
+	})
+
+	t.Run("GetNoteByUserID return errors on missing user", func(t *testing.T) {
+		notesS := Setup(t, fixtureNotes())
+		userID := uuid.New()
+		_, err := notesS.GetNotesByUserID(userID)
+		assert.ErrorContains(t, err, fmt.Errorf("getNoteByUserID: %s", userID).Error())
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
@@ -142,6 +157,7 @@ func TestNotes(t *testing.T) {
 		_, err := note.NewNotesRepo(notes)
 		assert.ErrorContains(t, err, "newNotesRepo: duplicate noteID")
 	})
+
 }
 
 func fixtureNotes() []note.Note {

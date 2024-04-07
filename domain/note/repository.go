@@ -36,24 +36,29 @@ func (nR NoteRepo) Update(note Note) error {
 	return errors.New("")
 }
 
-func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) Note {
+func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (Note, error) {
 	for _, n := range nR.notes {
 		if n.GetID() == noteID {
-			return n
+			return n, nil
 		}
 	}
-	return Note{}
+	return Note{}, fmt.Errorf("GetNoteByID: Not found [%s]", noteID)
 }
 
-func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) []Note {
+func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]Note, error) {
 	var ret []Note
+	var found bool
 	for _, n := range nR.notes {
 		if n.GetUserID() == userID {
+			found = true
 			n.SetID(uuid.UUID{0})
 			ret = append(ret, n)
 		}
 	}
-	return ret
+	if !found {
+		return nil, fmt.Errorf("getNotesByUserID: not found [%s]", userID)
+	}
+	return ret, nil
 }
 
 func noDuplicate(notes []Note) error {

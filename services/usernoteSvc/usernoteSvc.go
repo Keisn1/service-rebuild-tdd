@@ -41,9 +41,17 @@ func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
 }
 
 func (nS NotesService) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
-	return nS.notes.GetNoteByID(noteID), nil
+	n, err := nS.notes.GetNoteByID(noteID)
+	if err != nil {
+		return note.Note{}, fmt.Errorf("getNoteByID: %s: %w", noteID, err)
+	}
+	return n, nil
 }
 
 func (nS NotesService) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
-	return nS.notes.GetNotesByUserID(userID), nil
+	notes, err := nS.notes.GetNotesByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("getNoteByUserID: %s: %w", userID, err)
+	}
+	return notes, nil
 }
