@@ -18,9 +18,13 @@ func NewNotesService(nR note.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
-func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
-	// TODO: anything calling into the service, shall already talk the language of the service => Notes
+func (ns NotesService) Create(n note.Note) (note.Note, error) {
+	n.SetID(uuid.New())
+	ns.notes.Create(n)
+	return n, nil
+}
 
+func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
 	if !newN.GetTitle().IsEmpty() {
 		n.SetTitle(newN.GetTitle().Get())
 	}

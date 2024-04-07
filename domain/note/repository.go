@@ -24,6 +24,10 @@ func NewNotesRepo(notes []Note) (NoteRepo, error) {
 	return nR, nil
 }
 
+func (nR NoteRepo) Create(n Note) {
+	nR.notes[n.GetID()] = n
+}
+
 func (nR NoteRepo) Update(note Note) error {
 	if _, ok := nR.notes[note.GetID()]; ok {
 		nR.notes[note.GetID()] = note

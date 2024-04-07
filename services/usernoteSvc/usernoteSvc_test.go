@@ -10,15 +10,19 @@ import (
 )
 
 func TestNotes(t *testing.T) {
-	// t.Run("I can create a new note", func(t *testing.T) {
-	// 	notesR, err := note.NewNotesRepo(fixtureNotes())
-	// 	assert.NoError(t, err)
-	// 	notesS := svc.NewNotesService(notesR)
+	t.Run("I can create a new note", func(t *testing.T) {
+		notesS := Setup(t, fixtureNotes())
 
-	// 	note := note.NewNote(uuid.UUID{}, "new note title", "new note content", uuid.New())
-	// 	notesS.Create(note)
+		note := note.NewNote(uuid.UUID{}, note.NewTitle("new note title"), note.NewContent("new note content"), uuid.New())
+		note, err := notesS.Create(note)
+		assert.NoError(t, err)
+		assert.NotEqual(t, note.GetID(), uuid.UUID{})
+		assert.Equal(t, "new note title", note.GetTitle().Get())
+		assert.Equal(t, "new note content", note.GetContent().Get())
 
-	// })
+		got := notesS.GetNoteByID(note.GetID())
+		assert.Equal(t, note, got)
+	})
 
 	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
 		notesR, err := note.NewNotesRepo(fixtureNotes())
@@ -30,9 +34,7 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
-		notesR, err := note.NewNotesRepo(fixtureNotes())
-		assert.NoError(t, err)
-		notesS := svc.NewNotesService(notesR)
+		notesS := Setup(t, fixtureNotes())
 
 		type testCase struct {
 			name       string
@@ -81,8 +83,7 @@ func TestNotes(t *testing.T) {
 	})
 
 	t.Run("I can get a note by its ID", func(t *testing.T) {
-		notesR, err := note.NewNotesRepo(fixtureNotes())
-		assert.NoError(t, err)
+		notesS := Setup(t, fixtureNotes())
 		type testCase struct {
 			noteID uuid.UUID
 			want   note.Note
@@ -94,14 +95,13 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := notesR.GetNoteByID(tc.noteID)
+			got := notesS.GetNoteByID(tc.noteID)
 			assert.Equal(t, tc.want, got)
 		}
 	})
 
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
-		notesR, err := note.NewNotesRepo(fixtureNotes())
-		assert.NoError(t, err)
+		notesS := Setup(t, fixtureNotes())
 		type testCase struct {
 			userID uuid.UUID
 			want   []note.Note
@@ -125,7 +125,7 @@ func TestNotes(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got := notesR.GetNotesByUserID(tc.userID)
+			got := notesS.GetNotesByUserID(tc.userID)
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
@@ -147,4 +147,10 @@ func fixtureNotes() []note.Note {
 		note.NewNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
 		note.NewNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 	}
+}
+
+func Setup(t *testing.T, notes []note.Note) svc.NotesService {
+	notesR, err := note.NewNotesRepo(fixtureNotes())
+	assert.NoError(t, err)
+	return svc.NewNotesService(notesR)
 }
