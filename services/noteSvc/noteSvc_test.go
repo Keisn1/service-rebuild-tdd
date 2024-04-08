@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
+	"github.com/Keisn1/note-taking-app/domain/note/repositories/memory"
 	svc "github.com/Keisn1/note-taking-app/services/noteSvc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +52,7 @@ func TestNoteCrud(t *testing.T) {
 	})
 
 	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
-		notesR, err := note.NewNotesRepo(fixtureNotes())
+		notesR, err := memory.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
 
@@ -184,7 +185,7 @@ func fixtureNotes() []note.Note {
 }
 
 func Setup(t *testing.T, notes []note.Note) svc.NotesService {
-	notesR, err := note.NewNotesRepo(fixtureNotes())
+	notesR, err := memory.NewNotesRepo(fixtureNotes())
 	assert.NoError(t, err)
 	return svc.NewNotesService(notesR)
 }

@@ -7,14 +7,15 @@ import (
 	"fmt"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
+	"github.com/Keisn1/note-taking-app/domain/note/repositories/memory"
 	"github.com/google/uuid"
 )
 
 type NotesService struct {
-	notes note.NoteRepo
+	notes memory.NoteRepo
 }
 
-func NewNotesService(nR note.NoteRepo) NotesService {
+func NewNotesService(nR memory.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
