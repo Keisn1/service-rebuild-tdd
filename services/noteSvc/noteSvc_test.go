@@ -1,17 +1,17 @@
-package usernoteSvc_test
+package noteSvc_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
-	svc "github.com/Keisn1/note-taking-app/services/usernoteSvc"
+	svc "github.com/Keisn1/note-taking-app/services/noteSvc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNotes(t *testing.T) {
-	t.Run("Try to delete a note gives an error", func(t *testing.T) {
+func TestNoteCrud(t *testing.T) {
+	t.Run("Try to delete a non present note gives an error", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		noteID := uuid.UUID{}
 
