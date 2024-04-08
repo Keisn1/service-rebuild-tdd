@@ -1,0 +1,44 @@
+:PROPERTIES:
+:header-args:sql: :engine postgresql :dbuser simba :dbpassword mufassa :database note_taking_app :dbport 5432 :dbhost localhost
+:END:
+#+title: Postgres
+
+
+* List db users
+#+begin_src sql
+\du
+#+end_src
+
+* List dbs
+#+begin_src sql
+\l
+#+end_src
+
+#+RESULTS:
+| List of databases |       |          |                 |            |            |            |           |                   |
+|-------------------+-------+----------+-----------------+------------+------------+------------+-----------+-------------------|
+| Name              | Owner | Encoding | Locale Provider | Collate    | Ctype      | ICU Locale | ICU Rules | Access privileges |
+| note_taking_app   | simba | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           |                   |
+| postgres          | simba | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           |                   |
+| template0         | simba | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =c/simba          |
+| simba=CTc/simba   |       |          |                 |            |            |            |           |                   |
+| template1         | simba | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =c/simba          |
+| simba=CTc/simba   |       |          |                 |            |            |            |           |                   |
+| test_user_store   | simba | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           |                   |
+
+* Drop
+** DROP DB
+*** note_taking_app
+#+begin_src sql
+DROP DATABASE IF EXISTS note_taking_app;
+#+end_src
+
+#+RESULTS:
+|---------------|
+| DROP DATABASE |
+|---------------|
+
+*** test_note_taking_app
+#+begin_src sql
+DROP DATABASE IF EXISTS test_note_taking_app;
+#+end_src

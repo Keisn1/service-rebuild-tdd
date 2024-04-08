@@ -7,3 +7,13 @@ services:
         GO_VERSION: ${GO_VERSION}
     ports:
       - ${HOST_PORT}:${SERVER_ADDRESS}
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: simba
+      POSTGRES_PASSWORD: mufassa
+      POSTGRES_DB: test_note_taking_app
+    ports:
+      - 5432:5432
