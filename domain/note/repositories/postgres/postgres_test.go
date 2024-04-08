@@ -1,17 +1,19 @@
-package pg_test
+package postgres_test
 
 import (
 	"testing"
 
+	"database/sql"
 	"github.com/Keisn1/note-taking-app/domain/note"
+	"github.com/Keisn1/note-taking-app/domain/note/repositories/postgres"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPostGres(t *testing.T) {
 	t.Run("Get notes of users by UserID", func(t *testing.T) {
-		conn := SetupPostGres(fixture_notes())
-		notesR := postgres.NoteRepo(conn)
+		conn := SetupPostGres(fixtureNotes())
+		notesR := postgres.NewNotesRepo(conn)
 		type testCase struct {
 			userID uuid.UUID
 			want   []note.Note
@@ -50,4 +52,8 @@ func fixtureNotes() []note.Note {
 		note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
 		note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 	}
+}
+
+func SetupPostGres(notes []note.Note) *sql.Conn {
+	return nil
 }
