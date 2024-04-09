@@ -26,6 +26,40 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
+func TestNotesRepo_Update(t *testing.T) {
+	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
+	defer testDB.Close()
+	defer deleteTable()
+
+	t.Run("Able to delete a note", func(t *testing.T) {
+
+	})
+}
+
+func TestNotesRepo_Delete(t *testing.T) {
+	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
+	defer testDB.Close()
+	defer deleteTable()
+
+	t.Run("Able to delete a note", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+
+		nN := note.MakeNewNote(note.NewTitle("title"), note.NewContent("content"), uuid.UUID{1})
+		n := note.MakeNoteFromNewNote(nN)
+		nR.Create(n)
+
+		err := nR.Delete(n.GetID())
+		assert.NoError(t, err)
+	})
+	t.Run("Delete non-present note throws error ", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+
+		noteID := uuid.New()
+		err := nR.Delete(noteID)
+		assert.ErrorContains(t, err, fmt.Sprintf("delete: note not present [%s]", noteID))
+	})
+}
+
 func TestNotesRepo_Create(t *testing.T) {
 	t.Run("Add a note", func(t *testing.T) {
 		testDB, deleteTable := SetupNotesTable(t, []note.Note{})
@@ -42,7 +76,7 @@ func TestNotesRepo_Create(t *testing.T) {
 		assert.Equal(t, got, n)
 	})
 
-	t.Run("Throws error if note to be created already present", func(t *testing.T) {
+	t.Run("Throws error if note to be created is already present", func(t *testing.T) {
 		testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 		defer testDB.Close()
 		defer deleteTable()

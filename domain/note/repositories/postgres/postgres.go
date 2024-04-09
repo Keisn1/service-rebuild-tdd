@@ -36,6 +36,17 @@ func noteDBToNote(nDB noteDB) note.Note {
 		nDB.userID)
 }
 
+func (nR NoteRepo) Delete(noteID uuid.UUID) error {
+	deleteRow := `DELETE FROM notes WHERE id=$1`
+	res, _ := nR.db.Exec(deleteRow, noteID)
+
+	if c, _ := res.RowsAffected(); c == 0 {
+		return fmt.Errorf("delete: note not present [%s]", noteID)
+	}
+
+	return nil
+}
+
 func (nR NoteRepo) Create(n note.Note) error {
 	insertRow := `INSERT INTO notes (id, title, content, user_id) VALUES ($1, $2, $3, $4)`
 	_, err := nR.db.Exec(

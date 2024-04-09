@@ -32,7 +32,7 @@ func TestNoteCrud(t *testing.T) {
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
 	})
 
-	t.Run("Throws error if database throws error", func(t *testing.T) {
+	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
 		notesRepo := StubNoteRepo{}
 		notesS := svc.NewNotesService(notesRepo)
 

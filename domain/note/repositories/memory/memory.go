@@ -35,6 +35,9 @@ func (nR NoteRepo) Delete(noteID uuid.UUID) error {
 }
 
 func (nR NoteRepo) Create(n note.Note) error {
+	if _, ok := nR.notes[n.GetID()]; ok {
+		return fmt.Errorf("create: already present %s", n.GetID())
+	}
 	nR.notes[n.GetID()] = n
 	return nil
 }
