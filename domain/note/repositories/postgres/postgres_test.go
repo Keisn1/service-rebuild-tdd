@@ -26,6 +26,23 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
+func TestNotesRepo_Create(t *testing.T) {
+	testDB, deleteTable := SetupNotesTable(t, []note.Note{})
+	defer testDB.Close()
+	defer deleteTable()
+	t.Run("Add a note", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+
+		n := note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})
+		err := nR.Create(n)
+		assert.NoError(t, err)
+
+		_, err = nR.GetNotesByUserID(n.GetID())
+		assert.NoError(t, err)
+	})
+
+}
+
 func TestNotesRepo_GetNoteByID(t *testing.T) {
 	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()

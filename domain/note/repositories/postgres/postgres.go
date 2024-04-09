@@ -35,6 +35,10 @@ func noteDBToNote(nDB noteDB) note.Note {
 		nDB.userID)
 }
 
+func (nR NoteRepo) Create(n note.Note) error {
+	return nil
+}
+
 func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	getNoteByID := `
 	SELECT id, title, content, user_id FROM notes WHERE id=$1;
