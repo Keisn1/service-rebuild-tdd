@@ -1,6 +1,8 @@
 package postgres_test
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"database/sql"
@@ -12,12 +14,56 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPostGres(t *testing.T) {
-	t.Run("Get notes of users by UserID", func(t *testing.T) {
-		db := SetupPostGres(t, fixtureNotes())
-		defer db.Close()
+const (
+	testDBName   = "test_note_taking_app"
+	testUser     = "postgres"
+	testPassword = "password"
+)
 
-		notesR := postgres.NewNotesRepo(db)
+func TestMain(m *testing.M) {
+	exitCode := run(m)
+	os.Exit(exitCode)
+}
+
+func run(m *testing.M) int {
+	var (
+		dropDB   = fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, testDBName)
+		createDB = fmt.Sprintf(`CREATE DATABASE %s;`, testDBName)
+	)
+
+	dsn := fmt.Sprintf("host=localhost port=5432 user=%s password=%s sslmode=disable", testUser, testPassword)
+	postgresDB, err := sql.Open("pgx", dsn)
+	if err != nil {
+		panic(err)
+	}
+	defer postgresDB.Close()
+
+	_, err = postgresDB.Exec(dropDB)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = postgresDB.Exec(createDB)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_, err = postgresDB.Exec(dropDB)
+		if err != nil {
+			panic(fmt.Errorf("postgresDB.Exec() err = %s", err))
+		}
+	}()
+
+	return m.Run()
+}
+
+func TestNotesRepo(t *testing.T) {
+	t.Run("Get notes by userID", func(t *testing.T) {
+		testDB := SetupNotesTable(t, fixtureNotes())
+		defer testDB.Close()
+
+		nR := postgres.NewNotesRepo(testDB)
 		type testCase struct {
 			userID uuid.UUID
 			want   []note.Note
@@ -41,7 +87,7 @@ func TestPostGres(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, err := notesR.GetNotesByUserID(tc.userID)
+			got, err := nR.GetNotesByUserID(tc.userID)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tc.want, got)
 		}
@@ -49,47 +95,29 @@ func TestPostGres(t *testing.T) {
 
 }
 
-func fixtureNotes() []note.Note {
-	return []note.Note{
-		note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
-		note.MakeNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
-		note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
-		note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
-	}
-}
+func SetupNotesTable(t *testing.T, notes []note.Note) *sql.DB {
+	var (
+		createNoteTable = `CREATE TABLE notes(
+							id UUID PRIMARY KEY,
+							title TEXT,
+							content TEXT,
+							user_id UUID NOT NULL)`
+	)
 
-func SetupPostGres(t *testing.T, notes []note.Note) *sql.DB {
-	url := "postgres://simba:mufassa@localhost:5432/test_note_taking_app"
-	db, err := sql.Open("pgx", url)
-
+	dsn := fmt.Sprintf("host=localhost port=5432 user=%s password=%s sslmode=disable dbname=%s ", testUser, testPassword, testDBName)
+	testDB, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// dropDB := `DROP DATABASE IF EXISTS test_note_taking_app;`
-	// createDB := `CREATE DATABASE test_note_taking_app;`
-	dropNoteTable := `DROP TABLE IF EXISTS notes;`
-	createNoteTable := `
-CREATE TABLE notes(
-id UUID PRIMARY KEY,
-title TEXT,
-content TEXT,
-user_id UUID NOT NULL
-)
-`
-	_, err = db.Exec(dropNoteTable)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = db.Exec(createNoteTable)
+	_, err = testDB.Exec(createNoteTable)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	insertRow := `INSERT INTO notes (id, title, content, user_id) VALUES ($1, $2, $3, $4)`
 	for _, n := range notes {
-		_, err = db.Exec(
+		_, err = testDB.Exec(
 			insertRow,
 			n.GetID(),
 			n.GetTitle().Get(),
@@ -100,8 +128,14 @@ user_id UUID NOT NULL
 			t.Fatal(err)
 		}
 	}
-
-	return db
+	return testDB
 }
 
-//TODO: need to have a timeout context for getting the database connection
+func fixtureNotes() []note.Note {
+	return []note.Note{
+		note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+		note.MakeNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+		note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+		note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+	}
+}
