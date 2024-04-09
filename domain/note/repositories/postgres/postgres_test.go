@@ -39,7 +39,7 @@ func TestNotesRepo_Update(t *testing.T) {
 		assert.ErrorContains(t, err, fmt.Sprintf("update: [%v]: DBError", n))
 	})
 
-	t.Run("Given a note NOT present in the system, return error", func(t *testing.T) {
+	t.Run("Given a note NOT present in the system, return ErrNoteNotFound", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
 
 		n := note.MakeNote(uuid.New(), note.NewTitle("invalid"), note.NewContent("invalid"), uuid.New())

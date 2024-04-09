@@ -11,18 +11,10 @@ import (
 )
 
 type NotesService struct {
-	notes noteRepo
+	notes note.NoteRepo
 }
 
-type noteRepo interface {
-	Delete(noteID uuid.UUID) error
-	Create(n note.Note) error
-	Update(note note.Note) error
-	GetNoteByID(noteID uuid.UUID) (note.Note, error)
-	GetNotesByUserID(userID uuid.UUID) ([]note.Note, error)
-}
-
-func NewNotesService(nR noteRepo) NotesService {
+func NewNotesService(nR note.NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 

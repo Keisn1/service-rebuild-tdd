@@ -17,6 +17,14 @@ type NewNote struct {
 	userID  uuid.UUID
 }
 
+type Content struct {
+	content *string
+}
+
+type Title struct {
+	title *string
+}
+
 func MakeNote(noteID uuid.UUID, title Title, content Content, userID uuid.UUID) Note {
 	return Note{
 		noteID:  noteID,
@@ -57,10 +65,6 @@ func (n *Note) SetContent(content string) { n.content.Set(content) }
 
 func (n *Note) GetUserID() uuid.UUID { return n.userID }
 
-type Title struct {
-	title *string
-}
-
 func NewTitle(title string) Title {
 	return Title{title: &title}
 }
@@ -77,10 +81,6 @@ func (tt Title) String() string {
 }
 
 func (tt Title) IsEmpty() bool { return tt.title == nil }
-
-type Content struct {
-	content *string
-}
 
 func NewContent(content string) Content {
 	return Content{content: &content}
