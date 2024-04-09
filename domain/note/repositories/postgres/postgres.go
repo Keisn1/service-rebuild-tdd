@@ -31,7 +31,10 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	getNote := `
 SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
 `
-	rows, _ := nR.db.Query(getNote, userID)
+	rows, err := nR.db.Query(getNote, userID)
+	if err != nil {
+		return nil, fmt.Errorf("getNotesByUserID: [%s]: %w", userID, err)
+	}
 	defer rows.Close()
 
 	var notes []noteDB
