@@ -64,7 +64,7 @@ func TestNoteService_Create(t *testing.T) {
 }
 
 func TestNoteService_Update(t *testing.T) {
-	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
+	t.Run("Given a note NOT present in the system and a note containing updates for this note, it throws an error", func(t *testing.T) {
 		notesR, err := memory.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
 		notesS := svc.NewNotesService(notesR)
@@ -73,7 +73,7 @@ func TestNoteService_Update(t *testing.T) {
 		assert.ErrorContains(t, err, "update: ")
 	})
 
-	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
+	t.Run("Given a note present in the system and a note containing updates for this note, I can update the present note inside the system", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 
 		type testCase struct {

@@ -36,6 +36,10 @@ func noteDBToNote(nDB noteDB) note.Note {
 		nDB.userID)
 }
 
+func (nR NoteRepo) Update(n note.Note) error {
+	return nil
+}
+
 func (nR NoteRepo) Delete(noteID uuid.UUID) error {
 	deleteRow := `DELETE FROM notes WHERE id=$1`
 	res, _ := nR.db.Exec(deleteRow, noteID)
