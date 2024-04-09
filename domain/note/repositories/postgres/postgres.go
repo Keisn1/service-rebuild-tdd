@@ -14,6 +14,13 @@ type database interface {
 	Exec(query string, args ...any) (sql.Result, error)
 }
 
+type noteDB struct {
+	id      uuid.UUID
+	title   string
+	content string
+	userID  uuid.UUID
+}
+
 type NoteRepo struct {
 	db database
 }
@@ -22,28 +29,17 @@ func NewNotesRepo(db database) NoteRepo {
 	return NoteRepo{db: db}
 }
 
-type noteDB struct {
-	id      uuid.UUID
-	title   string
-	content string
-	userID  uuid.UUID
-}
-
-func noteDBToNote(nDB noteDB) note.Note {
-	return note.MakeNote(nDB.id,
-		note.NewTitle(nDB.title),
-		note.NewContent(nDB.content),
-		nDB.userID)
-}
-
 func (nR NoteRepo) Update(n note.Note) error {
 	updateRow := `
 	UPDATE notes
 	SET title = $1, content = $2 WHERE id=$3 `
 
-	res, _ := nR.db.Exec(updateRow, n.GetTitle().String(), n.GetContent().String(), n.GetID())
+	res, err := nR.db.Exec(updateRow, n.GetTitle().String(), n.GetContent().String(), n.GetID())
+	if err != nil {
+		return fmt.Errorf("update: [%v]: %w", n, err)
+	}
 	if c, _ := res.RowsAffected(); c == 0 {
-		return fmt.Errorf("update: [%v]", n)
+		return note.ErrNoteNotFound
 	}
 
 	return nil
@@ -123,4 +119,11 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	}
 
 	return ret, nil
+}
+
+func noteDBToNote(nDB noteDB) note.Note {
+	return note.MakeNote(nDB.id,
+		note.NewTitle(nDB.title),
+		note.NewContent(nDB.content),
+		nDB.userID)
 }

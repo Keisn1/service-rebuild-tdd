@@ -43,7 +43,7 @@ func (ns NotesService) Create(nN note.NewNote) (note.Note, error) {
 	return n, nil
 }
 
-func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
+func (ns NotesService) Update(n note.Note, newN note.Note) (note.Note, error) {
 	if !newN.GetTitle().IsEmpty() {
 		n.SetTitle(newN.GetTitle().String())
 	}

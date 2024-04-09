@@ -5,16 +5,16 @@ import (
 	"errors"
 )
 
-type SQLDB struct{}
+type stubSQLDB struct{}
 
-func (s *SQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (s *stubSQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return nil, errors.New("DBError")
 }
 
-func (s *SQLDB) QueryRow(query string, args ...any) (row *sql.Row) {
+func (s *stubSQLDB) QueryRow(query string, args ...any) (row *sql.Row) {
 	return
 }
 
-func (s *SQLDB) Exec(query string, args ...any) (res sql.Result, err error) {
-	return
+func (s *stubSQLDB) Exec(query string, args ...any) (res sql.Result, err error) {
+	return nil, errors.New("DBError")
 }

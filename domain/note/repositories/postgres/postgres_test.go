@@ -31,12 +31,20 @@ func TestNotesRepo_Update(t *testing.T) {
 	defer testDB.Close()
 	defer deleteTable()
 
-	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
+	t.Run("Given an error received by the DB, the error is forwarded", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(&stubSQLDB{})
+
+		n := note.MakeNote(uuid.New(), note.NewTitle("invalid"), note.NewContent("invalid"), uuid.New())
+		err := nR.Update(n)
+		assert.ErrorContains(t, err, fmt.Sprintf("update: [%v]: DBError", n))
+	})
+
+	t.Run("Given a note NOT present in the system, return error", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
 
 		n := note.MakeNote(uuid.New(), note.NewTitle("invalid"), note.NewContent("invalid"), uuid.New())
 		err := nR.Update(n)
-		assert.ErrorContains(t, err, fmt.Sprintf("update: [%v]", n))
+		assert.ErrorContains(t, err, note.ErrNoteNotFound.Error())
 	})
 
 	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
@@ -216,8 +224,8 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 	})
 
 	t.Run("Fowards error on database error", func(t *testing.T) {
-		sdb := &SQLDB{}
-		nR := postgres.NewNotesRepo(sdb)
+		stubDB := &stubSQLDB{}
+		nR := postgres.NewNotesRepo(stubDB)
 
 		userID := uuid.UUID{}
 		wantErr := fmt.Errorf("getNotesByUserID: [%s]: %w", userID, errors.New("DBError"))
