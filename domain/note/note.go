@@ -69,7 +69,7 @@ func (tt Title) Set(title string) {
 	*tt.title = title
 }
 
-func (tt Title) Get() string {
+func (tt Title) String() string {
 	return *tt.title
 }
 
@@ -87,7 +87,7 @@ func (c Content) Set(content string) {
 	*c.content = content
 }
 
-func (c Content) Get() string {
+func (c Content) String() string {
 	return *c.content
 }
 

@@ -69,8 +69,8 @@ func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
 		_, err = testDB.Exec(
 			insertRow,
 			n.GetID(),
-			n.GetTitle().Get(),
-			n.GetContent().Get(),
+			n.GetTitle().String(),
+			n.GetContent().String(),
 			n.GetUserID(),
 		)
 		if err != nil {

@@ -40,8 +40,8 @@ func TestNoteCrud(t *testing.T) {
 		got, err := notesS.Create(newNote)
 		assert.NoError(t, err)
 		assert.NotEqual(t, got.GetID(), uuid.UUID{})
-		assert.Equal(t, "new note title", got.GetTitle().Get())
-		assert.Equal(t, "new note content", got.GetContent().Get())
+		assert.Equal(t, "new note title", got.GetTitle().String())
+		assert.Equal(t, "new note content", got.GetContent().String())
 		assert.Equal(t, userID, got.GetUserID())
 
 		noteID := got.GetID()

@@ -35,11 +35,11 @@ func (ns NotesService) Create(nN note.NewNote) (note.Note, error) {
 
 func (ns NotesService) Update(n, newN note.Note) (note.Note, error) {
 	if !newN.GetTitle().IsEmpty() {
-		n.SetTitle(newN.GetTitle().Get())
+		n.SetTitle(newN.GetTitle().String())
 	}
 
 	if !newN.GetContent().IsEmpty() {
-		n.SetContent(newN.GetContent().Get())
+		n.SetContent(newN.GetContent().String())
 	}
 
 	err := ns.notes.Update(n)

@@ -23,10 +23,10 @@ func TestNote(t *testing.T) {
 		assert.Equal(t, newNoteID, n.GetID())
 
 		n.SetTitle("new title")
-		assert.Equal(t, "new title", n.GetTitle().Get())
+		assert.Equal(t, "new title", n.GetTitle().String())
 
 		n.SetContent("new content")
-		assert.Equal(t, "new content", n.GetContent().Get())
+		assert.Equal(t, "new content", n.GetContent().String())
 	})
 
 	t.Run("I can set a title and get a title", func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestNote(t *testing.T) {
 		title.Set("newTitle")
 
 		want := "newTitle"
-		got := title.Get()
+		got := title.String()
 		assert.Equal(t, want, got)
 	})
 
@@ -48,7 +48,7 @@ func TestNote(t *testing.T) {
 		content.Set("newContent")
 
 		want := "newContent"
-		got := content.Get()
+		got := content.String()
 		assert.Equal(t, want, got)
 	})
 
