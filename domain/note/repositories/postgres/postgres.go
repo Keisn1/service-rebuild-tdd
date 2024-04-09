@@ -28,6 +28,13 @@ type noteDB struct {
 	userID  uuid.UUID
 }
 
+func noteDBToNote(nDB noteDB) note.Note {
+	return note.MakeNote(nDB.id,
+		note.NewTitle(nDB.title),
+		note.NewContent(nDB.content),
+		nDB.userID)
+}
+
 func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	getNoteByID := `
 	SELECT id, title, content, user_id FROM notes WHERE id=$1;
@@ -42,12 +49,7 @@ func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 		return note.Note{}, fmt.Errorf("getNoteByID: [%s]: %w", noteID, err)
 	}
 
-	n := note.MakeNote(nDB.id,
-		note.NewTitle(nDB.title),
-		note.NewContent(nDB.content),
-		nDB.userID)
-
-	return n, nil
+	return noteDBToNote(nDB), nil
 }
 
 func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
@@ -62,12 +64,12 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 
 	var notes []noteDB
 	for rows.Next() {
-		var n noteDB
-		err := rows.Scan(&n.id, &n.title, &n.content, &n.userID)
+		var nDB noteDB
+		err := rows.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
 		if err != nil {
 			return nil, fmt.Errorf("getNotesByUserId: [%s]: scan rows: %w", userID, err)
 		}
-		notes = append(notes, n)
+		notes = append(notes, nDB)
 	}
 
 	if len(notes) == 0 {
@@ -75,13 +77,8 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	}
 
 	var ret []note.Note
-	for _, n := range notes {
-		ret = append(ret, note.MakeNote(
-			n.id,
-			note.NewTitle(n.title),
-			note.NewContent(n.content),
-			n.userID,
-		))
+	for _, nDB := range notes {
+		ret = append(ret, noteDBToNote(nDB))
 	}
 
 	return ret, nil
