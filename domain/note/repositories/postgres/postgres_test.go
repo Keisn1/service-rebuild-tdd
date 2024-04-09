@@ -36,6 +36,62 @@ func TestNotesRepo_Update(t *testing.T) {
 	})
 }
 
+func TestNotesRepo_Edit(t *testing.T) {
+	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
+	defer testDB.Close()
+	defer deleteTable()
+
+	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+
+		type testCase struct {
+			name       string
+			currNote   note.Note
+			updateNote note.Note
+			want       note.Note
+		}
+
+		testCases := []testCase{
+			{
+				name:       "New Title, new 0 character content, update of both (title and content) expected",
+				currNote:   note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+				updateNote: note.MakeNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
+				want:       note.MakeNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
+			},
+			{
+				name:       "New Title, empty content, therefore no update",
+				currNote:   note.MakeNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+				updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.Content{}, uuid.UUID{1}),
+				want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+			},
+			{
+				name:       "New 0 character title, new content, update of both (title and content) expected",
+				currNote:   note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
+				want:       note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
+			},
+			{
+				name:       "empty title, empty content, therefore no update",
+				currNote:   note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+				updateNote: note.MakeNote(uuid.UUID{4}, note.Title{}, note.Content{}, uuid.UUID{2}),
+				want:       note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				n, err := nR.Update(tc.currNote, tc.updateNote)
+				assert.NoError(t, err)
+				// assert.Equal(t, tc.want, n) // assert that the right note was sent back
+
+				// got, err := notesS.GetNoteByID(tc.currNote.GetID())
+				// assert.NoError(t, err)
+				// assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
+			})
+		}
+	})
+}
+
 func TestNotesRepo_Delete(t *testing.T) {
 	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()
