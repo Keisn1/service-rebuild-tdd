@@ -2,16 +2,21 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
 	"github.com/google/uuid"
 )
 
 type NoteRepo struct {
-	db *sql.DB
+	db database
 }
 
-func NewNotesRepo(db *sql.DB) NoteRepo {
+type database interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
+func NewNotesRepo(db database) NoteRepo {
 	return NoteRepo{db: db}
 }
 
@@ -27,12 +32,17 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
 `
 	rows, _ := nR.db.Query(getNote, userID)
+	defer rows.Close()
+
 	var notes []noteDB
 	for rows.Next() {
-
 		var n noteDB
 		_ = rows.Scan(&n.id, &n.title, &n.content, &n.userID)
 		notes = append(notes, n)
+	}
+
+	if len(notes) == 0 {
+		return nil, fmt.Errorf("getNotesByUserID: not found [%s]", userID)
 	}
 
 	var ret []note.Note

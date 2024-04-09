@@ -1,6 +1,7 @@
 package postgres_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -56,12 +57,39 @@ func run(m *testing.M) int {
 	}()
 
 	return m.Run()
+
 }
 
-func TestNotesRepo(t *testing.T) {
+type SQLDB struct{}
+
+func (s *SQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return nil, errors.New("DBError")
+}
+
+func TestNotesRepo_GetNotesByUserID(t *testing.T) {
+	testDB := SetupNotesTable(t, fixtureNotes())
+	defer testDB.Close()
+
+	t.Run("Returns error on missing user", func(t *testing.T) {
+		sdb := &SQLDB{}
+		nR := postgres.NewNotesRepo(sdb)
+
+		userID := uuid.UUID{}
+		wantErr := fmt.Errorf("getNotesByUserID: [%s]: %w", userID, errors.New("DBError"))
+		_, err := nR.GetNotesByUserID(userID)
+		assert.EqualError(t, err, wantErr.Error())
+	})
+
+	t.Run("Returns error on missing user", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+
+		userID := uuid.UUID{}
+		wantErrMsg := fmt.Sprintf("getNotesByUserID: not found [%s]", userID)
+		_, err := nR.GetNotesByUserID(userID)
+		assert.ErrorContains(t, err, wantErrMsg)
+	})
+
 	t.Run("Get notes by userID", func(t *testing.T) {
-		testDB := SetupNotesTable(t, fixtureNotes())
-		defer testDB.Close()
 
 		nR := postgres.NewNotesRepo(testDB)
 		type testCase struct {
@@ -92,7 +120,6 @@ func TestNotesRepo(t *testing.T) {
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
-
 }
 
 func SetupNotesTable(t *testing.T, notes []note.Note) *sql.DB {
