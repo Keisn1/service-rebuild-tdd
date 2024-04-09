@@ -8,12 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type NoteRepo struct {
-	db database
-}
-
 type database interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
+type NoteRepo struct {
+	db database
 }
 
 func NewNotesRepo(db database) NoteRepo {
@@ -27,11 +27,18 @@ type noteDB struct {
 	userID  uuid.UUID
 }
 
+func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+	// 	getNote := `
+	// SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
+	// `
+	return note.Note{}, nil
+}
+
 func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
-	getNote := `
+	getNotesByUserID := `
 SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
 `
-	rows, err := nR.db.Query(getNote, userID)
+	rows, err := nR.db.Query(getNotesByUserID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("getNotesByUserID: [%s]: %w", userID, err)
 	}
@@ -40,7 +47,10 @@ SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
 	var notes []noteDB
 	for rows.Next() {
 		var n noteDB
-		_ = rows.Scan(&n.id, &n.title, &n.content, &n.userID)
+		err := rows.Scan(&n.id, &n.title, &n.content, &n.userID)
+		if err != nil {
+			return nil, fmt.Errorf("getNotesByUserId: [%s]: scan rows: %w", userID, err)
+		}
 		notes = append(notes, n)
 	}
 

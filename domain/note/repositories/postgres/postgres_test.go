@@ -66,19 +66,34 @@ func (s *SQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return nil, errors.New("DBError")
 }
 
-func TestNotesRepo_GetNotesByUserID(t *testing.T) {
+func TestNotesRepo_GetNoteByID(t *testing.T) {
 	testDB := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()
 
-	t.Run("Returns error on missing user", func(t *testing.T) {
-		sdb := &SQLDB{}
-		nR := postgres.NewNotesRepo(sdb)
+	t.Run("Happy: get note by id", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
 
-		userID := uuid.UUID{}
-		wantErr := fmt.Errorf("getNotesByUserID: [%s]: %w", userID, errors.New("DBError"))
-		_, err := nR.GetNotesByUserID(userID)
-		assert.EqualError(t, err, wantErr.Error())
+		type testCase struct {
+			noteID uuid.UUID
+			want   note.Note
+		}
+
+		testCases := []testCase{
+			{noteID: uuid.UUID{1}, want: note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})},
+			{noteID: uuid.UUID{3}, want: note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2})},
+		}
+
+		for _, tc := range testCases {
+			got, err := nR.GetNoteByID(tc.noteID)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		}
 	})
+
+}
+func TestNotesRepo_GetNotesByUserID(t *testing.T) {
+	testDB := SetupNotesTable(t, fixtureNotes())
+	defer testDB.Close()
 
 	t.Run("Returns error on missing user", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
@@ -90,7 +105,6 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 	})
 
 	t.Run("Get notes by userID", func(t *testing.T) {
-
 		nR := postgres.NewNotesRepo(testDB)
 		type testCase struct {
 			userID uuid.UUID
@@ -120,6 +134,17 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
+
+	t.Run("Fowards error on database error", func(t *testing.T) {
+		sdb := &SQLDB{}
+		nR := postgres.NewNotesRepo(sdb)
+
+		userID := uuid.UUID{}
+		wantErr := fmt.Errorf("getNotesByUserID: [%s]: %w", userID, errors.New("DBError"))
+		_, err := nR.GetNotesByUserID(userID)
+		assert.EqualError(t, err, wantErr.Error())
+	})
+
 }
 
 func SetupNotesTable(t *testing.T, notes []note.Note) *sql.DB {
