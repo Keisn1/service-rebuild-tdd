@@ -36,7 +36,10 @@ func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	var nDB noteDB
 	err := row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
 	if err != nil {
-		return note.Note{}, err
+		if err == sql.ErrNoRows {
+			return note.Note{}, fmt.Errorf("getNoteByID: not found [%s]: %w", noteID, err)
+		}
+		return note.Note{}, fmt.Errorf("getNoteByID: [%s]: %w", noteID, err)
 	}
 
 	n := note.MakeNote(nDB.id,

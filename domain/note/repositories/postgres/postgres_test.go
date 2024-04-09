@@ -67,7 +67,7 @@ func (s *SQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 }
 
 func (s *SQLDB) QueryRow(query string, args ...any) (row *sql.Row) {
-	return row
+	return
 }
 
 func TestNotesRepo_GetNoteByID(t *testing.T) {
@@ -95,14 +95,15 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 		}
 	})
 
-	t.Run("Note not found", func(t *testing.T) {
+	t.Run("Note not found - sql.ErrNoRows", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
 		noteID := uuid.UUID{}
 
 		_, err := nR.GetNoteByID(noteID)
-		assert.Error(t, err)
+		assert.EqualError(t, err, fmt.Errorf("getNoteByID: not found [%s]: %w", noteID, sql.ErrNoRows).Error())
 	})
 }
+
 func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()
