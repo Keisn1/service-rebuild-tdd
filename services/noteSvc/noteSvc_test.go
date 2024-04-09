@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNoteCrud(t *testing.T) {
+func TestNoteService_Delete(t *testing.T) {
 	t.Run("Try to delete a non present note gives an error", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		noteID := uuid.UUID{}
@@ -31,7 +31,8 @@ func TestNoteCrud(t *testing.T) {
 		_, err = notesS.GetNoteByID(noteID)
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
 	})
-
+}
+func TestNoteService_Create(t *testing.T) {
 	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
 		notesRepo := StubNoteRepo{}
 		notesS := svc.NewNotesService(notesRepo)
@@ -60,7 +61,9 @@ func TestNoteCrud(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
+}
 
+func TestNoteService_Update(t *testing.T) {
 	t.Run("Given a note not present in the system, return error", func(t *testing.T) {
 		notesR, err := memory.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
@@ -119,7 +122,9 @@ func TestNoteCrud(t *testing.T) {
 			})
 		}
 	})
+}
 
+func TestNoteService_GetNoteByID(t *testing.T) {
 	t.Run("GetNoteByID return error on missing note", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		noteID := uuid.New()
@@ -152,7 +157,8 @@ func TestNoteCrud(t *testing.T) {
 		_, err := notesS.GetNotesByUserID(userID)
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByUserID: [%s]", userID).Error())
 	})
-
+}
+func TestNoteService_GetNotesByUserID(t *testing.T) {
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		type testCase struct {
