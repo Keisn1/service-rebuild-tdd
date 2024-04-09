@@ -11,6 +11,7 @@ import (
 type database interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
+	Exec(query string, args ...any) (sql.Result, error)
 }
 
 type NoteRepo struct {
@@ -36,6 +37,18 @@ func noteDBToNote(nDB noteDB) note.Note {
 }
 
 func (nR NoteRepo) Create(n note.Note) error {
+	insertRow := `INSERT INTO notes (id, title, content, user_id) VALUES ($1, $2, $3, $4)`
+	_, err := nR.db.Exec(
+		insertRow,
+		n.GetID(),
+		n.GetTitle().String(),
+		n.GetContent().String(),
+		n.GetUserID(),
+	)
+	if err != nil {
+		return fmt.Errorf("create: [%s]", n.GetID())
+	}
+
 	return nil
 }
 

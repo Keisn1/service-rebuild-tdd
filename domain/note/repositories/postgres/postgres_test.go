@@ -27,20 +27,32 @@ func TestMain(m *testing.M) {
 }
 
 func TestNotesRepo_Create(t *testing.T) {
-	testDB, deleteTable := SetupNotesTable(t, []note.Note{})
-	defer testDB.Close()
-	defer deleteTable()
 	t.Run("Add a note", func(t *testing.T) {
+		testDB, deleteTable := SetupNotesTable(t, []note.Note{})
+		defer testDB.Close()
+		defer deleteTable()
 		nR := postgres.NewNotesRepo(testDB)
 
 		n := note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})
 		err := nR.Create(n)
 		assert.NoError(t, err)
 
-		_, err = nR.GetNotesByUserID(n.GetID())
+		got, err := nR.GetNoteByID(n.GetID())
 		assert.NoError(t, err)
+		assert.Equal(t, got, n)
 	})
 
+	t.Run("Throws error if note to be created already present", func(t *testing.T) {
+		testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
+		defer testDB.Close()
+		defer deleteTable()
+		nR := postgres.NewNotesRepo(testDB)
+
+		n := note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})
+		err := nR.Create(n)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, fmt.Sprintf("create: [%s]", n.GetID()))
+	})
 }
 
 func TestNotesRepo_GetNoteByID(t *testing.T) {

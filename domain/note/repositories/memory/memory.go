@@ -34,8 +34,9 @@ func (nR NoteRepo) Delete(noteID uuid.UUID) error {
 
 }
 
-func (nR NoteRepo) Create(n note.Note) {
+func (nR NoteRepo) Create(n note.Note) error {
 	nR.notes[n.GetID()] = n
+	return nil
 }
 
 func (nR NoteRepo) Update(note note.Note) error {

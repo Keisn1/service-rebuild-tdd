@@ -7,15 +7,22 @@ import (
 	"fmt"
 
 	"github.com/Keisn1/note-taking-app/domain/note"
-	"github.com/Keisn1/note-taking-app/domain/note/repositories/memory"
 	"github.com/google/uuid"
 )
 
 type NotesService struct {
-	notes memory.NoteRepo
+	notes noteRepo
 }
 
-func NewNotesService(nR memory.NoteRepo) NotesService {
+type noteRepo interface {
+	Delete(noteID uuid.UUID) error
+	Create(n note.Note) error
+	Update(note note.Note) error
+	GetNoteByID(noteID uuid.UUID) (note.Note, error)
+	GetNotesByUserID(userID uuid.UUID) ([]note.Note, error)
+}
+
+func NewNotesService(nR noteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
@@ -29,7 +36,10 @@ func (ns NotesService) Delete(noteID uuid.UUID) error {
 
 func (ns NotesService) Create(nN note.NewNote) (note.Note, error) {
 	n := note.MakeNoteFromNewNote(nN)
-	ns.notes.Create(n)
+	err := ns.notes.Create(n)
+	if err != nil {
+		return note.Note{}, err
+	}
 	return n, nil
 }
 
