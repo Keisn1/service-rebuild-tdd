@@ -45,27 +45,30 @@ func TestNotesRepo_Update(t *testing.T) {
 		type testCase struct {
 			name       string
 			updateNote note.Note
+			want       note.Note
 		}
 
 		testCases := []testCase{
 			{
-				name:       "New Title, new 0 character content, update of both (title and content) expected",
-				updateNote: note.MakeNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
+				name:       "New Title, 0length content, update of both: 'new title' and '' ",
+				updateNote: note.MakeNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
+				want:       note.MakeNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
 			},
-			// {
-			// 	name:       "New Title, empty content, therefore no update",
-			// 	updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.Content{}, uuid.UUID{1}),
-			// 	// want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
-			// },
 			{
-				name:       "New 0 character title, new content, update of both (title and content) expected",
-				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
+				name:       "New Title, empty content, will update both: 'new title' and '' ",
+				updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("new title"), note.Content{}, uuid.UUID{1}),
+				want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
 			},
-			// {
-			// 	name:       "nothing new",
-			// 	updateNote: note.MakeNote(uuid.UUID{4}, note.Title{}, note.Content{}, uuid.UUID{2}),
-			// },
-
+			{
+				name:       "New 0length title, new content, update of both: '' and 'new content'",
+				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
+				want:       note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
+			},
+			{
+				name:       "Empty title and content, will update to '' and ''",
+				updateNote: note.MakeNote(uuid.UUID{4}, note.Title{}, note.Content{}, uuid.UUID{2}),
+				want:       note.MakeNote(uuid.UUID{4}, note.NewTitle(""), note.NewContent(""), uuid.UUID{2}),
+			},
 		}
 
 		for _, tc := range testCases {
@@ -75,7 +78,7 @@ func TestNotesRepo_Update(t *testing.T) {
 
 				got, err := nR.GetNoteByID(tc.updateNote.GetID())
 				assert.NoError(t, err)
-				assert.Equal(t, got, tc.updateNote)
+				assert.Equal(t, tc.want, got)
 			})
 		}
 	})

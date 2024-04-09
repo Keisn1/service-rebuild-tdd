@@ -41,11 +41,11 @@ func (nR NoteRepo) Update(n note.Note) error {
 	UPDATE notes
 	SET title = $1, content = $2 WHERE id=$3 `
 
-	res, _ := nR.db.Exec(updateRow, n.GetTitle().String(), n.GetContent().String(), n.GetUserID())
-
+	res, _ := nR.db.Exec(updateRow, n.GetTitle().String(), n.GetContent().String(), n.GetID())
 	if c, _ := res.RowsAffected(); c == 0 {
 		return fmt.Errorf("update: [%v]", n)
 	}
+
 	return nil
 }
 

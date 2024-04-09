@@ -70,6 +70,9 @@ func (tt Title) Set(title string) {
 }
 
 func (tt Title) String() string {
+	if tt.IsEmpty() {
+		return ""
+	}
 	return *tt.title
 }
 
@@ -88,6 +91,9 @@ func (c Content) Set(content string) {
 }
 
 func (c Content) String() string {
+	if c.IsEmpty() {
+		return ""
+	}
 	return *c.content
 }
 

@@ -85,25 +85,25 @@ func TestNoteService_Update(t *testing.T) {
 
 		testCases := []testCase{
 			{
-				name:       "New Title, new 0 character content, update of both (title and content) expected",
+				name:       "New Title, 0length content, update of both: 'new title' and ''",
 				currNote:   note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
-				updateNote: note.MakeNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
-				want:       note.MakeNote(uuid.UUID{1}, note.NewTitle("New title"), note.NewContent(""), uuid.UUID{1}),
+				updateNote: note.MakeNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
+				want:       note.MakeNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
 			},
 			{
-				name:       "New Title, empty content, therefore no update",
+				name:       "New Title, empty content, will update only title: 'new title'",
 				currNote:   note.MakeNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
-				updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.Content{}, uuid.UUID{1}),
-				want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+				updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("new title"), note.Content{}, uuid.UUID{1}),
+				want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("new title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
 			},
 			{
-				name:       "New 0 character title, new content, update of both (title and content) expected",
+				name:       "0length title, New content, update of both: '' and 'new content'",
 				currNote:   note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
-				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
-				want:       note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
+				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
+				want:       note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
 			},
 			{
-				name:       "empty title, empty content, therefore no update",
+				name:       "empty title, empty content, therefore no update at all",
 				currNote:   note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 				updateNote: note.MakeNote(uuid.UUID{4}, note.Title{}, note.Content{}, uuid.UUID{2}),
 				want:       note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
