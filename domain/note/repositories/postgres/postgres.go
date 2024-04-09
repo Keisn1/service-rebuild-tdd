@@ -39,8 +39,7 @@ func noteDBToNote(nDB noteDB) note.Note {
 func (nR NoteRepo) Update(n note.Note) error {
 	updateRow := `
 	UPDATE notes
-	SET title = $1, content = $2 WHERE id=$3
-`
+	SET title = $1, content = $2 WHERE id=$3 `
 
 	res, _ := nR.db.Exec(updateRow, n.GetTitle().String(), n.GetContent().String(), n.GetUserID())
 

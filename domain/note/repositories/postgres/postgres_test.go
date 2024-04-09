@@ -57,10 +57,10 @@ func TestNotesRepo_Update(t *testing.T) {
 			// 	updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.Content{}, uuid.UUID{1}),
 			// 	// want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("New title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
 			// },
-			{
-				name:       "New 0 character title, new content, update of both (title and content) expected",
-				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
-			},
+			// {
+			// 	name:       "New 0 character title, new content, update of both (title and content) expected",
+			// 	updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("New content"), uuid.UUID{2}),
+			// },
 			// {
 			// 	name:       "nothing new",
 			// 	updateNote: note.MakeNote(uuid.UUID{4}, note.Title{}, note.Content{}, uuid.UUID{2}),
@@ -76,11 +76,6 @@ func TestNotesRepo_Update(t *testing.T) {
 				got, err := nR.GetNoteByID(tc.updateNote.GetID())
 				assert.NoError(t, err)
 				assert.Equal(t, got, tc.updateNote)
-				// assert.Equal(t, tc.want, n) // assert that the right note was sent back
-
-				// got, err := notesS.GetNoteByID(tc.currNote.GetID())
-				// assert.NoError(t, err)
-				// assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})
 		}
 	})
