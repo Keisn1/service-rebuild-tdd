@@ -10,6 +10,7 @@ import (
 
 type database interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
 }
 
 type NoteRepo struct {
@@ -28,16 +29,25 @@ type noteDB struct {
 }
 
 func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
-	// 	getNote := `
-	// SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
-	// `
-	return note.Note{}, nil
+	getNoteByID := `
+	SELECT id, title, content, user_id FROM notes WHERE id=$1;
+	`
+	row := nR.db.QueryRow(getNoteByID, noteID)
+	var nDB noteDB
+	_ = row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
+
+	n := note.MakeNote(nDB.id,
+		note.NewTitle(nDB.title),
+		note.NewContent(nDB.content),
+		nDB.userID)
+
+	return n, nil
 }
 
 func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	getNotesByUserID := `
-SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
-`
+	SELECT id, title, content, user_id FROM notes WHERE user_id=$1;
+	`
 	rows, err := nR.db.Query(getNotesByUserID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("getNotesByUserID: [%s]: %w", userID, err)

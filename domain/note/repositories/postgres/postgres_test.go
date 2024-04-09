@@ -66,9 +66,14 @@ func (s *SQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return nil, errors.New("DBError")
 }
 
+func (s *SQLDB) QueryRow(query string, args ...any) (row *sql.Row) {
+	return row
+}
+
 func TestNotesRepo_GetNoteByID(t *testing.T) {
-	testDB := SetupNotesTable(t, fixtureNotes())
+	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()
+	defer deleteTable()
 
 	t.Run("Happy: get note by id", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
@@ -90,19 +95,17 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 		}
 	})
 
+	t.Run("Note not found", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+		noteID := uuid.UUID{}
+		_, err := nR.GetNoteByID(noteID)
+		assert.Error(t, err)
+	})
 }
 func TestNotesRepo_GetNotesByUserID(t *testing.T) {
-	testDB := SetupNotesTable(t, fixtureNotes())
+	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()
-
-	t.Run("Returns error on missing user", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
-
-		userID := uuid.UUID{}
-		wantErrMsg := fmt.Sprintf("getNotesByUserID: not found [%s]", userID)
-		_, err := nR.GetNotesByUserID(userID)
-		assert.ErrorContains(t, err, wantErrMsg)
-	})
+	defer deleteTable()
 
 	t.Run("Get notes by userID", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
@@ -134,6 +137,14 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
+	t.Run("Returns error on missing user", func(t *testing.T) {
+		nR := postgres.NewNotesRepo(testDB)
+
+		userID := uuid.UUID{}
+		wantErrMsg := fmt.Sprintf("getNotesByUserID: not found [%s]", userID)
+		_, err := nR.GetNotesByUserID(userID)
+		assert.ErrorContains(t, err, wantErrMsg)
+	})
 
 	t.Run("Fowards error on database error", func(t *testing.T) {
 		sdb := &SQLDB{}
@@ -147,13 +158,14 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 
 }
 
-func SetupNotesTable(t *testing.T, notes []note.Note) *sql.DB {
+func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
 	var (
 		createNoteTable = `CREATE TABLE notes(
 							id UUID PRIMARY KEY,
 							title TEXT,
 							content TEXT,
 							user_id UUID NOT NULL)`
+		dropNotesTable = `DROP TABLE notes`
 	)
 
 	dsn := fmt.Sprintf("host=localhost port=5432 user=%s password=%s sslmode=disable dbname=%s ", testUser, testPassword, testDBName)
@@ -180,7 +192,16 @@ func SetupNotesTable(t *testing.T, notes []note.Note) *sql.DB {
 			t.Fatal(err)
 		}
 	}
-	return testDB
+
+	deleteTable := func() {
+		_, err := testDB.Exec(dropNotesTable)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testDB.Close()
+	}
+
+	return testDB, deleteTable
 }
 
 func fixtureNotes() []note.Note {
