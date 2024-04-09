@@ -98,6 +98,7 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 	t.Run("Note not found", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
 		noteID := uuid.UUID{}
+
 		_, err := nR.GetNoteByID(noteID)
 		assert.Error(t, err)
 	})

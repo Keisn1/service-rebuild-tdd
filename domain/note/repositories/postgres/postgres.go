@@ -34,7 +34,10 @@ func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	`
 	row := nR.db.QueryRow(getNoteByID, noteID)
 	var nDB noteDB
-	_ = row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
+	err := row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
+	if err != nil {
+		return note.Note{}, err
+	}
 
 	n := note.MakeNote(nDB.id,
 		note.NewTitle(nDB.title),
