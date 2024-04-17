@@ -15,7 +15,7 @@ func TestJWT_CreateToken(t *testing.T) {
 
 	userID := uuid.New()
 	jwtPayload := j.CreateToken(userID)
-	assert.Equal(t, jwt.Payload.UserID, userID)
+	assert.Equal(t, jwtPayload.Subject, userID.String())
 }
 
 func TestJWT_Verify(t *testing.T) {
@@ -68,6 +68,25 @@ func TestJWT_Verify(t *testing.T) {
 		// 	},
 		// 	assertions: func(t *testing.T, err error) {
 		// 		assert.EqualError(t, err, "authenticate: no expiration date set")
+		// 	},
+		// },
+		// {
+		// 	name: "False issuer",
+		// 	bearerToken: func() string {
+		// 		inOneHour := jwtLib.NewNumericDate(time.Now().Add(1 * time.Hour))
+		// 		claims := setupClaims(inOneHour, "false issuer", "")
+		// 		return setupJwtTokenString(t, claims, secret)
+		// 	},
+		// 	assertion: func(t *testing.T, err error) {
+		// 		assert.EqualError(t, err, "authenticate: incorrect issuer")
+		// 	},
+		// },
+		//
+		// {
+		// 	name:        "Wrong method",
+		// 	bearerToken: func() string { return getBearerTokenEcdsa256(t) },
+		// 	assertion: func(t *testing.T, err error) {
+		// 		assert.ErrorContains(t, err, "authenticate: verify: ")
 		// 	},
 		// },
 	}

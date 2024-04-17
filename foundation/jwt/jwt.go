@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type JWT interface {
-	Verify(userID string, tokenS string) (Claims, error)
+	Verify(tokenS string) (Claims, error)
 }
 
 type jwtToken struct {
@@ -22,6 +23,22 @@ func NewJWT(key string) *jwtToken {
 }
 
 type Claims jwt.MapClaims
+
+type JWTPayload struct {
+	jwt.RegisteredClaims
+	Token string
+}
+
+func (j *jwtToken) CreateToken(userID uuid.UUID) *JWTPayload {
+	payload := &JWTPayload{}
+	payload.Subject = userID.String()
+
+	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{})
+	// tokenS, _ := token.SignedString([]byte(j.key))
+
+	// payload.Token = tokenS
+	return payload
+}
 
 func (j *jwtToken) Verify(tokenS string) (Claims, error) {
 	claims, err := j.parseTokenString(tokenS)

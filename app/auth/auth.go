@@ -26,7 +26,7 @@ func (a *Auth) Authenticate(userID, bearerToken string) (jwt.Claims, error) {
 		return nil, fmt.Errorf("authenticate: %w", err)
 	}
 
-	claims, err := a.jwt.Verify(userID, tokenS)
+	claims, err := a.jwt.Verify(tokenS)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate: %w", err)
 	}
