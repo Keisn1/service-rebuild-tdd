@@ -4,29 +4,16 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"errors"
-	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type mockUserStore struct {
-	mock.Mock
-}
-
-func (mUS *mockUserStore) FindUserByID(userID string) error {
-	args := mUS.Called(userID)
-	return args.Error(0)
-}
-
 func TestAuthentication(t *testing.T) {
-	mUserStore := new(mockUserStore)
-	a := &Auth{mUserStore}
+	a := &Auth{}
 	secret := os.Getenv("JWT_SECRET_KEY")
 	issuer := os.Getenv("JWT_NOTES_ISSUER")
 
@@ -34,13 +21,11 @@ func TestAuthentication(t *testing.T) {
 		name        string
 		userID      string
 		bearerToken func() string
-		setupMock   func()
 		assertion   func(t *testing.T, err error)
 	}{
 		{
 			name:        "Empty Bearer",
 			bearerToken: func() string { return "" },
-			setupMock:   func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.EqualError(t, err, "authenticate: expected authorization header format: Bearer <token>")
 			},
@@ -48,7 +33,6 @@ func TestAuthentication(t *testing.T) {
 		{
 			name:        "Wrong format length",
 			bearerToken: func() string { return "Bearer invalid length" },
-			setupMock:   func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.EqualError(t, err, "authenticate: expected authorization header format: Bearer <token>")
 			},
@@ -56,7 +40,6 @@ func TestAuthentication(t *testing.T) {
 		{
 			name:        "Wrong format Prefix",
 			bearerToken: func() string { return "NoBearer asdf;lkj" },
-			setupMock:   func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.EqualError(t, err, "authenticate: expected authorization header format: Bearer <token>")
 			},
@@ -64,7 +47,6 @@ func TestAuthentication(t *testing.T) {
 		{
 			name:        "Wrong method",
 			bearerToken: func() string { return getBearerTokenEcdsa256(t) },
-			setupMock:   func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "authenticate: error parsing tokenString")
 			},
@@ -72,7 +54,6 @@ func TestAuthentication(t *testing.T) {
 		{
 			name:        "Invalid Token",
 			bearerToken: func() string { return "Bearer invalidToken" },
-			setupMock:   func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "authenticate: error parsing tokenString")
 			},
@@ -82,7 +63,6 @@ func TestAuthentication(t *testing.T) {
 			bearerToken: func() string {
 				return setupJwtTokenString(t, jwt.MapClaims{}, "falseSecret")
 			},
-			setupMock: func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "authenticate: error parsing tokenString")
 			},
@@ -94,7 +74,6 @@ func TestAuthentication(t *testing.T) {
 				claims := setupClaims(oneMinuteAgo, "", "")
 				return setupJwtTokenString(t, claims, secret)
 			},
-			setupMock: func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "authenticate: error parsing tokenString")
 			},
@@ -104,7 +83,6 @@ func TestAuthentication(t *testing.T) {
 			bearerToken: func() string {
 				return setupJwtTokenString(t, jwt.MapClaims{}, secret)
 			},
-			setupMock: func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.EqualError(t, err, "authenticate: no expiration date set")
 			},
@@ -116,25 +94,8 @@ func TestAuthentication(t *testing.T) {
 				claims := setupClaims(inOneHour, "false issuer", "")
 				return setupJwtTokenString(t, claims, secret)
 			},
-			setupMock: func() {},
 			assertion: func(t *testing.T, err error) {
 				assert.EqualError(t, err, "authenticate: incorrect issuer")
-			},
-		},
-		{
-			name:   "User not found",
-			userID: "000",
-			bearerToken: func() string {
-				inOneHour := jwt.NewNumericDate(time.Now().Add(1 * time.Hour))
-				claims := setupClaims(inOneHour, issuer, "000")
-				return setupJwtTokenString(t, claims, secret)
-			},
-			setupMock: func() {
-				mUserStore.On("FindUserByID", "000").Return(errors.New("user not found"))
-			},
-			assertion: func(t *testing.T, err error) {
-				assert.EqualError(t, err, "authenticate: checkUserID: user not found")
-				mUserStore.AssertCalled(t, "FindUserByID", "000")
 			},
 		},
 		{
@@ -145,12 +106,8 @@ func TestAuthentication(t *testing.T) {
 				claims := setupClaims(inOneHour, issuer, "456")
 				return setupJwtTokenString(t, claims, secret)
 			},
-			setupMock: func() {
-				mUserStore.On("FindUserByID", "123").Return(nil)
-			},
 			assertion: func(t *testing.T, err error) {
 				assert.EqualError(t, err, "authenticate: invalid subject")
-				mUserStore.AssertCalled(t, "FindUserByID", "123")
 			},
 		},
 		{
@@ -161,20 +118,15 @@ func TestAuthentication(t *testing.T) {
 				claims := setupClaims(inOneHour, issuer, "123")
 				return setupJwtTokenString(t, claims, secret)
 			},
-			setupMock: func() {
-				mUserStore.On("FindUserByID", "123").Return(nil)
-			},
 			assertion: func(t *testing.T, err error) {
 				assert.NoError(t, err)
-				mUserStore.AssertCalled(t, "FindUserByID", "123")
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.setupMock()
-			err := a.Authenticate(tc.userID, tc.bearerToken())
+			_, err := a.Authenticate(tc.userID, tc.bearerToken())
 			tc.assertion(t, err)
 		})
 	}
@@ -192,12 +144,6 @@ func getBearerTokenEcdsa256(t *testing.T) (tokenString string) {
 	tokenString, err = token.SignedString(key)
 	assert.NoError(t, err)
 	return "Bearer " + tokenString
-}
-
-func addAuthorizationJWT(t *testing.T, tokenS string, req *http.Request) *http.Request {
-	t.Helper()
-	req.Header.Add("Authorization", "Bearer "+tokenS)
-	return req
 }
 
 func setupJwtTokenString(t *testing.T, claims jwt.MapClaims, secret string) string {

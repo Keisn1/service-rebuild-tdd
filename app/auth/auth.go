@@ -3,113 +3,41 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Keisn1/note-taking-app/foundation/jwt"
 )
 
 type key int
 
 const userIDKey key = 1
 
-type AuthInterface interface {
-	Authenticate(userID, bearerToken string) (jwt.Claims, error)
-}
-
 type UserStore interface {
 	FindUserByID(userID string) error
 }
 
 type Auth struct {
-	userStore UserStore
+	jwt jwt.JWT
 }
 
-func (a *Auth) checkUserID(userID string) error {
-	if err := a.userStore.FindUserByID(userID); err != nil {
-		return fmt.Errorf("checkUserID: %w", err)
+func (a *Auth) Authenticate(userID, bearerToken string) (jwt.Claims, error) {
+	tokenS, err := a.getJWTTokenString(bearerToken)
+	if err != nil {
+		return nil, fmt.Errorf("authenticate: %w", err)
 	}
-	return nil
+
+	claims, err := a.jwt.Verify(userID, tokenS)
+	if err != nil {
+		return nil, fmt.Errorf("authenticate: %w", err)
+	}
+
+	return claims, nil
 }
 
-func (a *Auth) getTokenString(bearerToken string) (string, error) {
+func (a *Auth) getJWTTokenString(bearerToken string) (string, error) {
 	parts := strings.Split(bearerToken, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		return "", errors.New("expected authorization header format: Bearer <token>")
 	}
 	return parts[1], nil
-}
-
-func (a *Auth) parseTokenString(tokenS string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenS, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		secret := []byte(os.Getenv("JWT_SECRET_KEY"))
-		return secret, nil
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("error parsing tokenString: %w", err)
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		return claims, nil
-	} else {
-		return nil, errors.New("error extracting claims")
-	}
-}
-
-func (a *Auth) checkSubject(userID string, claims jwt.MapClaims) error {
-	if userID != claims["sub"] {
-		return errors.New("invalid subject")
-	}
-	return nil
-}
-
-func (a *Auth) checkIssuer(claims jwt.MapClaims) error {
-	issuer := os.Getenv("JWT_NOTES_ISSUER")
-	if issuer != claims["iss"] {
-		return errors.New("incorrect issuer")
-	}
-	return nil
-}
-
-func (a *Auth) checkExpSet(claims jwt.MapClaims) error {
-	if _, ok := claims["exp"]; !ok {
-		return fmt.Errorf("no expiration date set")
-	}
-	return nil
-}
-
-func (a *Auth) Authenticate(userID, bearerToken string) error {
-	tokenS, err := a.getTokenString(bearerToken)
-	if err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
-
-	claims, err := a.parseTokenString(tokenS)
-	if err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
-
-	if err := a.checkExpSet(claims); err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
-
-	if err := a.checkIssuer(claims); err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
-
-	if err := a.checkUserID(userID); err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
-
-	if err := a.checkSubject(userID, claims); err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
-	return nil
 }
