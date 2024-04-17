@@ -96,23 +96,3 @@ func mustEncode(t *testing.T, a any) *bytes.Buffer {
 	}
 	return buf
 }
-
-// func TestSignIn(t *testing.T) {
-// 	mUserStore := &mockUserStore{}
-// 	userCtrl := ctrls.NewUserCtrlr(mUserStore)
-// 	logBuf := &bytes.Buffer{}
-// 	log.SetOutput(logBuf)
-// 	testCase :=  []struct {
-// 		name         string
-// 		handler      http.HandlerFunc
-// 		mockNSParams mockUserStoreParams
-// 		wantStatus   int
-// 		wantBody     string
-// 		wantLogging  []string
-// 		assertions   func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, callAssertion mockNotesStoreParams)
-// 	} {
-// 		{
-// 			name: "Success SignIn",
-// 		},
-// 	}
-// }

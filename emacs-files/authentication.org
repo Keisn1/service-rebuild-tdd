@@ -74,7 +74,6 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 }
 #+end_src
 
-
 * [[https://www.youtube.com/watch?v=bQgNYK1Z5ho][Domain Driven, Data Oriented Architecture with Bill Kennedy]]
 ** App layer
 - startup and shutdown

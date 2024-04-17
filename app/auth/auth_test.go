@@ -19,8 +19,8 @@ type mockUserStore struct {
 	mock.Mock
 }
 
-func (mus *mockUserStore) FindUserByID(userID string) error {
-	args := mus.Called(userID)
+func (mUS *mockUserStore) FindUserByID(userID string) error {
+	args := mUS.Called(userID)
 	return args.Error(0)
 }
 
@@ -138,7 +138,7 @@ func TestAuthentication(t *testing.T) {
 			},
 		},
 		{
-			name:   "userID (123) in endpoint unequal userID in jwt (456)",
+			name:   "userID NOT equal subject in jwt (456)",
 			userID: "123",
 			bearerToken: func() string {
 				inOneHour := jwt.NewNumericDate(time.Now().Add(1 * time.Hour))
@@ -149,7 +149,7 @@ func TestAuthentication(t *testing.T) {
 				mUserStore.On("FindUserByID", "123").Return(nil)
 			},
 			assertion: func(t *testing.T, err error) {
-				assert.EqualError(t, err, "authenticate: user not enabled")
+				assert.EqualError(t, err, "authenticate: invalid subject")
 				mUserStore.AssertCalled(t, "FindUserByID", "123")
 			},
 		},
@@ -180,13 +180,6 @@ func TestAuthentication(t *testing.T) {
 	}
 }
 
-func ErrorContainss(t *testing.T, err error, containss ...string) {
-	t.Helper()
-	for _, contains := range containss {
-		assert.ErrorContains(t, err, contains)
-	}
-}
-
 func getBearerTokenEcdsa256(t *testing.T) (tokenString string) {
 	t.Helper()
 	var (
@@ -201,14 +194,8 @@ func getBearerTokenEcdsa256(t *testing.T) (tokenString string) {
 	return "Bearer " + tokenString
 }
 
-func newEmptyGetRequest(t *testing.T) *http.Request {
-	t.Helper()
-	req, err := http.NewRequest(http.MethodGet, "", nil)
-	assert.NoError(t, err)
-	return req
-}
-
 func addAuthorizationJWT(t *testing.T, tokenS string, req *http.Request) *http.Request {
+	t.Helper()
 	req.Header.Add("Authorization", "Bearer "+tokenS)
 	return req
 }

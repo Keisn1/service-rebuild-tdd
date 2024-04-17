@@ -6,8 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"database/sql"
-
 	"github.com/Keisn1/note-taking-app/domain/note"
 	"github.com/Keisn1/note-taking-app/domain/note/repositories/postgres"
 	"github.com/google/uuid"
@@ -112,7 +110,7 @@ func TestNotesRepo_Delete(t *testing.T) {
 
 		noteID := uuid.New()
 		err := nR.Delete(noteID)
-		assert.ErrorContains(t, err, fmt.Sprintf("delete: note not present [%s]", noteID))
+		assert.ErrorContains(t, err, note.ErrNoteNotFound.Error())
 	})
 }
 
@@ -132,7 +130,7 @@ func TestNotesRepo_Create(t *testing.T) {
 		assert.Equal(t, got, n)
 	})
 
-	t.Run("Throws error if note to be created is already present", func(t *testing.T) {
+	t.Run("Throws error if note to be created already exists", func(t *testing.T) {
 		testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 		defer testDB.Close()
 		defer deleteTable()
@@ -170,12 +168,12 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 		}
 	})
 
-	t.Run("Note not found - sql.ErrNoRows", func(t *testing.T) {
+	t.Run("Note not found", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
 		noteID := uuid.UUID{}
 
 		_, err := nR.GetNoteByID(noteID)
-		assert.EqualError(t, err, fmt.Errorf("getNoteByID: not found [%s]: %w", noteID, sql.ErrNoRows).Error())
+		assert.EqualError(t, err, note.ErrNoteNotFound.Error())
 	})
 }
 

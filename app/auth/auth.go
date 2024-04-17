@@ -63,9 +63,9 @@ func (a *Auth) parseTokenString(tokenS string) (jwt.MapClaims, error) {
 	}
 }
 
-func (a *Auth) isUserEnabled(userID string, claims jwt.MapClaims) error {
+func (a *Auth) checkSubject(userID string, claims jwt.MapClaims) error {
 	if userID != claims["sub"] {
-		return errors.New("user not enabled")
+		return errors.New("invalid subject")
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func (a *Auth) Authenticate(userID, bearerToken string) error {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 
-	if err := a.isUserEnabled(userID, claims); err != nil {
+	if err := a.checkSubject(userID, claims); err != nil {
 		return fmt.Errorf("authenticate: %w", err)
 	}
 	return nil

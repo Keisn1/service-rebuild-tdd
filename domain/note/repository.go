@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrNoteNotFound = errors.New("the product was not found")
+	ErrNoteNotFound = errors.New("the note was not found")
 )
 
 type NoteRepo interface {

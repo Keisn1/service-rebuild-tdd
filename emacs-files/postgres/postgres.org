@@ -3,7 +3,6 @@
 :END:
 #+title: Postgres
 
-
 * List db users
 #+begin_src sql
 \du

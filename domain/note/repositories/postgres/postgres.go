@@ -50,7 +50,7 @@ func (nR NoteRepo) Delete(noteID uuid.UUID) error {
 	res, _ := nR.db.Exec(deleteRow, noteID)
 
 	if c, _ := res.RowsAffected(); c == 0 {
-		return fmt.Errorf("delete: note not present [%s]", noteID)
+		return note.ErrNoteNotFound
 	}
 
 	return nil
@@ -81,7 +81,7 @@ func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	err := row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return note.Note{}, fmt.Errorf("getNoteByID: not found [%s]: %w", noteID, err)
+			return note.Note{}, note.ErrNoteNotFound
 		}
 		return note.Note{}, fmt.Errorf("getNoteByID: [%s]: %w", noteID, err)
 	}
