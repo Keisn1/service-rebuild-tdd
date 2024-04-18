@@ -8,6 +8,7 @@ import (
 	jwtLib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func TestJWT_CreateToken(t *testing.T) {
@@ -45,18 +46,17 @@ func TestJWT_Verify(t *testing.T) {
 				assert.ErrorContains(t, err, "verify: error parsing tokenString")
 			},
 		},
-		// {
-		// 	name: "Expired Token",
-		// 	tokenS: func() string {
-		// 		oneMinuteAgo := jwtLib.NewNumericDate(time.Now().Add(-1 * time.Minute))
-		// 		claims := setupClaims(oneMinuteAgo, "", "")
-
-		// 		return setupJwtTokenString(t, claims, j.key)
-		// 	},
-		// 	assertions: func(t *testing.T, err error) {
-		// 		assert.ErrorContains(t, err, "authenticate: error parsing tokenString")
-		// 	},
-		// },
+		{
+			name: "Expired Token",
+			tokenS: func() string {
+				oneMinuteAgo := jwtLib.NewNumericDate(time.Now().Add(-1 * time.Minute))
+				claims := setupClaims(oneMinuteAgo, "", "")
+				return setupJwtTokenString(t, claims, j.key)
+			},
+			assertions: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "verify: ")
+			},
+		},
 		// {
 		// 	name: "No expiration date set",
 		// 	tokenS: func() string {
@@ -95,4 +95,22 @@ func TestJWT_Verify(t *testing.T) {
 		_, err := j.Verify(tc.tokenS())
 		tc.assertions(t, err)
 	}
+}
+
+func setupJwtTokenString(t *testing.T, claims jwtLib.MapClaims, secret string) string {
+	t.Helper()
+	token := jwtLib.NewWithClaims(jwtLib.SigningMethodHS256, claims)
+	tokenS, err := token.SignedString([]byte(secret))
+	assert.NoError(t, err)
+	bearerToken := "Bearer " + tokenS
+	return bearerToken
+}
+
+func setupClaims(exp *jwtLib.NumericDate, iss, sub string) jwtLib.MapClaims {
+	claims := jwtLib.MapClaims{
+		"exp": exp,
+		"iss": iss,
+		"sub": sub,
+	}
+	return claims
 }

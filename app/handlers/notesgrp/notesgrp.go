@@ -191,6 +191,6 @@ func (nc *Handlers) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleError(w http.ResponseWriter, errMsg string, status int, logMsg string, args ...any) {
-	http.Error(w, "", status)
+	http.Error(w, errMsg, status)
 	slog.Error(logMsg, args...)
 }

@@ -11,7 +11,7 @@ import (
 
 type MidHandler func(http.Handler) http.Handler
 
-func NewJwtMidHandler(a auth.AuthInterface) MidHandler {
+func NewJwtMidHandler(a auth.Auth) MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			userID := chi.URLParam(r, "userID")
