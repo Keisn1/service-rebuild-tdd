@@ -1,8 +1,9 @@
-package jwt
+package jwtSvc
 
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -12,14 +13,15 @@ type JWT interface {
 	Verify(tokenS string) (Claims, error)
 }
 
-type jwtToken struct {
-	key string
+type jwtSvc struct {
+	key []byte
 }
 
-func NewJWT(key string) *jwtToken {
-	return &jwtToken{
-		key: key,
+func NewJWT(key []byte) (*jwtSvc, error) {
+	if len(key) < 32 {
+		return nil, errors.New("key minLength 32")
 	}
+	return &jwtSvc{key: key}, nil
 }
 
 type Claims jwt.MapClaims
@@ -29,38 +31,37 @@ type JWTPayload struct {
 	Token string
 }
 
-func (j *jwtToken) CreateToken(userID uuid.UUID) *JWTPayload {
+func (j *jwtSvc) CreateToken(userID uuid.UUID, d time.Duration) (*JWTPayload, error) {
 	payload := &JWTPayload{}
 	payload.Subject = userID.String()
+	payload.ExpiresAt = jwt.NewNumericDate(time.Now().Add(d))
 
-	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{})
-	// tokenS, _ := token.SignedString([]byte(j.key))
-
-	// payload.Token = tokenS
-	return payload
-}
-
-func (j *jwtToken) Verify(tokenS string) (Claims, error) {
-	claims, err := j.parseTokenString(tokenS)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	tokenS, err := token.SignedString(j.key)
 	if err != nil {
-		return nil, fmt.Errorf("verify: %w", err)
+		return nil, err
 	}
 
-	// if err := j.checkExpSet(claims); err != nil {
-	// 	return nil, fmt.Errorf("verify: %w", err)
-	// }
-
-	// if err := j.checkIssuer(claims); err != nil {
-	// 	return nil, fmt.Errorf("verify: %w", err)
-	// }
-
-	// if err := j.checkSubject(userID, claims); err != nil {
-	// 	return nil, fmt.Errorf("verify: %w", err)
-	// }
-	return claims, err
+	payload.Token = tokenS
+	return payload, nil
 }
 
-func (j *jwtToken) parseTokenString(tokenS string) (Claims, error) {
+func (j *jwtSvc) Verify(tokenS string) (*JWTPayload, error) {
+	token, err := jwt.ParseWithClaims(tokenS, &JWTPayload{}, j.keyFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, ok := token.Claims.(*JWTPayload)
+	if !ok {
+		return nil, errors.New("invalid token")
+	}
+
+	payload.Token = tokenS
+	return payload, nil
+}
+
+func (j *jwtSvc) parseTokenString(tokenS string) (Claims, error) {
 	token, err := jwt.Parse(tokenS, j.keyFunc)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tokenString: %w", err)
@@ -73,7 +74,7 @@ func (j *jwtToken) parseTokenString(tokenS string) (Claims, error) {
 	}
 }
 
-func (j *jwtToken) keyFunc(token *jwt.Token) (interface{}, error) {
+func (j *jwtSvc) keyFunc(token *jwt.Token) (interface{}, error) {
 	// Don't forget to validate the alg is what you expect:
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
