@@ -9,69 +9,52 @@ import (
 	"github.com/google/uuid"
 )
 
-type JWT interface {
-	Verify(tokenS string) (Claims, error)
+type Claims struct {
+	jwt.RegisteredClaims
+}
+
+type JWTService interface {
+	CreateToken(userID uuid.UUID, d time.Duration) (string, error)
+	Verify(tokenS string) (*Claims, error)
 }
 
 type jwtSvc struct {
 	key []byte
 }
 
-func NewJWT(key []byte) (*jwtSvc, error) {
+func NewJWTService(key []byte) (*jwtSvc, error) {
 	if len(key) < 32 {
 		return nil, errors.New("key minLength 32")
 	}
 	return &jwtSvc{key: key}, nil
 }
 
-type Claims jwt.MapClaims
+func (j *jwtSvc) CreateToken(userID uuid.UUID, d time.Duration) (string, error) {
+	claims := &Claims{}
+	claims.Subject = userID.String()
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(d))
 
-type JWTPayload struct {
-	jwt.RegisteredClaims
-	Token string
-}
-
-func (j *jwtSvc) CreateToken(userID uuid.UUID, d time.Duration) (*JWTPayload, error) {
-	payload := &JWTPayload{}
-	payload.Subject = userID.String()
-	payload.ExpiresAt = jwt.NewNumericDate(time.Now().Add(d))
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenS, err := token.SignedString(j.key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	payload.Token = tokenS
-	return payload, nil
+	return tokenS, nil
 }
 
-func (j *jwtSvc) Verify(tokenS string) (*JWTPayload, error) {
-	token, err := jwt.ParseWithClaims(tokenS, &JWTPayload{}, j.keyFunc)
+func (j *jwtSvc) Verify(tokenS string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenS, &Claims{}, j.keyFunc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("verify: %w", err)
 	}
 
-	payload, ok := token.Claims.(*JWTPayload)
+	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return nil, errors.New("invalid token")
+		return nil, errors.New("verify: invalid claims")
 	}
 
-	payload.Token = tokenS
-	return payload, nil
-}
-
-func (j *jwtSvc) parseTokenString(tokenS string) (Claims, error) {
-	token, err := jwt.Parse(tokenS, j.keyFunc)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing tokenString: %w", err)
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		return Claims(claims), nil
-	} else {
-		return nil, errors.New("error extracting claims")
-	}
+	return claims, nil
 }
 
 func (j *jwtSvc) keyFunc(token *jwt.Token) (interface{}, error) {

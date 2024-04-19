@@ -1,20 +1,19 @@
-package auth
+package auth_test
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"os"
 	"testing"
 
-	"github.com/Keisn1/note-taking-app/foundation/jwt"
-	jwtLib "github.com/golang-jwt/jwt/v5"
+	"github.com/Keisn1/note-taking-app/app/auth"
+	"github.com/Keisn1/note-taking-app/foundation/common"
+	"github.com/Keisn1/note-taking-app/foundation/jwtSvc"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthentication(t *testing.T) {
-	secret := os.Getenv("JWT_SECRET_KEY")
-	a := &Auth{jwt: jwt.NewJWT(secret)}
+	key := common.MustGenerateRandomKey(32)
+	jwtS, err := jwtSvc.NewJWTService(key)
+	assert.NoError(t, err)
+	a := auth.NewAuth(jwtS)
 
 	testCases := []struct {
 		name        string
@@ -45,7 +44,7 @@ func TestAuthentication(t *testing.T) {
 		},
 		{
 			name:        "Failing token verification",
-			bearerToken: func() string { return getBearerTokenEcdsa256(t) },
+			bearerToken: func() string { return "Bearer asdf;ljasdfl;j" },
 			assertion: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "authenticate: verify: ")
 			},
@@ -58,36 +57,4 @@ func TestAuthentication(t *testing.T) {
 			tc.assertion(t, err)
 		})
 	}
-}
-
-func getBearerTokenEcdsa256(t *testing.T) (tokenString string) {
-	t.Helper()
-	var (
-		key   *ecdsa.PrivateKey
-		token *jwtLib.Token
-	)
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	assert.NoError(t, err)
-	token = jwtLib.New(jwtLib.SigningMethodES256)
-	tokenString, err = token.SignedString(key)
-	assert.NoError(t, err)
-	return "Bearer " + tokenString
-}
-
-func setupJwtTokenString(t *testing.T, claims jwtLib.MapClaims, secret string) string {
-	t.Helper()
-	token := jwtLib.NewWithClaims(jwtLib.SigningMethodHS256, claims)
-	tokenS, err := token.SignedString([]byte(secret))
-	assert.NoError(t, err)
-	bearerToken := "Bearer " + tokenS
-	return bearerToken
-}
-
-func setupClaims(exp *jwtLib.NumericDate, iss, sub string) jwtLib.MapClaims {
-	claims := jwtLib.MapClaims{
-		"exp": exp,
-		"iss": iss,
-		"sub": sub,
-	}
-	return claims
 }

@@ -5,28 +5,28 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Keisn1/note-taking-app/foundation/jwt"
+	"github.com/Keisn1/note-taking-app/foundation/jwtSvc"
 )
 
 type key int
 
 const userIDKey key = 1
 
-type UserStore interface {
-	FindUserByID(userID string) error
-}
-
 type Auth struct {
-	jwt jwt.JWT
+	jwtS jwtSvc.JWTService
 }
 
-func (a *Auth) Authenticate(userID, bearerToken string) (jwt.Claims, error) {
+func NewAuth(jwtS jwtSvc.JWTService) *Auth {
+	return &Auth{jwtS: jwtS}
+}
+
+func (a *Auth) Authenticate(userID, bearerToken string) (*jwtSvc.Claims, error) {
 	tokenS, err := a.getJWTTokenString(bearerToken)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate: %w", err)
 	}
 
-	claims, err := a.jwt.Verify(tokenS)
+	claims, err := a.jwtS.Verify(tokenS)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate: %w", err)
 	}
