@@ -1,4 +1,4 @@
-package noteSvc_test
+package note_test
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/Keisn1/note-taking-app/domain/note"
 	"github.com/Keisn1/note-taking-app/domain/note/repositories/memory"
-	svc "github.com/Keisn1/note-taking-app/services/noteSvc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,7 +34,7 @@ func TestNoteService_Delete(t *testing.T) {
 func TestNoteService_Create(t *testing.T) {
 	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
 		notesRepo := StubNoteRepo{}
-		notesS := svc.NewNotesService(notesRepo)
+		notesS := note.NewNotesService(notesRepo)
 
 		userID := uuid.New()
 		newNote := note.MakeNewNote(note.NewTitle("invalid title"), note.NewContent(""), userID)
@@ -67,7 +66,7 @@ func TestNoteService_Update(t *testing.T) {
 	t.Run("Given a note NOT present in the system and a note containing updates for this note, it throws an error", func(t *testing.T) {
 		notesR, err := memory.NewNotesRepo(fixtureNotes())
 		assert.NoError(t, err)
-		notesS := svc.NewNotesService(notesR)
+		notesS := note.NewNotesService(notesR)
 
 		_, err = notesS.Update(note.Note{}, note.Note{})
 		assert.ErrorContains(t, err, "update: ")
@@ -200,8 +199,8 @@ func fixtureNotes() []note.Note {
 	}
 }
 
-func Setup(t *testing.T, notes []note.Note) svc.NotesService {
+func Setup(t *testing.T, notes []note.Note) note.NotesService {
 	notesR, err := memory.NewNotesRepo(fixtureNotes())
 	assert.NoError(t, err)
-	return svc.NewNotesService(notesR)
+	return note.NewNotesService(notesR)
 }

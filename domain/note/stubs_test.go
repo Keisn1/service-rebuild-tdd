@@ -1,4 +1,4 @@
-package noteSvc_test
+package note_test
 
 import (
 	"errors"

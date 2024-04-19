@@ -1,20 +1,16 @@
-// Package noteSvc wraps the data/store layer
-// handles Crud operations on note domain type
-// make changes persistent by calling data/store layer
-package noteSvc
+package note
 
 import (
 	"fmt"
 
-	"github.com/Keisn1/note-taking-app/domain/note"
 	"github.com/google/uuid"
 )
 
 type NotesService struct {
-	notes note.NoteRepo
+	notes NoteRepo
 }
 
-func NewNotesService(nR note.NoteRepo) NotesService {
+func NewNotesService(nR NoteRepo) NotesService {
 	return NotesService{notes: nR}
 }
 
@@ -26,16 +22,16 @@ func (ns NotesService) Delete(noteID uuid.UUID) error {
 	return nil
 }
 
-func (ns NotesService) Create(nN note.NewNote) (note.Note, error) {
-	n := note.MakeNoteFromNewNote(nN)
+func (ns NotesService) Create(nN NewNote) (Note, error) {
+	n := MakeNoteFromNewNote(nN)
 	err := ns.notes.Create(n)
 	if err != nil {
-		return note.Note{}, err
+		return Note{}, err
 	}
 	return n, nil
 }
 
-func (ns NotesService) Update(n note.Note, newN note.Note) (note.Note, error) {
+func (ns NotesService) Update(n Note, newN Note) (Note, error) {
 	if !newN.GetTitle().IsEmpty() {
 		n.SetTitle(newN.GetTitle().String())
 	}
@@ -46,20 +42,20 @@ func (ns NotesService) Update(n note.Note, newN note.Note) (note.Note, error) {
 
 	err := ns.notes.Update(n)
 	if err != nil {
-		return note.Note{}, fmt.Errorf("update: %w", err)
+		return Note{}, fmt.Errorf("update: %w", err)
 	}
 	return n, nil
 }
 
-func (nS NotesService) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+func (nS NotesService) GetNoteByID(noteID uuid.UUID) (Note, error) {
 	n, err := nS.notes.GetNoteByID(noteID)
 	if err != nil {
-		return note.Note{}, fmt.Errorf("getNoteByID: [%s]: %w", noteID, err)
+		return Note{}, fmt.Errorf("getNoteByID: [%s]: %w", noteID, err)
 	}
 	return n, nil
 }
 
-func (nS NotesService) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
+func (nS NotesService) GetNotesByUserID(userID uuid.UUID) ([]Note, error) {
 	notes, err := nS.notes.GetNotesByUserID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("getNoteByUserID: [%s]: %w", userID, err)
