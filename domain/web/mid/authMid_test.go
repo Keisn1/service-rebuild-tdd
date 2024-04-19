@@ -2,16 +2,16 @@ package mid_test
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/Keisn1/note-taking-app/domain/web/auth"
 	"github.com/Keisn1/note-taking-app/domain/web/mid"
-	"github.com/Keisn1/note-taking-app/foundation/security"
-	"github.com/go-chi/chi/v5"
+	"github.com/Keisn1/note-taking-app/foundation/common"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -20,82 +20,87 @@ type MockAuth struct {
 	mock.Mock
 }
 
-func (ma *MockAuth) Authenticate(userID, bearerToken string) (*security.Claims, error) {
-	args := ma.Called(userID, bearerToken)
-	return args.Get(0).(*security.Claims), args.Error(1)
-}
-
 func TestJWTAuthenticationMiddleware(t *testing.T) {
 	var logBuf bytes.Buffer
 	log.SetOutput(&logBuf)
 
-	mockAuth := new(MockAuth)
-	jwtMidHandler := mid.Authenticate(mockAuth)
-	handler := jwtMidHandler(http.HandlerFunc(
+	key := common.MustGenerateRandomKey(32)
+	jwtSvc, err := auth.NewJWTService(key)
+	assert.NoError(t, err)
+	a := auth.NewAuth(jwtSvc)
+
+	authMid := mid.Authenticate(a)
+	handler := authMid(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }),
 	)
 
+	userID := uuid.New()
+
 	testCases := []struct {
-		name          string
-		setupMockAuth func()
-		setupRequest  func() *http.Request
-		assertions    func(t *testing.T, recorder *httptest.ResponseRecorder)
+		name        string
+		setupHeader func(*http.Request)
+		assertions  func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Test authentication success",
-			setupRequest: func() *http.Request {
-				req := httptest.NewRequest(http.MethodGet, "/auth", nil)
-				req = WithUrlParam(req, "userID", "123")
-				req.Header.Set("Authorization", "Bearer valid token")
-				return req
-			},
-			setupMockAuth: func() {
-				mockAuth.On("Authenticate", "123", "Bearer valid token").Return(&security.Claims{}, nil)
+			setupHeader: func(req *http.Request) {
+				tokenS, _ := jwtSvc.CreateToken(userID, time.Minute)
+				req.Header.Set("Authorization", "Bearer "+tokenS)
 			},
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, "Test Handler", recorder.Body.String())
-				mockAuth.AssertCalled(t, "Authenticate", "123", "Bearer valid token")
 			},
 		},
 		{
-			name: "Test authentication Failure",
-			setupRequest: func() *http.Request {
-				req := httptest.NewRequest(http.MethodGet, "/auth", nil)
-				req = WithUrlParam(req, "userID", "123")
-				req.Header.Set("Authorization", "Bearer INVALID token")
-				return req
+			name:        "missing authentication header",
+			setupHeader: func(req *http.Request) {},
+			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusForbidden, recorder.Code)
+				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
+				assert.Contains(t, logBuf.String(), "Failed Authentication")
 			},
-			setupMockAuth: func() {
-				var claims *security.Claims
-				mockAuth.On("Authenticate", "123", "Bearer INVALID token").Return(
-					claims, errors.New("error in authenticate"),
-				)
+		},
+		{
+			name:        "invalid authentication header",
+			setupHeader: func(req *http.Request) { req.Header.Set("Authorization", "invalid") },
+			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusForbidden, recorder.Code)
+				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
+				assert.Contains(t, logBuf.String(), "Failed Authentication")
+			},
+		},
+		{
+			name: "expired token",
+			setupHeader: func(req *http.Request) {
+				tokenS, _ := jwtSvc.CreateToken(userID, -1*time.Minute)
+				req.Header.Set("Authorization", "Bearer "+tokenS)
 			},
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusForbidden, recorder.Code)
-				assert.Contains(t, recorder.Body.String(), "Failed Authentication")
-				assert.Contains(t, logBuf.String(),
-					"Failed Authentication userID \"123\" bearerToken \"Bearer INVALID token\"")
+				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
+				assert.Contains(t, logBuf.String(), "Failed Authentication")
+			},
+		},
+		{
+			name:        "invalid token",
+			setupHeader: func(req *http.Request) { req.Header.Set("Authorization", "Bearer invalid") },
+			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusForbidden, recorder.Code)
+				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
+				assert.Contains(t, logBuf.String(), "Failed Authentication")
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		logBuf.Reset()
-		tc.setupMockAuth()
-		req := tc.setupRequest()
+		req := httptest.NewRequest(http.MethodGet, "/auth", nil)
+		tc.setupHeader(req)
 
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, req)
 
 		tc.assertions(t, recorder)
 	}
-}
-
-func WithUrlParam(r *http.Request, key, value string) *http.Request {
-	chiCtx := chi.NewRouteContext()
-	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx))
-	chiCtx.URLParams.Add(key, value)
-	return r
 }
