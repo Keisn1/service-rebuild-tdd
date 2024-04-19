@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Keisn1/note-taking-app/domain/note"
-	"github.com/Keisn1/note-taking-app/domain/note/repositories/postgres"
+	"github.com/Keisn1/note-taking-app/domain/core/note"
+	"github.com/Keisn1/note-taking-app/domain/core/note/repositories/postgres"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"

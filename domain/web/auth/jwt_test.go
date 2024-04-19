@@ -1,22 +1,22 @@
-package jwtSvc_test
+package auth_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/Keisn1/note-taking-app/domain/web/auth"
 	"github.com/Keisn1/note-taking-app/foundation/common"
-	"github.com/Keisn1/note-taking-app/foundation/jwtSvc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJWT(t *testing.T) {
 	key := common.MustGenerateRandomKey(24)
-	_, err := jwtSvc.NewJWTService(key)
+	_, err := auth.NewJWTService(key)
 	assert.EqualError(t, err, "key minLength 32")
 
 	key = common.MustGenerateRandomKey(32)
-	jwtS, err := jwtSvc.NewJWTService(key)
+	jwtS, err := auth.NewJWTService(key)
 	assert.NoError(t, err)
 
 	userID := uuid.New()

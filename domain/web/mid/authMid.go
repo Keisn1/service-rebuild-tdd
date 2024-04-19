@@ -1,17 +1,16 @@
-package authMid
+package mid
 
 import (
 	"fmt"
 	"log/slog"
 	"net/http"
 
-	"github.com/Keisn1/note-taking-app/app/auth"
+	"github.com/Keisn1/note-taking-app/domain/web/auth"
+	"github.com/Keisn1/note-taking-app/foundation/web"
 	"github.com/go-chi/chi/v5"
 )
 
-type MidHandler func(http.Handler) http.Handler
-
-func Authenticate(a auth.AuthInterface) MidHandler {
+func Authenticate(a auth.AuthInterface) web.MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			userID := chi.URLParam(r, "userID")

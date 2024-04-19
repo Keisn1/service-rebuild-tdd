@@ -1,4 +1,4 @@
-package authMid_test
+package mid_test
 
 import (
 	"bytes"
@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Keisn1/note-taking-app/app/middleware/authMid"
-	"github.com/Keisn1/note-taking-app/foundation/jwtSvc"
+	"github.com/Keisn1/note-taking-app/domain/web/mid"
+	"github.com/Keisn1/note-taking-app/foundation/security"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -20,9 +20,9 @@ type MockAuth struct {
 	mock.Mock
 }
 
-func (ma *MockAuth) Authenticate(userID, bearerToken string) (*jwtSvc.Claims, error) {
+func (ma *MockAuth) Authenticate(userID, bearerToken string) (*security.Claims, error) {
 	args := ma.Called(userID, bearerToken)
-	return args.Get(0).(*jwtSvc.Claims), args.Error(1)
+	return args.Get(0).(*security.Claims), args.Error(1)
 }
 
 func TestJWTAuthenticationMiddleware(t *testing.T) {
@@ -30,7 +30,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	log.SetOutput(&logBuf)
 
 	mockAuth := new(MockAuth)
-	jwtMidHandler := authMid.Authenticate(mockAuth)
+	jwtMidHandler := mid.Authenticate(mockAuth)
 	handler := jwtMidHandler(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }),
 	)
@@ -50,7 +50,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 				return req
 			},
 			setupMockAuth: func() {
-				mockAuth.On("Authenticate", "123", "Bearer valid token").Return(&jwtSvc.Claims{}, nil)
+				mockAuth.On("Authenticate", "123", "Bearer valid token").Return(&security.Claims{}, nil)
 			},
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -67,7 +67,7 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 				return req
 			},
 			setupMockAuth: func() {
-				var claims *jwtSvc.Claims
+				var claims *security.Claims
 				mockAuth.On("Authenticate", "123", "Bearer INVALID token").Return(
 					claims, errors.New("error in authenticate"),
 				)

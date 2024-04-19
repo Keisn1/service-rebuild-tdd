@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/Keisn1/note-taking-app/domain/note"
+	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/google/uuid"
 )
 

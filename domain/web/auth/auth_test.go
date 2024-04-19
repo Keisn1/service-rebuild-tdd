@@ -3,15 +3,14 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/Keisn1/note-taking-app/app/auth"
+	"github.com/Keisn1/note-taking-app/domain/web/auth"
 	"github.com/Keisn1/note-taking-app/foundation/common"
-	"github.com/Keisn1/note-taking-app/foundation/jwtSvc"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthentication(t *testing.T) {
 	key := common.MustGenerateRandomKey(32)
-	jwtS, err := jwtSvc.NewJWTService(key)
+	jwtS, err := auth.NewJWTService(key)
 	assert.NoError(t, err)
 	a := auth.NewAuth(jwtS)
 

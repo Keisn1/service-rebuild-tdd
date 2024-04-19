@@ -1,4 +1,4 @@
-package jwtSvc
+package auth
 
 import (
 	"errors"
@@ -65,25 +65,3 @@ func (j *jwtSvc) keyFunc(token *jwt.Token) (interface{}, error) {
 
 	return []byte(j.key), nil
 }
-
-// func (j *JWT) checkSubject(userID string, claims Claims) error {
-// 	if userID != claims["sub"] {
-// 		return errors.New("invalid subject")
-// 	}
-// 	return nil
-// }
-
-// func (j *JWT) checkIssuer(claims Claims) error {
-// 	issuer := os.Getenv("JWT_NOTES_ISSUER")
-// 	if issuer != claims["iss"] {
-// 		return errors.New("incorrect issuer")
-// 	}
-// 	return nil
-// }
-
-// func (j *JWT) checkExpSet(claims Claims) error {
-// 	if _, ok := claims["exp"]; !ok {
-// 		return fmt.Errorf("no expiration date set")
-// 	}
-// 	return nil
-// }
