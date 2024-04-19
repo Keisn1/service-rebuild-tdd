@@ -64,7 +64,7 @@ func retrieveAllNotes(t *testing.T, hdl notesgrp.Handlers) domain.Notes {
 func canRetrieveAllNotes(t *testing.T, hdl notesgrp.Handlers) {
 	t.Helper()
 	gotNotes := retrieveAllNotes(t, hdl)
-	gotNotes = setNoteIdZero(t, gotNotes)
+	gotNotes = setNoteIdZero(gotNotes)
 	assert.Equal(t, allNotes(), gotNotes)
 }
 
@@ -84,7 +84,7 @@ func canRetrieveNotesByUserID(t *testing.T, hdl notesgrp.Handlers) {
 		req := setupRequest(t, "GET", "/users/notes", uid, "", &bytes.Buffer{})
 		hdl.GetNotesByUserID(rr, req)
 		gotNotes := decodeBodyNotes(t, rr.Body)
-		gotNotes = setNoteIdZero(t, gotNotes)
+		gotNotes = setNoteIdZero(gotNotes)
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, wantNotes, gotNotes)
@@ -149,7 +149,7 @@ func canEditNote(t *testing.T, hdl notesgrp.Handlers) {
 		assert.Equal(t, domain.Notes{n}, gotNotes)
 	}
 }
-func setNoteIdZero(t *testing.T, notes domain.Notes) domain.Notes {
+func setNoteIdZero(notes domain.Notes) domain.Notes {
 	var newNotes domain.Notes
 	for _, n := range notes {
 		n.NoteID = 0

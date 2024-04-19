@@ -58,3 +58,6 @@ func TestAuthentication(t *testing.T) {
 		})
 	}
 }
+
+func TestAuthorization(t *testing.T) {
+}

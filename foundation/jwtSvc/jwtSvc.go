@@ -51,7 +51,7 @@ func (j *jwtSvc) Verify(tokenS string) (*Claims, error) {
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return nil, errors.New("verify: invalid claims")
+		return nil, errors.New("verify: invalid token")
 	}
 
 	return claims, nil
