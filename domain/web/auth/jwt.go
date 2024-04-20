@@ -29,6 +29,14 @@ func NewJWTService(key []byte) (*jwtSvc, error) {
 	return &jwtSvc{key: key}, nil
 }
 
+func MustNewJWTService(key []byte) *jwtSvc {
+	jwtSvc, err := NewJWTService(key)
+	if err != nil {
+		panic(err)
+	}
+	return jwtSvc
+}
+
 func (j *jwtSvc) CreateToken(userID uuid.UUID, d time.Duration) (string, error) {
 	claims := &Claims{}
 	claims.Subject = userID.String()

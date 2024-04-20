@@ -25,6 +25,14 @@ func NewNotesRepo(notes []note.Note) (NoteRepo, error) {
 	return nR, nil
 }
 
+func MustNewNotesRepo(notes []note.Note) NoteRepo {
+	nr, err := NewNotesRepo(notes)
+	if err != nil {
+		panic(err)
+	}
+	return nr
+}
+
 func (nR NoteRepo) Delete(noteID uuid.UUID) error {
 	if _, ok := nR.notes[noteID]; ok {
 		delete(nR.notes, noteID)

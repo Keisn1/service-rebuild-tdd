@@ -7,7 +7,7 @@ import (
 )
 
 type AuthInterface interface {
-	Authenticate(userID, bearerToken string) (*Claims, error)
+	Authenticate(bearerToken string) (*Claims, error)
 }
 
 type Auth struct {
@@ -18,7 +18,7 @@ func NewAuth(jwtS JWTService) Auth {
 	return Auth{jwtSvc: jwtS}
 }
 
-func (a Auth) Authenticate(userID, bearerToken string) (*Claims, error) {
+func (a Auth) Authenticate(bearerToken string) (*Claims, error) {
 	tokenS, err := getBearerToken(bearerToken)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate: %w", err)

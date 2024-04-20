@@ -3,7 +3,7 @@ package note_test
 import (
 	"errors"
 
-	"github.com/Keisn1/note-taking-app/domain/note"
+	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/google/uuid"
 )
 

@@ -10,9 +10,7 @@ import (
 
 func TestAuthentication(t *testing.T) {
 	key := common.MustGenerateRandomKey(32)
-	jwtS, err := auth.NewJWTService(key)
-	assert.NoError(t, err)
-	a := auth.NewAuth(jwtS)
+	a := auth.NewAuth(auth.MustNewJWTService(key))
 
 	testCases := []struct {
 		name        string
@@ -52,7 +50,7 @@ func TestAuthentication(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := a.Authenticate(tc.userID, tc.bearerToken())
+			_, err := a.Authenticate(tc.bearerToken())
 			tc.assertion(t, err)
 		})
 	}
