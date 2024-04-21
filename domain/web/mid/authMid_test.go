@@ -2,12 +2,14 @@ package mid_test
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/Keisn1/note-taking-app/domain/web/auth"
 	"github.com/Keisn1/note-taking-app/domain/web/mid"
 	"github.com/Keisn1/note-taking-app/foundation/common"
@@ -20,7 +22,59 @@ type MockAuth struct {
 	mock.Mock
 }
 
-func TestJWTAuthenticationMiddleware(t *testing.T) {
+type StubNoteRepo struct {
+	notes map[uuid.UUID]note.Note
+}
+
+func (nr StubNoteRepo) Delete(noteID uuid.UUID) error                   { return nil }
+func (nr StubNoteRepo) Create(n note.Note) error                        { return nil }
+func (nr StubNoteRepo) Update(note note.Note) error                     { return nil }
+func (nr StubNoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) { return nr.notes[noteID], nil }
+
+func (nr StubNoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) { return nil, nil }
+
+func Test_Authorize(t *testing.T) {
+	userID := uuid.New()
+	noteID := uuid.New()
+	snr := &StubNoteRepo{
+		notes: map[uuid.UUID]note.Note{noteID: note.MakeNote(noteID, note.Title{}, note.Content{}, userID)},
+	}
+	ns := note.NewNotesService(snr)
+
+	midAuthorize := mid.AuthorizeNote(ns)
+	handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }))
+
+	req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
+	req.SetPathValue("note_id", noteID.String())
+	req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, userID))
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	req = httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
+	req.SetPathValue("note_id", noteID.String())
+	falseUserID := uuid.New()
+	req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, falseUserID))
+
+	handler.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	// testCases := []struct {
+	// 	name      string
+	// 	userID    uuid.UUID
+	// 	noteID    uuid.UUID
+	// 	assertion func(t *testing.T, err error)
+	// }{}
+	// for _, tc := range testCases {
+	// 	t.Run(tc.name, func(t *testing.T) {
+	// 		handler.ServeHTTP(rr, req)
+	// 		tc.assertion(t, err)
+	// 	})
+	// }
+
+}
+
+func Test_Authenticate(t *testing.T) {
 	var logBuf bytes.Buffer
 	log.SetOutput(&logBuf)
 
@@ -29,8 +83,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 	assert.NoError(t, err)
 	a := auth.NewAuth(jwtSvc)
 
-	authMid := mid.Authenticate(a)
-	handler := authMid(http.HandlerFunc(
+	midAuthenticate := mid.Authenticate(a)
+	handler := midAuthenticate(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }),
 	)
 
@@ -57,8 +111,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			setupHeader: func(req *http.Request) {},
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusForbidden, recorder.Code)
-				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
-				assert.Contains(t, logBuf.String(), "Failed Authentication")
+				assert.Contains(t, recorder.Body.String(), "failed authentication")
+				assert.Contains(t, logBuf.String(), "failed authentication")
 			},
 		},
 		{
@@ -66,8 +120,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			setupHeader: func(req *http.Request) { req.Header.Set("Authorization", "invalid") },
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusForbidden, recorder.Code)
-				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
-				assert.Contains(t, logBuf.String(), "Failed Authentication")
+				assert.Contains(t, recorder.Body.String(), "failed authentication")
+				assert.Contains(t, logBuf.String(), "failed authentication")
 			},
 		},
 		{
@@ -78,8 +132,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			},
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusForbidden, recorder.Code)
-				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
-				assert.Contains(t, logBuf.String(), "Failed Authentication")
+				assert.Contains(t, recorder.Body.String(), "failed authentication")
+				assert.Contains(t, logBuf.String(), "failed authentication")
 			},
 		},
 		{
@@ -87,8 +141,8 @@ func TestJWTAuthenticationMiddleware(t *testing.T) {
 			setupHeader: func(req *http.Request) { req.Header.Set("Authorization", "Bearer invalid") },
 			assertions: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusForbidden, recorder.Code)
-				assert.Equal(t, recorder.Body.String(), "Failed Authentication\n")
-				assert.Contains(t, logBuf.String(), "Failed Authentication")
+				assert.Contains(t, recorder.Body.String(), "failed authentication")
+				assert.Contains(t, logBuf.String(), "failed authentication")
 			},
 		},
 	}
