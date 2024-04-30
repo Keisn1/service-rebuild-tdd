@@ -1,6 +1,7 @@
 package mid
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -14,7 +15,7 @@ type contextUserIDKey int
 
 const UserIDKey contextUserIDKey = 1
 
-func AuthorizeNote(ns note.NotesService) web.MidHandler {
+func AuthorizeNote(ns note.NotesServiceInterface) web.MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			noteID, _ := uuid.Parse(r.PathValue("note_id"))
@@ -34,12 +35,15 @@ func Authenticate(a auth.AuthInterface) web.MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			bearerToken := r.Header.Get("Authorization")
-			_, err := a.Authenticate(bearerToken)
+			claims, err := a.Authenticate(bearerToken)
 			if err != nil {
 				http.Error(w, "failed authentication", http.StatusForbidden)
 				slog.Info("failed authentication")
 				return
 			}
+
+			ctx := context.WithValue(r.Context(), UserIDKey, claims.Subject)
+			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
 		}

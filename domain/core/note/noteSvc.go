@@ -6,6 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type NotesServiceInterface interface {
+	Delete(noteID uuid.UUID) error
+	Create(nN UpdateNote) (Note, error)
+	Update(n Note, newN UpdateNote) (Note, error)
+	GetNoteByID(noteID uuid.UUID) (Note, error)
+	GetNotesByUserID(userID uuid.UUID) ([]Note, error)
+}
+
 type NotesService struct {
 	notes NoteRepo
 }

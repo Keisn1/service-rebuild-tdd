@@ -22,28 +22,20 @@ type MockAuth struct {
 	mock.Mock
 }
 
-type StubNoteRepo struct {
+type StubNoteService struct {
 	notes map[uuid.UUID]note.Note
 }
-
-func (nr StubNoteRepo) Delete(noteID uuid.UUID) error                   { return nil }
-func (nr StubNoteRepo) Create(n note.Note) error                        { return nil }
-func (nr StubNoteRepo) Update(note note.Note) error                     { return nil }
-func (nr StubNoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) { return nr.notes[noteID], nil }
-
-func (nr StubNoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) { return nil, nil }
 
 func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
 	noteID := uuid.New()
-	snr := &StubNoteRepo{
+	sns := &StubNoteService{
 		notes: map[uuid.UUID]note.Note{
 			noteID: note.NewNote(noteID, note.Title{}, note.Content{}, userID),
 		},
 	}
-	ns := note.NewNotesService(snr)
 
-	midAuthorize := mid.AuthorizeNote(ns)
+	midAuthorize := mid.AuthorizeNote(sns)
 	handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }))
 
 	req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
@@ -158,4 +150,33 @@ func Test_Authenticate(t *testing.T) {
 
 		tc.assertions(t, recorder)
 	}
+
+	t.Run("Test claims set on context after success", func(t *testing.T) {
+		var logBuf bytes.Buffer
+		log.SetOutput(&logBuf)
+
+		key := common.MustGenerateRandomKey(32)
+		jwtSvc, err := auth.NewJWTService(key)
+		assert.NoError(t, err)
+		a := auth.NewAuth(jwtSvc)
+
+		midAuthenticate := mid.Authenticate(a)
+
+		wantUserID := uuid.New()
+		handler := midAuthenticate(http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				got := r.Context().Value(mid.UserIDKey)
+				assert.Equal(t, wantUserID.String(), got)
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/auth", nil)
+		tokenS, err := jwtSvc.CreateToken(wantUserID, time.Minute)
+		assert.NoError(t, err)
+		req.Header.Set("Authorization", "Bearer "+tokenS)
+
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
+	})
+
 }
