@@ -11,7 +11,7 @@ type Note struct {
 	userID  uuid.UUID
 }
 
-type NewNote struct {
+type UpdateNote struct {
 	title   Title
 	content Content
 	userID  uuid.UUID
@@ -25,7 +25,7 @@ type Title struct {
 	title *string
 }
 
-func MakeNote(noteID uuid.UUID, title Title, content Content, userID uuid.UUID) Note {
+func NewNote(noteID uuid.UUID, title Title, content Content, userID uuid.UUID) Note {
 	return Note{
 		noteID:  noteID,
 		title:   title,
@@ -34,17 +34,8 @@ func MakeNote(noteID uuid.UUID, title Title, content Content, userID uuid.UUID) 
 	}
 }
 
-func MakeNoteFromNewNote(nN NewNote) Note {
-	return Note{
-		noteID:  uuid.New(),
-		title:   nN.title,
-		content: nN.content,
-		userID:  nN.userID,
-	}
-}
-
-func MakeNewNote(title Title, content Content, userID uuid.UUID) NewNote {
-	return NewNote{
+func NewUpdateNote(title Title, content Content, userID uuid.UUID) UpdateNote {
+	return UpdateNote{
 		title:   title,
 		content: content,
 		userID:  userID,
@@ -55,11 +46,13 @@ func (n *Note) GetID() uuid.UUID { return n.noteID }
 
 func (n *Note) SetID(id uuid.UUID) { n.noteID = id }
 
-func (n *Note) GetTitle() Title { return n.title }
+func (n *Note) GetTitle() Title       { return n.title }
+func (n *UpdateNote) GetTitle() Title { return n.title }
 
 func (n *Note) SetTitle(title string) { n.title.Set(title) }
 
-func (n *Note) GetContent() Content { return n.content }
+func (n *Note) GetContent() Content       { return n.content }
+func (n *UpdateNote) GetContent() Content { return n.content }
 
 func (n *Note) SetContent(content string) { n.content.Set(content) }
 

@@ -11,11 +11,13 @@ import (
 )
 
 func TestJWT(t *testing.T) {
-	key := common.MustGenerateRandomKey(24)
-	_, err := auth.NewJWTService(key)
-	assert.EqualError(t, err, "key minLength 32")
+	t.Run("Assert min length of key", func(t *testing.T) {
+		key := common.MustGenerateRandomKey(24)
+		_, err := auth.NewJWTService(key)
+		assert.EqualError(t, err, "key minLength 32")
+	})
 
-	key = common.MustGenerateRandomKey(32)
+	key := common.MustGenerateRandomKey(32)
 	jwtS, err := auth.NewJWTService(key)
 	assert.NoError(t, err)
 
@@ -30,7 +32,7 @@ func TestJWT(t *testing.T) {
 	assert.Equal(t, userID.String(), claims.Subject)
 	assert.False(t, claims.ExpiresAt.Before(time.Now()))
 
-	// assert that jwtS rejects false the token
+	// assert that jwtS rejects false token
 	_, err = jwtS.Verify(tokenS + string(common.MustGenerateRandomKey(10)))
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "verify: ")

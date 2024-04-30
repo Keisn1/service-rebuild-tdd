@@ -37,7 +37,7 @@ func TestNoteService_Create(t *testing.T) {
 		notesS := note.NewNotesService(notesRepo)
 
 		userID := uuid.New()
-		newNote := note.MakeNewNote(note.NewTitle("invalid title"), note.NewContent(""), userID)
+		newNote := note.NewUpdateNote(note.NewTitle("invalid title"), note.NewContent(""), userID)
 		_, err := notesS.Create(newNote)
 		assert.Error(t, err)
 	})
@@ -46,7 +46,7 @@ func TestNoteService_Create(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 
 		userID := uuid.New()
-		newNote := note.MakeNewNote(note.NewTitle("new note title"), note.NewContent("new note content"), userID)
+		newNote := note.NewUpdateNote(note.NewTitle("new note title"), note.NewContent("new note content"), userID)
 		got, err := notesS.Create(newNote)
 		assert.NoError(t, err)
 		assert.NotEqual(t, got.GetID(), uuid.UUID{})
@@ -68,7 +68,7 @@ func TestNoteService_Update(t *testing.T) {
 		assert.NoError(t, err)
 		notesS := note.NewNotesService(notesR)
 
-		_, err = notesS.Update(note.Note{}, note.Note{})
+		_, err = notesS.Update(note.Note{}, note.UpdateNote{})
 		assert.ErrorContains(t, err, "update: ")
 	})
 
@@ -78,34 +78,34 @@ func TestNoteService_Update(t *testing.T) {
 		type testCase struct {
 			name       string
 			currNote   note.Note
-			updateNote note.Note
+			updateNote note.UpdateNote
 			want       note.Note
 		}
 
 		testCases := []testCase{
 			{
 				name:       "New Title, 0length content, update of both: 'new title' and ''",
-				currNote:   note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
-				updateNote: note.MakeNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
-				want:       note.MakeNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
+				currNote:   note.NewNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+				updateNote: note.NewUpdateNote(note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
+				want:       note.NewNote(uuid.UUID{1}, note.NewTitle("new title"), note.NewContent(""), uuid.UUID{1}),
 			},
 			{
 				name:       "New Title, empty content, will update only title: 'new title'",
-				currNote:   note.MakeNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
-				updateNote: note.MakeNote(uuid.UUID{2}, note.NewTitle("new title"), note.Content{}, uuid.UUID{1}),
-				want:       note.MakeNote(uuid.UUID{2}, note.NewTitle("new title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+				currNote:   note.NewNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+				updateNote: note.NewUpdateNote(note.NewTitle("new title"), note.Content{}, uuid.UUID{1}),
+				want:       note.NewNote(uuid.UUID{2}, note.NewTitle("new title"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
 			},
 			{
 				name:       "0length title, New content, update of both: '' and 'new content'",
-				currNote:   note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
-				updateNote: note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
-				want:       note.MakeNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
+				currNote:   note.NewNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+				updateNote: note.NewUpdateNote(note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
+				want:       note.NewNote(uuid.UUID{3}, note.NewTitle(""), note.NewContent("new content"), uuid.UUID{2}),
 			},
 			{
 				name:       "empty title, empty content, therefore no update at all",
-				currNote:   note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
-				updateNote: note.MakeNote(uuid.UUID{4}, note.Title{}, note.Content{}, uuid.UUID{2}),
-				want:       note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+				currNote:   note.NewNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+				updateNote: note.NewUpdateNote(note.Title{}, note.Content{}, uuid.UUID{2}),
+				want:       note.NewNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 			},
 		}
 
@@ -139,8 +139,8 @@ func TestNoteService_GetNoteByID(t *testing.T) {
 		}
 
 		testCases := []testCase{
-			{noteID: uuid.UUID{1}, want: note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})},
-			{noteID: uuid.UUID{3}, want: note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2})},
+			{noteID: uuid.UUID{1}, want: note.NewNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1})},
+			{noteID: uuid.UUID{3}, want: note.NewNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2})},
 		}
 
 		for _, tc := range testCases {
@@ -169,15 +169,15 @@ func TestNoteService_GetNotesByUserID(t *testing.T) {
 			{
 				userID: uuid.UUID{1},
 				want: []note.Note{
-					note.MakeNote(uuid.UUID{}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
-					note.MakeNote(uuid.UUID{}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+					note.NewNote(uuid.UUID{}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+					note.NewNote(uuid.UUID{}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
 				},
 			},
 			{
 				userID: uuid.UUID{2},
 				want: []note.Note{
-					note.MakeNote(uuid.UUID{}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
-					note.MakeNote(uuid.UUID{}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+					note.NewNote(uuid.UUID{}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+					note.NewNote(uuid.UUID{}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 				},
 			},
 		}
@@ -192,10 +192,10 @@ func TestNoteService_GetNotesByUserID(t *testing.T) {
 
 func fixtureNotes() []note.Note {
 	return []note.Note{
-		note.MakeNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
-		note.MakeNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
-		note.MakeNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
-		note.MakeNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
+		note.NewNote(uuid.UUID{1}, note.NewTitle("robs 1st note"), note.NewContent("robs 1st note content"), uuid.UUID{1}),
+		note.NewNote(uuid.UUID{2}, note.NewTitle("robs 2nd note"), note.NewContent("robs 2nd note content"), uuid.UUID{1}),
+		note.NewNote(uuid.UUID{3}, note.NewTitle("annas 1st note"), note.NewContent("annas 1st note content"), uuid.UUID{2}),
+		note.NewNote(uuid.UUID{4}, note.NewTitle("annas 2nd note"), note.NewContent("annas 2nd note content"), uuid.UUID{2}),
 	}
 }
 

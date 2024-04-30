@@ -122,7 +122,7 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 }
 
 func noteDBToNote(nDB noteDB) note.Note {
-	return note.MakeNote(nDB.id,
+	return note.NewNote(nDB.id,
 		note.NewTitle(nDB.title),
 		note.NewContent(nDB.content),
 		nDB.userID)

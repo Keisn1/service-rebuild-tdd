@@ -37,7 +37,9 @@ func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
 	noteID := uuid.New()
 	snr := &StubNoteRepo{
-		notes: map[uuid.UUID]note.Note{noteID: note.MakeNote(noteID, note.Title{}, note.Content{}, userID)},
+		notes: map[uuid.UUID]note.Note{
+			noteID: note.NewNote(noteID, note.Title{}, note.Content{}, userID),
+		},
 	}
 	ns := note.NewNotesService(snr)
 
@@ -89,7 +91,6 @@ func Test_Authenticate(t *testing.T) {
 	)
 
 	userID := uuid.New()
-
 	testCases := []struct {
 		name        string
 		setupHeader func(*http.Request)

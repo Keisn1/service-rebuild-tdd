@@ -22,8 +22,9 @@ func (ns NotesService) Delete(noteID uuid.UUID) error {
 	return nil
 }
 
-func (ns NotesService) Create(nN NewNote) (Note, error) {
-	n := MakeNoteFromNewNote(nN)
+func (ns NotesService) Create(nN UpdateNote) (Note, error) {
+	n := NewNote(uuid.New(), nN.title, nN.content, nN.userID)
+
 	err := ns.notes.Create(n)
 	if err != nil {
 		return Note{}, err
@@ -31,7 +32,7 @@ func (ns NotesService) Create(nN NewNote) (Note, error) {
 	return n, nil
 }
 
-func (ns NotesService) Update(n Note, newN Note) (Note, error) {
+func (ns NotesService) Update(n Note, newN UpdateNote) (Note, error) {
 	if !newN.GetTitle().IsEmpty() {
 		n.SetTitle(newN.GetTitle().String())
 	}

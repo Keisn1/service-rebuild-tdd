@@ -10,7 +10,8 @@ import (
 
 func TestAuthentication(t *testing.T) {
 	key := common.MustGenerateRandomKey(32)
-	a := auth.NewAuth(auth.MustNewJWTService(key))
+	jwtSvc := auth.MustNewJWTService(key)
+	a := auth.NewAuth(jwtSvc)
 
 	testCases := []struct {
 		name        string
