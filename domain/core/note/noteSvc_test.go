@@ -1,11 +1,13 @@
 package note_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/Keisn1/note-taking-app/domain/core/note/repositories/memory"
+	"github.com/Keisn1/note-taking-app/domain/core/user"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,9 +34,18 @@ func TestNoteService_Delete(t *testing.T) {
 	})
 }
 func TestNoteService_Create(t *testing.T) {
+	t.Run("Throws error if userID not present", func(t *testing.T) {
+		notesS := Setup(t, fixtureNotes())
+		userID := uuid.New()
+
+		newNote := note.NewUpdateNote("invalid title", "", userID)
+		_, err := notesS.Create(newNote)
+		assert.Error(t, err)
+	})
+
 	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
-		notesRepo := StubNoteRepo{}
-		notesS := note.NewNotesService(notesRepo)
+		errorRepo := ErrorNoteRepo{}
+		notesS := note.NewNotesService(errorRepo)
 
 		userID := uuid.New()
 		newNote := note.NewUpdateNote("invalid title", "", userID)
@@ -47,6 +58,7 @@ func TestNoteService_Create(t *testing.T) {
 
 		userID := uuid.New()
 		newNote := note.NewUpdateNote("new note title", "new note content", userID)
+
 		got, err := notesS.Create(newNote)
 		assert.NoError(t, err)
 		assert.NotEqual(t, got.GetID(), uuid.UUID{})
@@ -200,7 +212,20 @@ func fixtureNotes() []note.Note {
 }
 
 func Setup(t *testing.T, notes []note.Note) note.NotesService {
-	notesR, err := memory.NewNotesRepo(fixtureNotes())
+	t.Helper()
+	notesR, err := memory.NewNotesRepo(notes)
 	assert.NoError(t, err)
-	return note.NewNotesService(notesR)
+	userSvc := StubUserService{}
+	return note.NewNotesService(notesR, userSvc)
+}
+
+type StubUserService struct {
+	ids map[uuid.UUID]struct{}
+}
+
+func (sus StubUserService) QueryByID(userID uuid.UUID) (user.User, error) {
+	if _, ok := sus.ids[userID]; !ok {
+		return user.User{}, errors.New("User not found")
+	}
+	return user.User{ID: userID}, nil
 }

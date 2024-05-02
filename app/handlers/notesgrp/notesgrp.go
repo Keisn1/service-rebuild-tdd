@@ -8,7 +8,7 @@ import (
 
 	"github.com/Keisn1/note-taking-app/app/api"
 	"github.com/Keisn1/note-taking-app/domain/core/note"
-	"github.com/Keisn1/note-taking-app/foundation"
+	"github.com/Keisn1/note-taking-app/domain/web/mid"
 	"github.com/google/uuid"
 )
 
@@ -94,11 +94,7 @@ func NewHandlers(ns note.NotesServiceI) Handlers {
 // }
 
 func (hdl *Handlers) Create(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
-	if !ok {
-		handleError(w, "", http.StatusBadRequest, "Add: invalid userID")
-		return
-	}
+	userID := mid.GetUserID(r.Context())
 
 	var np api.NotePost
 	err := json.NewDecoder(r.Body).Decode(&np)

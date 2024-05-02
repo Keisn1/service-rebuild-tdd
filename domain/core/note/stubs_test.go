@@ -7,27 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type StubNoteRepo struct {
+type ErrorNoteRepo struct {
 	notes map[uuid.UUID]note.Note
 }
 
-func (nR StubNoteRepo) Delete(noteID uuid.UUID) error { return nil }
-
-func (nR StubNoteRepo) Create(n note.Note) error {
-	if n.GetTitle().String() == "invalid title" {
-		return errors.New("error in noteRepo")
-	}
-	return nil
-}
-
-func (nR StubNoteRepo) Update(note note.Note) error {
-	return nil
-}
-
-func (nR StubNoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
-	return note.Note{}, nil
-}
-
-func (nR StubNoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
-	return nil, nil
-}
+func (nR ErrorNoteRepo) Create(n note.Note) error                               { return errors.New("error in noteRepo") }
+func (nR ErrorNoteRepo) Delete(noteID uuid.UUID) error                          { return nil }
+func (nR ErrorNoteRepo) Update(note note.Note) error                            { return nil }
+func (nR ErrorNoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error)        { return note.Note{}, nil }
+func (nR ErrorNoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) { return nil, nil }

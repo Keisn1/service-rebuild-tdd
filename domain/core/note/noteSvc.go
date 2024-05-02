@@ -3,6 +3,7 @@ package note
 import (
 	"fmt"
 
+	"github.com/Keisn1/note-taking-app/domain/core/user"
 	"github.com/google/uuid"
 )
 
@@ -15,11 +16,12 @@ type NotesServiceI interface {
 }
 
 type NotesService struct {
-	notes NoteRepo
+	notes   NoteRepo
+	userSvc user.UserSvcI
 }
 
-func NewNotesService(nR NoteRepo) NotesService {
-	return NotesService{notes: nR}
+func NewNotesService(nR NoteRepo, us user.UserSvcI) NotesService {
+	return NotesService{notes: nR, userSvc: us}
 }
 
 func (ns NotesService) Delete(noteID uuid.UUID) error {
