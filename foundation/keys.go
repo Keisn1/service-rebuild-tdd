@@ -1,5 +1,9 @@
 package foundation
 
-type contextUserIDKey int
+type contextKey int
 
-const UserIDKey contextUserIDKey = 1
+const (
+	UserIDKey contextKey = iota
+	ClaimsKey
+	NoteKey
+)

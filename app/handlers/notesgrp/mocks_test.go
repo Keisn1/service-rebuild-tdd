@@ -1,7 +1,7 @@
 package notesgrp_test
 
 import (
-	"github.com/Keisn1/note-taking-app/domain"
+	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 )
@@ -26,31 +26,26 @@ func (mNS *mockNotesSvc) Reset() {
 	mNS.ExpectedCalls = []*mock.Call{}
 }
 
-func (mNS *mockNotesSvc) GetAllNotes() (domain.Notes, error) {
-	args := mNS.Called()
-	return args.Get(0).(domain.Notes), args.Error(1)
-}
-
-func (mNS *mockNotesSvc) GetNoteByUserIDAndNoteID(userID uuid.UUID, noteID int) (domain.Notes, error) {
-	args := mNS.Called(userID, noteID)
-	return args.Get(0).(domain.Notes), args.Error(1)
-}
-
-func (mNS *mockNotesSvc) GetNotesByUserID(userID uuid.UUID) (domain.Notes, error) {
+func (mNS *mockNotesSvc) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	args := mNS.Called(userID)
-	return args.Get(0).(domain.Notes), args.Error(1)
+	return args.Get(0).([]note.Note), args.Error(1)
 }
 
-func (mNS *mockNotesSvc) AddNote(userID uuid.UUID, note string) error {
-	args := mNS.Called(userID, note)
-	return args.Error(0)
+func (mNS *mockNotesSvc) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+	args := mNS.Called(noteID)
+	return args.Get(0).(note.Note), args.Error(1)
 }
 
-func (mNS *mockNotesSvc) EditNote(userID uuid.UUID, noteID int, note string) error {
-	return nil
+func (mNS *mockNotesSvc) Create(newN note.UpdateNote) (note.Note, error) {
+	args := mNS.Called(newN)
+	return args.Get(0).(note.Note), args.Error(1)
 }
 
-func (mNS *mockNotesSvc) Delete(userID uuid.UUID, noteID int) error {
-	args := mNS.Called(userID, noteID)
+func (mNS *mockNotesSvc) Update(n note.Note, un note.UpdateNote) (note.Note, error) {
+	return note.Note{}, nil
+}
+
+func (mNS *mockNotesSvc) Delete(noteID uuid.UUID) error {
+	args := mNS.Called(noteID)
 	return args.Error(0)
 }

@@ -12,15 +12,12 @@ import (
 	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/Keisn1/note-taking-app/domain/web/auth"
 	"github.com/Keisn1/note-taking-app/domain/web/mid"
+	"github.com/Keisn1/note-taking-app/foundation"
 	"github.com/Keisn1/note-taking-app/foundation/common"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-type MockAuth struct {
-	mock.Mock
-}
 
 func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
@@ -42,7 +39,7 @@ func Test_Authorize(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
 		req.SetPathValue("note_id", noteID.String())
 
-		req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, userID))
+		req = req.WithContext(context.WithValue(req.Context(), foundation.UserIDKey, userID))
 		rr := httptest.NewRecorder()
 
 		handler.ServeHTTP(rr, req)
@@ -55,7 +52,7 @@ func Test_Authorize(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
 		req.SetPathValue("note_id", noteID.String())
 		falseUserID := uuid.New()
-		req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, falseUserID))
+		req = req.WithContext(context.WithValue(req.Context(), foundation.UserIDKey, falseUserID))
 
 		handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Test Handler"))
@@ -70,7 +67,7 @@ func Test_Authorize(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
 		req.SetPathValue("note_id", uuid.New().String())
 		userID := uuid.New()
-		req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, userID))
+		req = req.WithContext(context.WithValue(req.Context(), foundation.UserIDKey, userID))
 
 		handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Test Handler"))

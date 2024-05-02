@@ -8,17 +8,12 @@ import (
 
 	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/Keisn1/note-taking-app/domain/web/auth"
+	"github.com/Keisn1/note-taking-app/foundation"
 	"github.com/Keisn1/note-taking-app/foundation/web"
 	"github.com/google/uuid"
 )
 
-type contextKey int
-
-const UserIDKey contextKey = 1
-const ClaimsKey contextKey = 2
-const NoteKey contextKey = 2
-
-func AuthorizeNote(ns note.NotesServiceInterface) web.MidHandler {
+func AuthorizeNote(ns note.NotesServiceI) web.MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			noteID, err := uuid.Parse(r.PathValue("note_id"))
@@ -27,7 +22,7 @@ func AuthorizeNote(ns note.NotesServiceInterface) web.MidHandler {
 				return
 			}
 
-			userID := r.Context().Value(UserIDKey).(uuid.UUID)
+			userID := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
 			n, err := ns.GetNoteByID(noteID)
 			if err != nil {
 				http.Error(w, "", http.StatusForbidden)
@@ -72,11 +67,11 @@ func Authenticate(a auth.AuthInterface) web.MidHandler {
 }
 
 func setUserID(ctx context.Context, userID uuid.UUID) context.Context {
-	return context.WithValue(ctx, UserIDKey, userID)
+	return context.WithValue(ctx, foundation.UserIDKey, userID)
 }
 
 func GetUserID(ctx context.Context) uuid.UUID {
-	userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
+	userID, ok := ctx.Value(foundation.UserIDKey).(uuid.UUID)
 	if !ok {
 		return uuid.UUID{}
 	}
@@ -84,11 +79,11 @@ func GetUserID(ctx context.Context) uuid.UUID {
 }
 
 func setNote(ctx context.Context, n note.Note) context.Context {
-	return context.WithValue(ctx, NoteKey, n)
+	return context.WithValue(ctx, foundation.NoteKey, n)
 }
 
 func GetNote(ctx context.Context) note.Note {
-	n, ok := ctx.Value(NoteKey).(note.Note)
+	n, ok := ctx.Value(foundation.NoteKey).(note.Note)
 	if !ok {
 		fmt.Println("Not ok")
 		return note.Note{}
@@ -97,11 +92,11 @@ func GetNote(ctx context.Context) note.Note {
 }
 
 func setClaims(ctx context.Context, claims auth.Claims) context.Context {
-	return context.WithValue(ctx, ClaimsKey, claims)
+	return context.WithValue(ctx, foundation.ClaimsKey, claims)
 }
 
 func GetClaims(ctx context.Context) auth.Claims {
-	claims, ok := ctx.Value(ClaimsKey).(auth.Claims)
+	claims, ok := ctx.Value(foundation.ClaimsKey).(auth.Claims)
 	if !ok {
 		return auth.Claims{}
 	}

@@ -1,5 +1,6 @@
 package api
 
 type NotePost struct {
-	Note string `json:"note"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }

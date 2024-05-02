@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type NotesServiceInterface interface {
+type NotesServiceI interface {
 	Delete(noteID uuid.UUID) error
 	Create(nN UpdateNote) (Note, error)
 	Update(n Note, newN UpdateNote) (Note, error)
