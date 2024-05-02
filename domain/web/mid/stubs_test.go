@@ -5,6 +5,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type StubNoteService struct {
+	notes map[uuid.UUID]note.Note
+}
+
 func (ns StubNoteService) Delete(noteID uuid.UUID) error                { return nil }
 func (ns StubNoteService) Create(nN note.UpdateNote) (note.Note, error) { return note.Note{}, nil }
 func (ns StubNoteService) Update(n note.Note, newN note.UpdateNote) (note.Note, error) {

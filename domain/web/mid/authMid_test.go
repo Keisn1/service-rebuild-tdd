@@ -22,10 +22,6 @@ type MockAuth struct {
 	mock.Mock
 }
 
-type StubNoteService struct {
-	notes map[uuid.UUID]note.Note
-}
-
 func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
 	noteID := uuid.New()

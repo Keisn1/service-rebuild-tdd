@@ -62,13 +62,18 @@ func TestServer(t *testing.T) {
 			statusCode  int
 			want        string
 		}{
-			{setupHeader: func(r *http.Request) {}, statusCode: http.StatusForbidden, want: "failed authentication"},
-			{setupHeader: func(r *http.Request) {
-				token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{})
-				tokenS, err := token.SignedString(key)
-				assert.NoError(t, err)
-				r.Header.Set("Authorization", "Bearer "+tokenS)
+			{
+				setupHeader: func(r *http.Request) {},
+				statusCode:  http.StatusForbidden,
+				want:        "failed authentication",
 			},
+			{
+				setupHeader: func(r *http.Request) {
+					token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{})
+					tokenS, err := token.SignedString(key)
+					assert.NoError(t, err)
+					r.Header.Set("Authorization", "Bearer "+tokenS)
+				},
 				statusCode: http.StatusOK,
 				want:       "Hello from fetch",
 			},
