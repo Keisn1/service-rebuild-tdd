@@ -16,13 +16,12 @@ import (
 	"github.com/Keisn1/note-taking-app/foundation/common"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
 	noteID := uuid.New()
-	n := note.NewNote(noteID, note.Title{}, note.Content{}, userID)
+	n := note.NewNote(noteID, "", "", userID)
 	sns := &StubNoteService{notes: map[uuid.UUID]note.Note{noteID: n}}
 	midAuthorize := mid.AuthorizeNote(sns)
 

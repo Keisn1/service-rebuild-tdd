@@ -107,18 +107,24 @@ func (hdl *Handlers) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newN := note.NewUpdateNote(note.NewTitle(np.Title), note.NewContent(np.Content), userID)
-
-	_, err = hdl.notesSvc.Create(newN)
+	n, err := hdl.notesSvc.Create(toUpdateNote(np, userID))
 	if err != nil {
 		logMsg := fmt.Sprintf("Add: userID %v body %v", userID, np)
 		handleError(w, "", http.StatusConflict, logMsg, "error", err)
 		return
 	}
 
+	data, err := json.Marshal(n)
+	if err != nil {
+		logMsg := fmt.Sprintf("Create: userID %v body %v", userID, np)
+		handleError(w, "", http.StatusInternalServerError, logMsg, "error", err)
+		return
+	}
+
 	w.WriteHeader(http.StatusAccepted)
+	w.Write(data)
 	slog.Info(
-		fmt.Sprintf("Success: Add: userID %v body %v", userID, np),
+		fmt.Sprintf("Success: Create: userID %v body %v", userID, np),
 	)
 }
 
@@ -207,4 +213,8 @@ func (hdl *Handlers) Create(w http.ResponseWriter, r *http.Request) {
 func handleError(w http.ResponseWriter, errMsg string, status int, logMsg string, args ...any) {
 	http.Error(w, errMsg, status)
 	slog.Error(logMsg, args...)
+}
+
+func toUpdateNote(np api.NotePost, userID uuid.UUID) note.UpdateNote {
+	return note.NewUpdateNote(np.Title, np.Content, userID)
 }

@@ -21,13 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func mustEncode(t *testing.T, a any) *bytes.Buffer {
-	buf := bytes.NewBuffer([]byte{})
-	if err := json.NewEncoder(buf).Encode(a); err != nil {
-		t.Fatalf("encoding json: %v", err)
-	}
-	return buf
+func mustEncode(t *testing.T, a any) string {
+	data, err := json.Marshal(a)
+	assert.NoError(t, err)
+	return string(data)
 }
+
 func setupRequest(t *testing.T, method, target string, userID uuid.UUID) *http.Request {
 	t.Helper()
 	req := httptest.NewRequest(method, target, strings.NewReader(""))
@@ -56,8 +55,8 @@ func Test_Create(t *testing.T) {
 		body        api.NotePost
 		mNSP        func(userID uuid.UUID, body api.NotePost) mockNotesStoreParams
 		wantStatus  int
-		wantBody    string
-		wantLogging func(userID any, body any) []string
+		wantBody    func(userID uuid.UUID, body api.NotePost) string
+		wantLogging func(userID uuid.UUID, body api.NotePost) []string
 		assertions  func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams)
 	}
 
@@ -67,16 +66,18 @@ func Test_Create(t *testing.T) {
 			userID: uuid.New(),
 			body:   api.NotePost{Title: "test title", Content: "test content"},
 			mNSP: func(userID uuid.UUID, body api.NotePost) mockNotesStoreParams {
-				updateN := note.NewUpdateNote(note.NewTitle(body.Title), note.NewContent(body.Content), userID)
-				n := note.NewNote(uuid.New(), note.NewTitle(body.Title), note.NewContent(body.Content), userID)
-				return mockNotesStoreParams{method: "Create", arguments: []any{updateN}, returnArguments: []any{n, nil}}
+				updateN := note.NewUpdateNote(body.Title, body.Content, userID)
+				returnN := note.NewNote(uuid.UUID{1}, body.Title, body.Content, userID)
+				return mockNotesStoreParams{method: "Create", arguments: []any{updateN}, returnArguments: []any{returnN, nil}}
 			},
 			wantStatus: http.StatusAccepted,
-			wantBody:   "",
-			wantLogging: func(userID any, body any) []string {
+			wantBody: func(userID uuid.UUID, body api.NotePost) string {
+				return mustEncode(t, note.NewNote(uuid.UUID{1}, body.Title, body.Content, userID))
+			},
+			wantLogging: func(userID uuid.UUID, body api.NotePost) []string {
 				return []string{
 					"INFO",
-					fmt.Sprintf("Success: Add: userID %v body %v", userID, body)}
+					fmt.Sprintf("Success: Create: userID %v body %v", userID, body)}
 			},
 			assertions: func(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wantBody string, wL []string, mNSP mockNotesStoreParams) {
 				assert.Equal(t, wantStatus, rr.Code)
@@ -158,10 +159,10 @@ func Test_Create(t *testing.T) {
 	for _, tc := range testCases {
 		logBuf.Reset()
 		mNotesSvc.Setup(tc.mNSP(tc.userID, tc.body))
-		req := setupRequest(t, "POST", tc.userID, mustEncode(t, tc.body))
+		req := setupRequest(t, "POST", tc.userID, strings.NewReader(mustEncode(t, tc.body)))
 		rr := httptest.NewRecorder()
 		hdl.Create(rr, req)
-		tc.assertions(t, rr, tc.wantStatus, tc.wantBody, tc.wantLogging(tc.userID, tc.body), tc.mNSP(tc.userID, tc.body))
+		tc.assertions(t, rr, tc.wantStatus, tc.wantBody(tc.userID, tc.body), tc.wantLogging(tc.userID, tc.body), tc.mNSP(tc.userID, tc.body))
 	}
 }
 

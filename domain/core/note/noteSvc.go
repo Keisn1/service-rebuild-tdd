@@ -31,7 +31,12 @@ func (ns NotesService) Delete(noteID uuid.UUID) error {
 }
 
 func (ns NotesService) Create(nN UpdateNote) (Note, error) {
-	n := NewNote(uuid.New(), nN.title, nN.content, nN.userID)
+	n := Note{
+		NoteID:  uuid.New(),
+		Title:   nN.Title,
+		Content: nN.Content,
+		UserID:  nN.UserID,
+	}
 
 	err := ns.notes.Create(n)
 	if err != nil {
