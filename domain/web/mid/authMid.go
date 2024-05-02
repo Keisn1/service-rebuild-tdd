@@ -2,6 +2,7 @@ package mid
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -11,20 +12,36 @@ import (
 	"github.com/google/uuid"
 )
 
-type contextUserIDKey int
+type contextKey int
 
-const UserIDKey contextUserIDKey = 1
+const UserIDKey contextKey = 1
+const ClaimsKey contextKey = 2
+const NoteKey contextKey = 2
 
 func AuthorizeNote(ns note.NotesServiceInterface) web.MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			noteID, _ := uuid.Parse(r.PathValue("note_id"))
+			noteID, err := uuid.Parse(r.PathValue("note_id"))
+			if err != nil {
+				http.Error(w, "", http.StatusForbidden)
+				return
+			}
+
 			userID := r.Context().Value(UserIDKey).(uuid.UUID)
-			n, _ := ns.GetNoteByID(noteID)
+			n, err := ns.GetNoteByID(noteID)
+			if err != nil {
+				http.Error(w, "", http.StatusForbidden)
+				return
+			}
 			if n.GetUserID() != userID {
 				http.Error(w, "", http.StatusForbidden)
 				return
 			}
+
+			ctx := setNote(r.Context(), n)
+			r = r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(h)
 	}
@@ -42,7 +59,9 @@ func Authenticate(a auth.AuthInterface) web.MidHandler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDKey, claims.Subject)
+			userID, _ := uuid.Parse(claims.Subject)
+			ctx := setUserID(r.Context(), userID)
+			ctx = setClaims(ctx, claims)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
@@ -50,4 +69,41 @@ func Authenticate(a auth.AuthInterface) web.MidHandler {
 		return http.HandlerFunc(h)
 	}
 	return m
+}
+
+func setUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, UserIDKey, userID)
+}
+
+func GetUserID(ctx context.Context) uuid.UUID {
+	userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
+	if !ok {
+		return uuid.UUID{}
+	}
+	return userID
+}
+
+func setNote(ctx context.Context, n note.Note) context.Context {
+	return context.WithValue(ctx, NoteKey, n)
+}
+
+func GetNote(ctx context.Context) note.Note {
+	n, ok := ctx.Value(NoteKey).(note.Note)
+	if !ok {
+		fmt.Println("Not ok")
+		return note.Note{}
+	}
+	return n
+}
+
+func setClaims(ctx context.Context, claims *auth.Claims) context.Context {
+	return context.WithValue(ctx, ClaimsKey, claims)
+}
+
+func GetClaims(ctx context.Context) *auth.Claims {
+	claims, ok := ctx.Value(ClaimsKey).(*auth.Claims)
+	if !ok {
+		return nil
+	}
+	return claims
 }

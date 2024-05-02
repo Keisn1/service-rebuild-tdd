@@ -29,43 +29,60 @@ type StubNoteService struct {
 func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
 	noteID := uuid.New()
-	sns := &StubNoteService{
-		notes: map[uuid.UUID]note.Note{
-			noteID: note.NewNote(noteID, note.Title{}, note.Content{}, userID),
-		},
-	}
-
+	n := note.NewNote(noteID, note.Title{}, note.Content{}, userID)
+	sns := &StubNoteService{notes: map[uuid.UUID]note.Note{noteID: n}}
 	midAuthorize := mid.AuthorizeNote(sns)
-	handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Test Handler")) }))
 
-	req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
-	req.SetPathValue("note_id", noteID.String())
-	req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, userID))
-	rr := httptest.NewRecorder()
+	t.Run("Authorize success, retreived note set in context of request", func(t *testing.T) {
+		wantNote := n
+		wantResponse := "test handler"
+		handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(wantResponse))
 
-	handler.ServeHTTP(rr, req)
-	assert.Equal(t, http.StatusOK, rr.Code)
+			gotNote := mid.GetNote(r.Context())
+			assert.Equal(t, wantNote, gotNote)
+		}))
 
-	req = httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
-	req.SetPathValue("note_id", noteID.String())
-	falseUserID := uuid.New()
-	req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, falseUserID))
+		req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
+		req.SetPathValue("note_id", noteID.String())
 
-	handler.ServeHTTP(rr, req)
-	assert.Equal(t, http.StatusForbidden, rr.Code)
-	// testCases := []struct {
-	// 	name      string
-	// 	userID    uuid.UUID
-	// 	noteID    uuid.UUID
-	// 	assertion func(t *testing.T, err error)
-	// }{}
-	// for _, tc := range testCases {
-	// 	t.Run(tc.name, func(t *testing.T) {
-	// 		handler.ServeHTTP(rr, req)
-	// 		tc.assertion(t, err)
-	// 	})
-	// }
+		req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, userID))
+		rr := httptest.NewRecorder()
 
+		handler.ServeHTTP(rr, req)
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, wantResponse, rr.Body.String())
+	})
+
+	t.Run("Authorize failure, wrong user id", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
+		req.SetPathValue("note_id", noteID.String())
+		falseUserID := uuid.New()
+		req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, falseUserID))
+
+		handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("Test Handler"))
+		}))
+
+		handler.ServeHTTP(rr, req)
+		assert.Equal(t, http.StatusForbidden, rr.Code)
+	})
+
+	t.Run("Authorize failure, note not present", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/notImplemented", nil)
+		req.SetPathValue("note_id", uuid.New().String())
+		userID := uuid.New()
+		req = req.WithContext(context.WithValue(req.Context(), mid.UserIDKey, userID))
+
+		handler := midAuthorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("Test Handler"))
+		}))
+
+		handler.ServeHTTP(rr, req)
+		assert.Equal(t, http.StatusForbidden, rr.Code)
+	})
 }
 
 func Test_Authenticate(t *testing.T) {
@@ -152,9 +169,6 @@ func Test_Authenticate(t *testing.T) {
 	}
 
 	t.Run("Test claims set on context after success", func(t *testing.T) {
-		var logBuf bytes.Buffer
-		log.SetOutput(&logBuf)
-
 		key := common.MustGenerateRandomKey(32)
 		jwtSvc, err := auth.NewJWTService(key)
 		assert.NoError(t, err)
@@ -163,15 +177,23 @@ func Test_Authenticate(t *testing.T) {
 		midAuthenticate := mid.Authenticate(a)
 
 		wantUserID := uuid.New()
+		tokenS, err := jwtSvc.CreateToken(wantUserID, time.Minute)
+		assert.NoError(t, err)
+
+		wantClaims, err := a.Authenticate("Bearer " + tokenS)
+		assert.NoError(t, err)
+
 		handler := midAuthenticate(http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				got := r.Context().Value(mid.UserIDKey)
-				assert.Equal(t, wantUserID.String(), got)
+				gotUserID := mid.GetUserID(r.Context())
+				assert.Equal(t, wantUserID, gotUserID)
+
+				gotClaims := mid.GetClaims(r.Context())
+				assert.Equal(t, wantClaims, gotClaims)
 			}),
 		)
 
 		req := httptest.NewRequest(http.MethodGet, "/auth", nil)
-		tokenS, err := jwtSvc.CreateToken(wantUserID, time.Minute)
 		assert.NoError(t, err)
 		req.Header.Set("Authorization", "Bearer "+tokenS)
 

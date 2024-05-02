@@ -19,7 +19,7 @@ func NewAuth(jwtS JWTService) Auth {
 }
 
 func (a Auth) Authenticate(bearerToken string) (*Claims, error) {
-	tokenS, err := getBearerToken(bearerToken)
+	tokenS, err := getTokenString(bearerToken)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate: %w", err)
 	}
@@ -32,7 +32,7 @@ func (a Auth) Authenticate(bearerToken string) (*Claims, error) {
 	return claims, nil
 }
 
-func getBearerToken(bearerToken string) (string, error) {
+func getTokenString(bearerToken string) (string, error) {
 	parts := strings.Split(bearerToken, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		return "", errors.New("expected authorization header format: Bearer <token>")
