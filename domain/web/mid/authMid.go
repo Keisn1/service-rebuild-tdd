@@ -96,14 +96,14 @@ func GetNote(ctx context.Context) note.Note {
 	return n
 }
 
-func setClaims(ctx context.Context, claims *auth.Claims) context.Context {
+func setClaims(ctx context.Context, claims auth.Claims) context.Context {
 	return context.WithValue(ctx, ClaimsKey, claims)
 }
 
-func GetClaims(ctx context.Context) *auth.Claims {
-	claims, ok := ctx.Value(ClaimsKey).(*auth.Claims)
+func GetClaims(ctx context.Context) auth.Claims {
+	claims, ok := ctx.Value(ClaimsKey).(auth.Claims)
 	if !ok {
-		return nil
+		return auth.Claims{}
 	}
 	return claims
 }

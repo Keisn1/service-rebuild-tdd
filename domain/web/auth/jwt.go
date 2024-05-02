@@ -15,7 +15,7 @@ type Claims struct {
 
 type JWTService interface {
 	CreateToken(userID uuid.UUID, d time.Duration) (string, error)
-	Verify(tokenS string) (*Claims, error)
+	Verify(tokenS string) (Claims, error)
 }
 
 type jwtSvc struct {
@@ -51,18 +51,18 @@ func (j *jwtSvc) CreateToken(userID uuid.UUID, d time.Duration) (string, error) 
 	return tokenS, nil
 }
 
-func (j *jwtSvc) Verify(tokenS string) (*Claims, error) {
+func (j *jwtSvc) Verify(tokenS string) (Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenS, &Claims{}, j.keyFunc)
 	if err != nil {
-		return nil, fmt.Errorf("verify: %w", err)
+		return Claims{}, fmt.Errorf("verify: %w", err)
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return nil, errors.New("verify: invalid token")
+		return Claims{}, errors.New("verify: invalid token")
 	}
 
-	return claims, nil
+	return *claims, nil
 }
 
 func (j *jwtSvc) keyFunc(token *jwt.Token) (interface{}, error) {

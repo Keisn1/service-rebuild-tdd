@@ -18,12 +18,14 @@ import (
 func TestServer(t *testing.T) {
 	t.Run("Single route example", func(t *testing.T) {
 		cfg := mux.Config{}
+
 		testRoutes := func(api *web.App, cfg mux.Config) {
 			fetch := func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "Hello from fetch") }
 			get := func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "Hello from get") }
 			api.Handle("/fetch", http.HandlerFunc(fetch))
 			api.Handle("/get", http.HandlerFunc(get))
 		}
+
 		api := mux.NewAPI(testRoutes, cfg)
 
 		testCases := []struct {
@@ -46,11 +48,13 @@ func TestServer(t *testing.T) {
 	t.Run("Example with authentication", func(t *testing.T) {
 		key := common.MustGenerateRandomKey(32)
 		cfg := mux.Config{Auth: auth.NewAuth(auth.MustNewJWTService(key))}
+
 		testRoutes := func(api *web.App, cfg mux.Config) {
 			authen := mid.Authenticate(cfg.Auth)
 			fetch := func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "Hello from fetch") }
 			api.Handle("/fetch", authen(http.HandlerFunc(fetch)))
 		}
+
 		api := mux.NewAPI(testRoutes, cfg)
 
 		testCases := []struct {
