@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAddNote(t *testing.T) {
-	mNotesStore := &mockNotesStore{}
+func Test_Create(t *testing.T) {
+	mNotesStore := &mockNotesSvc{}
 	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
@@ -144,7 +144,7 @@ func TestAddNote(t *testing.T) {
 }
 
 func TestGetAllNotes(t *testing.T) {
-	mNotesStore := &mockNotesStore{}
+	mNotesStore := &mockNotesSvc{}
 	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
@@ -212,7 +212,7 @@ func TestGetAllNotes(t *testing.T) {
 }
 
 func TestGetNotesByUserID(t *testing.T) {
-	mNotesStore := &mockNotesStore{}
+	mNotesStore := &mockNotesSvc{}
 	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
@@ -327,7 +327,7 @@ func TestGetNotesByUserID(t *testing.T) {
 }
 
 func TestGetNoteByUserIDandNoteID(t *testing.T) {
-	mNotesStore := &mockNotesStore{}
+	mNotesStore := &mockNotesSvc{}
 	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
@@ -524,7 +524,7 @@ func TestGetNoteByUserIDandNoteID(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	mNotesStore := &mockNotesStore{}
+	mNotesStore := &mockNotesSvc{}
 	hdl := notesgrp.NewHandlers(mNotesStore)
 	logBuf := &bytes.Buffer{}
 	log.SetOutput(logBuf)
