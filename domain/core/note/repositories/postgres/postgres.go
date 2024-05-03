@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -8,17 +9,17 @@ import (
 	"github.com/google/uuid"
 )
 
-type database interface {
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...any) *sql.Row
-	Exec(query string, args ...any) (sql.Result, error)
-}
-
-type noteDB struct {
+type dbNote struct {
 	id      uuid.UUID
 	title   string
 	content string
 	userID  uuid.UUID
+}
+
+type database interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+	Exec(query string, args ...any) (sql.Result, error)
 }
 
 type NoteRepo struct {
@@ -72,12 +73,12 @@ func (nR NoteRepo) Create(n note.Note) error {
 	return nil
 }
 
-func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+func (nR NoteRepo) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, error) {
 	getNoteByID := `
 	SELECT id, title, content, user_id FROM notes WHERE id=$1;
 	`
 	row := nR.db.QueryRow(getNoteByID, noteID)
-	var nDB noteDB
+	var nDB dbNote
 	err := row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -99,9 +100,9 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	}
 	defer rows.Close()
 
-	var notes []noteDB
+	var notes []dbNote
 	for rows.Next() {
-		var nDB noteDB
+		var nDB dbNote
 		err := rows.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
 		if err != nil {
 			return nil, fmt.Errorf("getNotesByUserId: [%s]: scan rows: %w", userID, err)
@@ -121,6 +122,6 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	return ret, nil
 }
 
-func noteDBToNote(nDB noteDB) note.Note {
+func noteDBToNote(nDB dbNote) note.Note {
 	return note.NewNote(nDB.id, nDB.title, nDB.content, nDB.userID)
 }

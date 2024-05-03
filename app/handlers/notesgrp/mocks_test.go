@@ -31,7 +31,7 @@ func (mNS *mockNotesSvc) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error)
 	return args.Get(0).([]note.Note), args.Error(1)
 }
 
-func (mNS *mockNotesSvc) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+func (mNS *mockNotesSvc) QueryByID(noteID uuid.UUID) (note.Note, error) {
 	args := mNS.Called(noteID)
 	return args.Get(0).(note.Note), args.Error(1)
 }

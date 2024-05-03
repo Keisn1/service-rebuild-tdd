@@ -1,12 +1,11 @@
 package note_test
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/core/note"
-	"github.com/Keisn1/note-taking-app/domain/core/note/repositories/memory"
 	"github.com/Keisn1/note-taking-app/domain/core/user"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -25,11 +24,12 @@ func TestNoteService_Delete(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		robsNote := fixtureNotes()[0]
 		noteID := robsNote.GetID()
+		ctx := context.Background()
 
 		err := notesS.Delete(noteID)
 		assert.NoError(t, err)
 
-		_, err = notesS.GetNoteByID(noteID)
+		_, err = notesS.QueryByID(ctx, noteID)
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
 	})
 }
@@ -38,29 +38,32 @@ func TestNoteService_Create(t *testing.T) {
 	t.Run("Throws error if userID not present", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		userID := uuid.New()
+		ctx := context.Background()
 
 		newNote := note.NewUpdateNote("invalid title", "", userID)
-		_, err := notesS.Create(newNote)
+		_, err := notesS.Create(ctx, newNote)
 		assert.Error(t, err)
 	})
 
 	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
 		errorRepo := ErrorNoteRepo{}
-		notesS := note.NewNotesService(errorRepo, user.UserSvc{})
+		notesS := note.NewNotesService(errorRepo, user.Svc{})
+		ctx := context.Background()
 
 		userID := uuid.New()
 		newNote := note.NewUpdateNote("invalid title", "", userID)
-		_, err := notesS.Create(newNote)
+		_, err := notesS.Create(ctx, newNote)
 		assert.Error(t, err)
 	})
 
 	t.Run("I can create a new note", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 
+		ctx := context.Background()
 		userID := uuid.UUID{1}
 		newNote := note.NewUpdateNote("new note title", "new note content", userID)
 
-		got, err := notesS.Create(newNote)
+		got, err := notesS.Create(ctx, newNote)
 		assert.NoError(t, err)
 		assert.NotEqual(t, got.GetID(), uuid.UUID{})
 		assert.Equal(t, "new note title", got.GetTitle().String())
@@ -69,7 +72,8 @@ func TestNoteService_Create(t *testing.T) {
 
 		noteID := got.GetID()
 		want := got
-		got, err = notesS.GetNoteByID(noteID)
+
+		got, err = notesS.QueryByID(ctx, noteID)
 		assert.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
@@ -90,6 +94,7 @@ func TestNoteService_Update(t *testing.T) {
 
 		type testCase struct {
 			name       string
+			ctx        context.Context
 			currNote   note.Note
 			updateNote note.UpdateNote
 			want       note.Note
@@ -128,7 +133,7 @@ func TestNoteService_Update(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // assert that the right note was sent back
 
-				got, err = notesS.GetNoteByID(tc.currNote.GetID())
+				got, err = notesS.QueryByID(tc.ctx, tc.currNote.GetID())
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})
@@ -136,17 +141,26 @@ func TestNoteService_Update(t *testing.T) {
 	})
 }
 
-func TestNoteService_GetNoteByID(t *testing.T) {
+func TestNoteService_QueryByID(t *testing.T) {
 	t.Run("GetNoteByID return error on missing note", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		noteID := uuid.New()
-		_, err := notesS.GetNoteByID(noteID)
+		ctx := context.Background()
+		_, err := notesS.QueryByID(ctx, noteID)
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
+	})
+
+	t.Run("GetNoteByUserID return errors on missing user", func(t *testing.T) {
+		notesS := Setup(t, fixtureNotes())
+		userID := uuid.New()
+		_, err := notesS.GetNotesByUserID(userID)
+		assert.ErrorContains(t, err, fmt.Errorf("getNoteByUserID: [%s]", userID).Error())
 	})
 
 	t.Run("I can get a note by its ID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		type testCase struct {
+			ctx    context.Context
 			noteID uuid.UUID
 			want   note.Note
 		}
@@ -157,19 +171,13 @@ func TestNoteService_GetNoteByID(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, err := notesS.GetNoteByID(tc.noteID)
+			got, err := notesS.QueryByID(tc.ctx, tc.noteID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		}
 	})
-
-	t.Run("GetNoteByUserID return errors on missing user", func(t *testing.T) {
-		notesS := Setup(t, fixtureNotes())
-		userID := uuid.New()
-		_, err := notesS.GetNotesByUserID(userID)
-		assert.ErrorContains(t, err, fmt.Errorf("getNoteByUserID: [%s]", userID).Error())
-	})
 }
+
 func TestNoteService_GetNotesByUserID(t *testing.T) {
 	t.Run("I can get all notes of a User by the userID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
@@ -201,37 +209,4 @@ func TestNoteService_GetNotesByUserID(t *testing.T) {
 			assert.ElementsMatch(t, tc.want, got)
 		}
 	})
-}
-
-func fixtureNotes() []note.Note {
-	return []note.Note{
-		note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1}),
-		note.NewNote(uuid.UUID{2}, "robs 2nd note", "robs 2nd note content", uuid.UUID{1}),
-		note.NewNote(uuid.UUID{3}, "annas 1st note", "annas 1st note content", uuid.UUID{2}),
-		note.NewNote(uuid.UUID{4}, "annas 2nd note", "annas 2nd note content", uuid.UUID{2}),
-	}
-}
-
-func Setup(t *testing.T, notes []note.Note) note.NotesService {
-	t.Helper()
-	notesR, err := memory.NewNotesRepo(notes)
-	assert.NoError(t, err)
-
-	userSvc := StubUserService{ids: make(map[uuid.UUID]struct{})}
-	for _, n := range notes {
-		userSvc.ids[n.UserID] = struct{}{}
-	}
-
-	return note.NewNotesService(notesR, userSvc)
-}
-
-type StubUserService struct {
-	ids map[uuid.UUID]struct{}
-}
-
-func (sus StubUserService) QueryByID(userID uuid.UUID) (user.User, error) {
-	if _, ok := sus.ids[userID]; !ok {
-		return user.User{}, errors.New("User not found")
-	}
-	return user.User{ID: userID}, nil
 }

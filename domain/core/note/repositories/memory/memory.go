@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -8,14 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type NoteRepo struct {
+type Repo struct {
 	notes map[uuid.UUID]note.Note
 }
 
-func NewNotesRepo(notes []note.Note) (NoteRepo, error) {
-	var nR NoteRepo
+func NewRepo(notes []note.Note) (Repo, error) {
+	var nR Repo
 	if err := noDuplicate(notes); err != nil {
-		return NoteRepo{}, fmt.Errorf("newNotesRepo: %w", err)
+		return Repo{}, fmt.Errorf("newNotesRepo: %w", err)
 	}
 
 	nR.notes = make(map[uuid.UUID]note.Note)
@@ -25,15 +26,15 @@ func NewNotesRepo(notes []note.Note) (NoteRepo, error) {
 	return nR, nil
 }
 
-func MustNewNotesRepo(notes []note.Note) NoteRepo {
-	nr, err := NewNotesRepo(notes)
+func MustNewRepo(notes []note.Note) Repo {
+	nr, err := NewRepo(notes)
 	if err != nil {
 		panic(err)
 	}
 	return nr
 }
 
-func (nR NoteRepo) Delete(noteID uuid.UUID) error {
+func (nR Repo) Delete(noteID uuid.UUID) error {
 	if _, ok := nR.notes[noteID]; ok {
 		delete(nR.notes, noteID)
 		return nil
@@ -42,7 +43,7 @@ func (nR NoteRepo) Delete(noteID uuid.UUID) error {
 
 }
 
-func (nR NoteRepo) Create(n note.Note) error {
+func (nR Repo) Create(n note.Note) error {
 	if _, ok := nR.notes[n.GetID()]; ok {
 		return fmt.Errorf("create: already present %s", n.GetID())
 	}
@@ -50,7 +51,7 @@ func (nR NoteRepo) Create(n note.Note) error {
 	return nil
 }
 
-func (nR NoteRepo) Update(note note.Note) error {
+func (nR Repo) Update(note note.Note) error {
 	if _, ok := nR.notes[note.GetID()]; ok {
 		nR.notes[note.GetID()] = note
 		return nil
@@ -58,7 +59,7 @@ func (nR NoteRepo) Update(note note.Note) error {
 	return errors.New("")
 }
 
-func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
+func (nR Repo) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, error) {
 	for _, n := range nR.notes {
 		if n.GetID() == noteID {
 			return n, nil
@@ -67,7 +68,7 @@ func (nR NoteRepo) GetNoteByID(noteID uuid.UUID) (note.Note, error) {
 	return note.Note{}, fmt.Errorf("GetNoteByID: Not found [%s]", noteID)
 }
 
-func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
+func (nR Repo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	var ret []note.Note
 	var found bool
 	for _, n := range nR.notes {

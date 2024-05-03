@@ -23,7 +23,7 @@ func AuthorizeNote(ns note.Service) web.MidHandler {
 			}
 
 			userID := r.Context().Value(foundation.UserIDKey).(uuid.UUID)
-			n, err := ns.GetNoteByID(noteID)
+			n, err := ns.QueryByID(r.Context(), noteID)
 			if err != nil {
 				http.Error(w, "", http.StatusForbidden)
 				return

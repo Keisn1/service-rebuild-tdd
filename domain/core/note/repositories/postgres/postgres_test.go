@@ -1,6 +1,7 @@
 package postgres_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -49,6 +50,7 @@ func TestNotesRepo_Update(t *testing.T) {
 
 		type testCase struct {
 			name string
+			ctx  context.Context
 			n    note.Note
 			want note.Note
 		}
@@ -66,7 +68,7 @@ func TestNotesRepo_Update(t *testing.T) {
 				err := nR.Update(tc.n)
 				assert.NoError(t, err)
 
-				got, err := nR.GetNoteByID(tc.n.GetID())
+				got, err := nR.QueryByID(tc.ctx, tc.n.GetID())
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got)
 			})
@@ -81,18 +83,19 @@ func TestNotesRepo_Delete(t *testing.T) {
 
 	t.Run("Able to delete a note", func(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
+		ctx := context.Background()
 		noteID := uuid.New()
 		nN := note.NewNote(noteID, "title", "content", uuid.UUID{1})
 
 		nR.Create(nN)
-		got, err := nR.GetNoteByID(noteID)
+		got, err := nR.QueryByID(ctx, noteID)
 		assert.NoError(t, err)
 		assert.Equal(t, nN, got)
 
 		err = nR.Delete(noteID)
 		assert.NoError(t, err)
 
-		_, err = nR.GetNoteByID(noteID)
+		_, err = nR.QueryByID(ctx, noteID)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "not found")
 	})
@@ -113,11 +116,12 @@ func TestNotesRepo_Create(t *testing.T) {
 		defer deleteTable()
 		nR := postgres.NewNotesRepo(testDB)
 
+		ctx := context.Background()
 		n := note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1})
 		err := nR.Create(n)
 		assert.NoError(t, err)
 
-		got, err := nR.GetNoteByID(n.GetID())
+		got, err := nR.QueryByID(ctx, n.GetID())
 		assert.NoError(t, err)
 		assert.Equal(t, got, n)
 	})
@@ -144,6 +148,7 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 		nR := postgres.NewNotesRepo(testDB)
 
 		type testCase struct {
+			ctx    context.Context
 			noteID uuid.UUID
 			want   note.Note
 		}
@@ -154,17 +159,18 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, err := nR.GetNoteByID(tc.noteID)
+			got, err := nR.QueryByID(tc.ctx, tc.noteID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		}
 	})
 
 	t.Run("Note not found", func(t *testing.T) {
+		ctx := context.Background()
 		nR := postgres.NewNotesRepo(testDB)
 		noteID := uuid.UUID{}
 
-		_, err := nR.GetNoteByID(noteID)
+		_, err := nR.QueryByID(ctx, noteID)
 		assert.EqualError(t, err, note.ErrNoteNotFound.Error())
 	})
 }
