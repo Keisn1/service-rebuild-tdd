@@ -1,4 +1,4 @@
-package postgres_test
+package notedb_test
 
 import (
 	"database/sql"

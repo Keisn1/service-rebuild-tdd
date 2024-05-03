@@ -1,4 +1,4 @@
-package postgres_test
+package notedb_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/core/note"
-	"github.com/Keisn1/note-taking-app/domain/core/note/repositories/postgres"
+	"github.com/Keisn1/note-taking-app/domain/core/note/repositories/notedb"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
@@ -31,14 +31,14 @@ func TestNotesRepo_Update(t *testing.T) {
 	defer deleteTable()
 
 	t.Run("Given an error received by the DB, the error is forwarded", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(&stubSQLDB{})
+		nR := notedb.NewNotesRepo(&stubSQLDB{})
 		n := note.NewNote(uuid.New(), "", "", uuid.New())
 		err := nR.Update(n)
 		assert.ErrorContains(t, err, fmt.Sprintf("update: [%v]: DBError", n))
 	})
 
 	t.Run("Given a note NOT present in the system, return ErrNoteNotFound", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		n := note.NewNote(uuid.New(), "", "", uuid.New())
 		err := nR.Update(n)
@@ -46,7 +46,7 @@ func TestNotesRepo_Update(t *testing.T) {
 	})
 
 	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		type testCase struct {
 			name string
@@ -82,7 +82,7 @@ func TestNotesRepo_Delete(t *testing.T) {
 	defer deleteTable()
 
 	t.Run("Able to delete a note", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 		ctx := context.Background()
 		noteID := uuid.New()
 		nN := note.NewNote(noteID, "title", "content", uuid.UUID{1})
@@ -100,7 +100,7 @@ func TestNotesRepo_Delete(t *testing.T) {
 		assert.ErrorContains(t, err, "not found")
 	})
 	t.Run("Delete non-present note throws error ", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		noteID := uuid.New()
 		err := nR.Delete(noteID)
@@ -114,7 +114,7 @@ func TestNotesRepo_Create(t *testing.T) {
 		testDB, deleteTable := SetupNotesTable(t, []note.Note{})
 		defer testDB.Close()
 		defer deleteTable()
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		ctx := context.Background()
 		n := note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1})
@@ -130,7 +130,7 @@ func TestNotesRepo_Create(t *testing.T) {
 		testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 		defer testDB.Close()
 		defer deleteTable()
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		n := note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1})
 		err := nR.Create(n)
@@ -139,13 +139,13 @@ func TestNotesRepo_Create(t *testing.T) {
 	})
 }
 
-func TestNotesRepo_GetNoteByID(t *testing.T) {
+func TestNotesRepo_QueryByID(t *testing.T) {
 	testDB, deleteTable := SetupNotesTable(t, fixtureNotes())
 	defer testDB.Close()
 	defer deleteTable()
 
 	t.Run("Happy: get note by id", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		type testCase struct {
 			ctx    context.Context
@@ -167,11 +167,14 @@ func TestNotesRepo_GetNoteByID(t *testing.T) {
 
 	t.Run("Note not found", func(t *testing.T) {
 		ctx := context.Background()
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 		noteID := uuid.UUID{}
 
 		_, err := nR.QueryByID(ctx, noteID)
 		assert.EqualError(t, err, note.ErrNoteNotFound.Error())
+	})
+
+	t.Run("Test for context timeout", func(t *testing.T) {
 	})
 }
 
@@ -181,7 +184,7 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 	defer deleteTable()
 
 	t.Run("Get notes by userID", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 		type testCase struct {
 			userID uuid.UUID
 			want   []note.Note
@@ -211,7 +214,7 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 		}
 	})
 	t.Run("Returns error on missing user", func(t *testing.T) {
-		nR := postgres.NewNotesRepo(testDB)
+		nR := notedb.NewNotesRepo(testDB)
 
 		userID := uuid.UUID{}
 		wantErrMsg := fmt.Sprintf("getNotesByUserID: not found [%s]", userID)
@@ -221,7 +224,7 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 
 	t.Run("Fowards error on database error", func(t *testing.T) {
 		stubDB := &stubSQLDB{}
-		nR := postgres.NewNotesRepo(stubDB)
+		nR := notedb.NewNotesRepo(stubDB)
 
 		userID := uuid.UUID{}
 		wantErr := fmt.Errorf("getNotesByUserID: [%s]: %w", userID, errors.New("DBError"))

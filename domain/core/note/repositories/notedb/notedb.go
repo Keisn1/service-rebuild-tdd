@@ -1,4 +1,4 @@
-package postgres
+package notedb
 
 import (
 	"context"
