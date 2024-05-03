@@ -7,13 +7,24 @@ import (
 )
 
 type User struct {
-	ID    uuid.UUID
-	Name  string
-	Email mail.Address
+	ID           uuid.UUID
+	Name         Name
+	Email        mail.Address
+	PasswordHash []byte
 }
 
 type UpdateUser struct {
-	Name     string
-	Email    mail.Address
+	Name     Name
+	Email    *mail.Address
 	Password string
 }
+
+type Name struct {
+	userName *string
+}
+
+func NewName(un string) Name {
+	return Name{userName: &un}
+}
+
+func (u *User) GetName() Name { return u.Name }
