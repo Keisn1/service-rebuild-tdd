@@ -6,3 +6,4 @@
 /controllers/coverage.out
 /domain/*.out
 *.out
+/.dir-locals.el
