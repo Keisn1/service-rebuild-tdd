@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type NotesServiceI interface {
+type Service interface {
 	Delete(noteID uuid.UUID) error
 	Create(nN UpdateNote) (Note, error)
 	Update(n Note, newN UpdateNote) (Note, error)
@@ -17,10 +17,10 @@ type NotesServiceI interface {
 
 type NotesService struct {
 	notes   NoteRepo
-	userSvc user.UserSvcI
+	userSvc user.Service
 }
 
-func NewNotesService(nR NoteRepo, us user.UserSvcI) NotesService {
+func NewNotesService(nR NoteRepo, us user.Service) NotesService {
 	return NotesService{notes: nR, userSvc: us}
 }
 
@@ -33,6 +33,12 @@ func (ns NotesService) Delete(noteID uuid.UUID) error {
 }
 
 func (ns NotesService) Create(nN UpdateNote) (Note, error) {
+	// MidAuthenticate authenticates user but could still submit
+	// a note with a UserID different from its id
+	if _, err := ns.userSvc.QueryByID(nN.UserID); err != nil {
+		return Note{}, err
+	}
+
 	n := Note{
 		NoteID:  uuid.New(),
 		Title:   nN.Title,

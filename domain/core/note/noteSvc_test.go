@@ -33,6 +33,7 @@ func TestNoteService_Delete(t *testing.T) {
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
 	})
 }
+
 func TestNoteService_Create(t *testing.T) {
 	t.Run("Throws error if userID not present", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
@@ -45,7 +46,7 @@ func TestNoteService_Create(t *testing.T) {
 
 	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
 		errorRepo := ErrorNoteRepo{}
-		notesS := note.NewNotesService(errorRepo)
+		notesS := note.NewNotesService(errorRepo, user.UserSvc{})
 
 		userID := uuid.New()
 		newNote := note.NewUpdateNote("invalid title", "", userID)
@@ -56,7 +57,7 @@ func TestNoteService_Create(t *testing.T) {
 	t.Run("I can create a new note", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 
-		userID := uuid.New()
+		userID := uuid.UUID{1}
 		newNote := note.NewUpdateNote("new note title", "new note content", userID)
 
 		got, err := notesS.Create(newNote)
@@ -215,7 +216,12 @@ func Setup(t *testing.T, notes []note.Note) note.NotesService {
 	t.Helper()
 	notesR, err := memory.NewNotesRepo(notes)
 	assert.NoError(t, err)
-	userSvc := StubUserService{}
+
+	userSvc := StubUserService{ids: make(map[uuid.UUID]struct{})}
+	for _, n := range notes {
+		userSvc.ids[n.UserID] = struct{}{}
+	}
+
 	return note.NewNotesService(notesR, userSvc)
 }
 

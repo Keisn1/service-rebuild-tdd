@@ -27,10 +27,10 @@ import (
 // )
 
 type Handlers struct {
-	notesSvc note.NotesServiceI
+	notesSvc note.Service
 }
 
-func NewHandlers(ns note.NotesServiceI) Handlers {
+func NewHandlers(ns note.Service) Handlers {
 	return Handlers{notesSvc: ns}
 }
 

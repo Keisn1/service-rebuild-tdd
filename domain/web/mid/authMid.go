@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func AuthorizeNote(ns note.NotesServiceI) web.MidHandler {
+func AuthorizeNote(ns note.Service) web.MidHandler {
 	m := func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			noteID, err := uuid.Parse(r.PathValue("note_id"))
@@ -28,6 +28,7 @@ func AuthorizeNote(ns note.NotesServiceI) web.MidHandler {
 				http.Error(w, "", http.StatusForbidden)
 				return
 			}
+
 			if n.GetUserID() != userID {
 				http.Error(w, "", http.StatusForbidden)
 				return

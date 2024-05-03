@@ -8,7 +8,7 @@ type User struct {
 	ID uuid.UUID
 }
 
-type UserSvcI interface {
+type Service interface {
 	QueryByID(userID uuid.UUID) (User, error)
 }
 
