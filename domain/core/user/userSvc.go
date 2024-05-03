@@ -28,7 +28,15 @@ func NewSvc(repo Repo) Service {
 }
 
 func (s Svc) Update(ctx context.Context, u User, newU UpdateUser) (User, error) {
-	return User{Name: newU.Name, Email: newU.Email}, nil
+	if !newU.Name.IsEmpty() {
+		u.Name = newU.Name
+	}
+
+	if !newU.Email.IsEmpty() {
+		u.Email = newU.Email
+	}
+
+	return u, nil
 }
 
 func (s Svc) Create(ctx context.Context, newU UpdateUser) (User, error) {

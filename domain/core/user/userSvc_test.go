@@ -13,13 +13,13 @@ import (
 
 func Test_Update(t *testing.T) {
 	t.Run("Update Name", func(t *testing.T) {
-		u := user.User{ID: uuid.UUID{1}, Name: "rob", Email: mail.Address{Address: "rob@example.com"}}
+		u := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail(mail.Address{Address: "rob@example.com"})}
 
 		users := []user.User{u}
 		svc := user.NewSvc(user.NewRepo(users))
 
 		uu := user.UpdateUser{
-			Name: "robbie",
+			Name: user.NewName("robbie"),
 		}
 
 		updatedU, err := svc.Update(context.Background(), u, uu)
@@ -32,12 +32,12 @@ func Test_Update(t *testing.T) {
 	})
 
 	t.Run("Update Email", func(t *testing.T) {
-		u := user.User{ID: uuid.UUID{1}, Name: "rob", Email: mail.Address{Address: "rob@example.com"}}
+		u := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail(mail.Address{Address: "rob@example.com"})}
 
 		users := []user.User{u}
 		svc := user.NewSvc(user.NewRepo(users))
 
-		uu := user.UpdateUser{Email: mail.Address{Address: "robbie@example.com"}}
+		uu := user.UpdateUser{Email: user.NewEmail(mail.Address{Address: "robbie@example.com"})}
 
 		updatedU, err := svc.Update(context.Background(), u, uu)
 		assert.NoError(t, err)
@@ -61,24 +61,24 @@ func Test_Create(t *testing.T) {
 		testCases := []testCase{
 			{
 				newUser: user.UpdateUser{
-					Name:     "rob",
-					Email:    mail.Address{Address: "rob@example.com"},
+					Name:     user.NewName("rob"),
+					Email:    user.NewEmail(mail.Address{Address: "rob@example.com"}),
 					Password: "password",
 				},
 				wantUser: user.User{
-					Name:  "rob",
-					Email: mail.Address{Address: "rob@example.com"},
+					Name:  user.NewName("rob"),
+					Email: user.NewEmail(mail.Address{Address: "rob@example.com"}),
 				},
 			},
 			{
 				newUser: user.UpdateUser{
-					Name:     "anna",
-					Email:    mail.Address{Address: "anna@example.com"},
+					Name:     user.NewName("anna"),
+					Email:    user.NewEmail(mail.Address{Address: "anna@example.com"}),
 					Password: "passwordAnna",
 				},
 				wantUser: user.User{
-					Name:  "anna",
-					Email: mail.Address{Address: "anna@example.com"},
+					Name:  user.NewName("anna"),
+					Email: user.NewEmail(mail.Address{Address: "anna@example.com"}),
 				},
 			},
 		}
@@ -100,8 +100,8 @@ func Test_Create(t *testing.T) {
 
 	t.Run("Password checking", func(t *testing.T) {
 		newUser := user.UpdateUser{
-			Name:     "rob",
-			Email:    mail.Address{Address: "rob@example.com"},
+			Name:     user.NewName("rob"),
+			Email:    user.NewEmail(mail.Address{Address: "rob@example.com"}),
 			Password: "",
 		}
 
@@ -110,8 +110,8 @@ func Test_Create(t *testing.T) {
 		assert.ErrorContains(t, err, "create")
 
 		newUser = user.UpdateUser{
-			Name:     "rob",
-			Email:    mail.Address{Address: "rob@example.com"},
+			Name:     user.NewName("rob"),
+			Email:    user.NewEmail(mail.Address{Address: "rob@example.com"}),
 			Password: "72727272727272727272727272727272727272727272727272727272727272727272727272",
 		}
 
@@ -124,8 +124,8 @@ func Test_Create(t *testing.T) {
 func Test_QueryByID(t *testing.T) {
 	t.Run("I can get a user by the ID", func(t *testing.T) {
 		users := []user.User{
-			{ID: uuid.UUID{1}, Name: "rob", Email: mail.Address{Address: "rob@example.com"}},
-			{ID: uuid.UUID{2}, Name: "anna", Email: mail.Address{Address: "anna@example.com"}},
+			{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail(mail.Address{Address: "rob@example.com"})},
+			{ID: uuid.UUID{2}, Name: user.NewName("anna"), Email: user.NewEmail(mail.Address{Address: "anna@example.com"})},
 		}
 		svc := user.NewSvc(user.NewRepo(users))
 
@@ -143,8 +143,8 @@ func Test_QueryByID(t *testing.T) {
 				userID: uuid.UUID{1},
 				want: user.User{
 					ID:    uuid.UUID{1},
-					Name:  "rob",
-					Email: mail.Address{Address: "rob@example.com"},
+					Name:  user.NewName("rob"),
+					Email: user.NewEmail(mail.Address{Address: "rob@example.com"}),
 				},
 			},
 			{
@@ -152,8 +152,8 @@ func Test_QueryByID(t *testing.T) {
 				userID: uuid.UUID{2},
 				want: user.User{
 					ID:    uuid.UUID{2},
-					Name:  "anna",
-					Email: mail.Address{Address: "anna@example.com"},
+					Name:  user.NewName("anna"),
+					Email: user.NewEmail(mail.Address{Address: "anna@example.com"}),
 				},
 			},
 			{
