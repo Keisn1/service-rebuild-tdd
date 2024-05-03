@@ -50,7 +50,6 @@ func TestNotesRepo_Update(t *testing.T) {
 
 		type testCase struct {
 			name string
-			ctx  context.Context
 			n    note.Note
 			want note.Note
 		}
@@ -68,7 +67,7 @@ func TestNotesRepo_Update(t *testing.T) {
 				err := nR.Update(tc.n)
 				assert.NoError(t, err)
 
-				got, err := nR.QueryByID(tc.ctx, tc.n.GetID())
+				got, err := nR.QueryByID(context.Background(), tc.n.GetID())
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got)
 			})
@@ -148,7 +147,6 @@ func TestNotesRepo_QueryByID(t *testing.T) {
 		nR := notedb.NewNotesRepo(testDB)
 
 		type testCase struct {
-			ctx    context.Context
 			noteID uuid.UUID
 			want   note.Note
 		}
@@ -159,7 +157,7 @@ func TestNotesRepo_QueryByID(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, err := nR.QueryByID(tc.ctx, tc.noteID)
+			got, err := nR.QueryByID(context.Background(), tc.noteID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		}
@@ -172,9 +170,6 @@ func TestNotesRepo_QueryByID(t *testing.T) {
 
 		_, err := nR.QueryByID(ctx, noteID)
 		assert.EqualError(t, err, note.ErrNoteNotFound.Error())
-	})
-
-	t.Run("Test for context timeout", func(t *testing.T) {
 	})
 }
 

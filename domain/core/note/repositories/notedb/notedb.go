@@ -18,7 +18,7 @@ type dbNote struct {
 
 type database interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...any) *sql.Row
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	Exec(query string, args ...any) (sql.Result, error)
 }
 
@@ -74,10 +74,10 @@ func (nR NoteRepo) Create(n note.Note) error {
 }
 
 func (nR NoteRepo) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, error) {
-	getNoteByID := `
+	queryByIDSqlStmt := `
 	SELECT id, title, content, user_id FROM notes WHERE id=$1;
 	`
-	row := nR.db.QueryRow(getNoteByID, noteID)
+	row := nR.db.QueryRowContext(ctx, queryByIDSqlStmt, noteID)
 	var nDB dbNote
 	err := row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
 	if err != nil {

@@ -11,3 +11,9 @@ type User struct {
 	Name  string
 	Email mail.Address
 }
+
+type UpdateUser struct {
+	Name     string
+	Email    mail.Address
+	Password string
+}

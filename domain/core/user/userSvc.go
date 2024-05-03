@@ -9,6 +9,7 @@ import (
 
 type Service interface {
 	QueryByID(ctx context.Context, userID uuid.UUID) (User, error)
+	Create(ctx context.Context, nu UpdateUser) error
 }
 
 type Repo struct {
@@ -27,12 +28,16 @@ type Svc struct {
 	repo Repo
 }
 
-func NewUserSvc(repo Repo) Service {
+func NewSvc(repo Repo) Service {
 	return Svc{repo: repo}
 }
 
-func (us Svc) QueryByID(ctx context.Context, userID uuid.UUID) (User, error) {
-	if user, ok := us.repo.users[userID]; ok {
+func (s Svc) Create(ctx context.Context, nu UpdateUser) error {
+	return errors.New("")
+}
+
+func (s Svc) QueryByID(ctx context.Context, userID uuid.UUID) (User, error) {
+	if user, ok := s.repo.users[userID]; ok {
 		return user, nil
 	}
 	return User{}, errors.New("user not found")

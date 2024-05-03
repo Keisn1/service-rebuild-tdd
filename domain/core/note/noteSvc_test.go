@@ -24,12 +24,11 @@ func TestNoteService_Delete(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		robsNote := fixtureNotes()[0]
 		noteID := robsNote.GetID()
-		ctx := context.Background()
 
 		err := notesS.Delete(noteID)
 		assert.NoError(t, err)
 
-		_, err = notesS.QueryByID(ctx, noteID)
+		_, err = notesS.QueryByID(context.Background(), noteID)
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
 	})
 }
@@ -38,32 +37,29 @@ func TestNoteService_Create(t *testing.T) {
 	t.Run("Throws error if userID not present", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		userID := uuid.New()
-		ctx := context.Background()
 
 		newNote := note.NewUpdateNote("invalid title", "", userID)
-		_, err := notesS.Create(ctx, newNote)
+		_, err := notesS.Create(context.Background(), newNote)
 		assert.Error(t, err)
 	})
 
 	t.Run("Throws error if repo throws error (given repo.Create is called)", func(t *testing.T) {
 		errorRepo := ErrorNoteRepo{}
 		notesS := note.NewNotesService(errorRepo, user.Svc{})
-		ctx := context.Background()
 
 		userID := uuid.New()
 		newNote := note.NewUpdateNote("invalid title", "", userID)
-		_, err := notesS.Create(ctx, newNote)
+		_, err := notesS.Create(context.Background(), newNote)
 		assert.Error(t, err)
 	})
 
 	t.Run("I can create a new note", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 
-		ctx := context.Background()
 		userID := uuid.UUID{1}
 		newNote := note.NewUpdateNote("new note title", "new note content", userID)
 
-		got, err := notesS.Create(ctx, newNote)
+		got, err := notesS.Create(context.Background(), newNote)
 		assert.NoError(t, err)
 		assert.NotEqual(t, got.GetID(), uuid.UUID{})
 		assert.Equal(t, "new note title", got.GetTitle().String())
@@ -73,28 +69,18 @@ func TestNoteService_Create(t *testing.T) {
 		noteID := got.GetID()
 		want := got
 
-		got, err = notesS.QueryByID(ctx, noteID)
+		got, err = notesS.QueryByID(context.Background(), noteID)
 		assert.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
 }
 
 func TestNoteService_Update(t *testing.T) {
-	// t.Run("Given a note NOT present in the system and a note containing updates for this note, it throws an error", func(t *testing.T) {
-	// 	notesR, err := memory.NewNotesRepo(fixtureNotes())
-	// 	assert.NoError(t, err)
-	// 	notesS := note.NewNotesService(notesR)
-
-	// 	_, err = notesS.Update(note.Note{}, note.UpdateNote{})
-	// 	assert.ErrorContains(t, err, "update: ")
-	// })
-
 	t.Run("Given a note present in the system and a note containing updates for this note, I can update the present note inside the system", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 
 		type testCase struct {
 			name       string
-			ctx        context.Context
 			currNote   note.Note
 			updateNote note.UpdateNote
 			want       note.Note
@@ -133,7 +119,7 @@ func TestNoteService_Update(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // assert that the right note was sent back
 
-				got, err = notesS.QueryByID(tc.ctx, tc.currNote.GetID())
+				got, err = notesS.QueryByID(context.Background(), tc.currNote.GetID())
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})
@@ -145,8 +131,7 @@ func TestNoteService_QueryByID(t *testing.T) {
 	t.Run("GetNoteByID return error on missing note", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		noteID := uuid.New()
-		ctx := context.Background()
-		_, err := notesS.QueryByID(ctx, noteID)
+		_, err := notesS.QueryByID(context.Background(), noteID)
 		assert.ErrorContains(t, err, fmt.Errorf("getNoteByID: [%s]", noteID).Error())
 	})
 
@@ -160,7 +145,6 @@ func TestNoteService_QueryByID(t *testing.T) {
 	t.Run("I can get a note by its ID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		type testCase struct {
-			ctx    context.Context
 			noteID uuid.UUID
 			want   note.Note
 		}
@@ -171,7 +155,7 @@ func TestNoteService_QueryByID(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			got, err := notesS.QueryByID(tc.ctx, tc.noteID)
+			got, err := notesS.QueryByID(context.Background(), tc.noteID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		}

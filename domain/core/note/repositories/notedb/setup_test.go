@@ -40,7 +40,6 @@ func run(m *testing.M) int {
 	}()
 
 	return m.Run()
-
 }
 
 func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {

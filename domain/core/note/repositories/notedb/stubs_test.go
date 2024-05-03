@@ -1,6 +1,7 @@
 package notedb_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 )
@@ -11,7 +12,7 @@ func (s *stubSQLDB) Query(query string, args ...interface{}) (*sql.Rows, error) 
 	return nil, errors.New("DBError")
 }
 
-func (s *stubSQLDB) QueryRow(query string, args ...any) (row *sql.Row) {
+func (s *stubSQLDB) QueryRowContext(ctx context.Context, query string, args ...any) (row *sql.Row) {
 	return
 }
 
