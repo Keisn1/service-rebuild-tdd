@@ -44,6 +44,8 @@ func (s Svc) Update(ctx context.Context, u User, newU UpdateUser) (User, error) 
 		u.PasswordHash = pwHash
 	}
 
+	s.repo.Update(ctx, u)
+
 	return u, nil
 }
 
@@ -79,6 +81,11 @@ func (s Svc) QueryByID(ctx context.Context, userID uuid.UUID) (User, error) {
 
 type Repo struct {
 	users map[uuid.UUID]User
+}
+
+func (r Repo) Update(ctx context.Context, u User) error {
+	r.users[u.ID] = u
+	return nil
 }
 
 func (r Repo) Create(ctx context.Context, u User) error {

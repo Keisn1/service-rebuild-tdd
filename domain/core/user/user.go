@@ -19,10 +19,6 @@ type UpdateUser struct {
 	Password Password
 }
 
-func (u *User) GetName() Name       { return u.Name }
-func (u *User) GetID() uuid.UUID    { return u.ID }
-func (u *UpdateUser) GetName() Name { return u.Name }
-
 type Name struct {
 	name *string
 }

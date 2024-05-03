@@ -2,7 +2,6 @@ package user_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/core/user"
@@ -38,8 +37,11 @@ func Test_Update(t *testing.T) {
 		for _, tc := range testCases {
 			gotU, err := svc.Update(context.Background(), tc.u, tc.uu)
 			assert.NoError(t, err)
-			assert.Equal(t, gotU.Name, tc.wantUser.Name)
-			assert.Equal(t, gotU.Email, tc.wantUser.Email)
+			assert.Equal(t, gotU, tc.wantUser)
+
+			retrievedUser, err := svc.QueryByID(context.Background(), tc.u.ID)
+			assert.NoError(t, err)
+			assert.Equal(t, retrievedUser, tc.wantUser)
 		}
 	})
 
@@ -51,8 +53,6 @@ func Test_Update(t *testing.T) {
 		uu := user.UpdateUser{Password: user.NewPassword("new password")}
 		gotU, err := svc.Update(context.Background(), u, uu)
 		assert.NoError(t, err)
-
-		fmt.Println(uu.Password.String())
 		assert.NoError(t, bcrypt.CompareHashAndPassword(gotU.PasswordHash, []byte(uu.Password.String())))
 	})
 }

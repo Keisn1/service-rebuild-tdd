@@ -23,7 +23,7 @@ func TestNoteService_Delete(t *testing.T) {
 	t.Run("I can delete a note by its ID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		robsNote := fixtureNotes()[0]
-		noteID := robsNote.GetID()
+		noteID := robsNote.NoteID
 
 		err := notesS.Delete(noteID)
 		assert.NoError(t, err)
@@ -62,12 +62,12 @@ func TestNoteService_Create(t *testing.T) {
 
 		got, err := notesS.Create(context.Background(), newNote)
 		assert.NoError(t, err)
-		assert.NotEqual(t, got.GetID(), uuid.UUID{})
-		assert.Equal(t, "new note title", got.GetTitle().String())
-		assert.Equal(t, "new note content", got.GetContent().String())
-		assert.Equal(t, userID, got.GetUserID())
+		assert.NotEqual(t, got.NoteID, uuid.UUID{})
+		assert.Equal(t, "new note title", got.Title.String())
+		assert.Equal(t, "new note content", got.Content.String())
+		assert.Equal(t, userID, got.UserID)
 
-		noteID := got.GetID()
+		noteID := got.NoteID
 		want := got
 
 		got, err = notesS.QueryByID(context.Background(), noteID)
@@ -136,7 +136,7 @@ func TestNoteService_Update(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // assert that the right note was sent back
 
-				got, err = notesS.QueryByID(context.Background(), tc.currNote.GetID())
+				got, err = notesS.QueryByID(context.Background(), tc.currNote.NoteID)
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})

@@ -55,12 +55,12 @@ func (ns NotesService) Create(ctx context.Context, nN UpdateNote) (Note, error) 
 }
 
 func (ns NotesService) Update(n Note, newN UpdateNote) (Note, error) {
-	if !newN.GetTitle().IsEmpty() {
-		n.SetTitle(newN.GetTitle().String())
+	if !newN.Title.IsEmpty() {
+		n.Title = newN.Title
 	}
 
-	if !newN.GetContent().IsEmpty() {
-		n.SetContent(newN.GetContent().String())
+	if !newN.Content.IsEmpty() {
+		n.Content = newN.Content
 	}
 
 	err := ns.repo.Update(n)

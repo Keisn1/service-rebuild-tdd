@@ -25,22 +25,6 @@ type Title struct {
 	title *string
 }
 
-func (n *Note) GetID() uuid.UUID { return n.NoteID }
-
-func (n *Note) SetID(id uuid.UUID) { n.NoteID = id }
-
-func (n *Note) GetTitle() Title       { return n.Title }
-func (n *UpdateNote) GetTitle() Title { return n.Title }
-
-func (n *Note) SetTitle(title string) { n.Title.Set(title) }
-
-func (n *Note) GetContent() Content       { return n.Content }
-func (n *UpdateNote) GetContent() Content { return n.Content }
-
-func (n *Note) SetContent(content string) { n.Content.Set(content) }
-
-func (n *Note) GetUserID() uuid.UUID { return n.UserID }
-
 func NewTitle(title string) Title {
 	return Title{title: &title}
 }
