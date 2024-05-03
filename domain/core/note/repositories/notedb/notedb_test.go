@@ -32,46 +32,28 @@ func TestNotesRepo_Update(t *testing.T) {
 
 	t.Run("Given an error received by the DB, the error is forwarded", func(t *testing.T) {
 		nR := notedb.NewNotesRepo(&stubSQLDB{})
-		n := note.NewNote(uuid.New(), "", "", uuid.New())
+		n := note.Note{NoteID: uuid.New(), Title: note.NewTitle(""), Content: note.NewContent(""), UserID: uuid.New()}
 		err := nR.Update(n)
 		assert.ErrorContains(t, err, fmt.Sprintf("update: [%v]: DBError", n))
 	})
 
 	t.Run("Given a note NOT present in the system, return ErrNoteNotFound", func(t *testing.T) {
 		nR := notedb.NewNotesRepo(testDB)
-
-		n := note.NewNote(uuid.New(), "", "", uuid.New())
+		n := note.Note{NoteID: uuid.New(), Title: note.NewTitle(""), Content: note.NewContent(""), UserID: uuid.New()}
 		err := nR.Update(n)
 		assert.ErrorContains(t, err, note.ErrNoteNotFound.Error())
 	})
 
 	t.Run("Given a note present in the system, I can update its title and its content", func(t *testing.T) {
 		nR := notedb.NewNotesRepo(testDB)
+		n := note.Note{NoteID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent("new content"), UserID: uuid.UUID{1}}
 
-		type testCase struct {
-			name string
-			n    note.Note
-			want note.Note
-		}
+		err := nR.Update(n)
+		assert.NoError(t, err)
 
-		testCases := []testCase{
-			{
-				name: "New Title, 0length content, update of both: 'new title' and '' ",
-				n:    note.NewNote(uuid.UUID{1}, "new title", "new content", uuid.UUID{1}),
-				want: note.NewNote(uuid.UUID{1}, "new title", "new content", uuid.UUID{1}),
-			},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				err := nR.Update(tc.n)
-				assert.NoError(t, err)
-
-				got, err := nR.QueryByID(context.Background(), tc.n.GetID())
-				assert.NoError(t, err)
-				assert.Equal(t, tc.want, got)
-			})
-		}
+		got, err := nR.QueryByID(context.Background(), n.GetID())
+		assert.NoError(t, err)
+		assert.Equal(t, n, got)
 	})
 }
 
@@ -84,12 +66,12 @@ func TestNotesRepo_Delete(t *testing.T) {
 		nR := notedb.NewNotesRepo(testDB)
 		ctx := context.Background()
 		noteID := uuid.New()
-		nN := note.NewNote(noteID, "title", "content", uuid.UUID{1})
+		n := note.Note{NoteID: noteID, Title: note.NewTitle("new title"), Content: note.NewContent("new content"), UserID: uuid.UUID{1}}
 
-		nR.Create(nN)
+		nR.Create(n)
 		got, err := nR.QueryByID(ctx, noteID)
 		assert.NoError(t, err)
-		assert.Equal(t, nN, got)
+		assert.Equal(t, n, got)
 
 		err = nR.Delete(noteID)
 		assert.NoError(t, err)
@@ -116,7 +98,8 @@ func TestNotesRepo_Create(t *testing.T) {
 		nR := notedb.NewNotesRepo(testDB)
 
 		ctx := context.Background()
-		n := note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1})
+		n := note.Note{NoteID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent("new content"), UserID: uuid.UUID{1}}
+
 		err := nR.Create(n)
 		assert.NoError(t, err)
 
@@ -131,7 +114,7 @@ func TestNotesRepo_Create(t *testing.T) {
 		defer deleteTable()
 		nR := notedb.NewNotesRepo(testDB)
 
-		n := note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1})
+		n := note.Note{NoteID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent("new content"), UserID: uuid.UUID{1}}
 		err := nR.Create(n)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, fmt.Sprintf("create: [%s]", n.GetID()))
@@ -152,8 +135,18 @@ func TestNotesRepo_QueryByID(t *testing.T) {
 		}
 
 		testCases := []testCase{
-			{noteID: uuid.UUID{1}, want: note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1})},
-			{noteID: uuid.UUID{3}, want: note.NewNote(uuid.UUID{3}, "annas 1st note", "annas 1st note content", uuid.UUID{2})},
+			{
+				noteID: uuid.UUID{1},
+				want: note.Note{
+					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+				},
+			},
+			{
+				noteID: uuid.UUID{3},
+				want: note.Note{
+					NoteID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2},
+				},
+			},
 		}
 
 		for _, tc := range testCases {
@@ -189,15 +182,15 @@ func TestNotesRepo_GetNotesByUserID(t *testing.T) {
 			{
 				userID: uuid.UUID{1},
 				want: []note.Note{
-					note.NewNote(uuid.UUID{1}, "robs 1st note", "robs 1st note content", uuid.UUID{1}),
-					note.NewNote(uuid.UUID{2}, "robs 2nd note", "robs 2nd note content", uuid.UUID{1}),
+					{NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1}},
+					{NoteID: uuid.UUID{2}, Title: note.NewTitle("robs 2nd note"), Content: note.NewContent("robs 2nd note content"), UserID: uuid.UUID{1}},
 				},
 			},
 			{
 				userID: uuid.UUID{2},
 				want: []note.Note{
-					note.NewNote(uuid.UUID{3}, "annas 1st note", "annas 1st note content", uuid.UUID{2}),
-					note.NewNote(uuid.UUID{4}, "annas 2nd note", "annas 2nd note content", uuid.UUID{2}),
+					{NoteID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2}},
+					{NoteID: uuid.UUID{4}, Title: note.NewTitle("annas 2nd note"), Content: note.NewContent("annas 2nd note content"), UserID: uuid.UUID{2}},
 				},
 			},
 		}

@@ -74,7 +74,6 @@ func (nR Repo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	for _, n := range nR.notes {
 		if n.GetUserID() == userID {
 			found = true
-			n.SetID(uuid.UUID{0})
 			ret = append(ret, n)
 		}
 	}

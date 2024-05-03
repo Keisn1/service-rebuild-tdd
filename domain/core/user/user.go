@@ -16,8 +16,12 @@ type User struct {
 type UpdateUser struct {
 	Name     Name
 	Email    Email
-	Password string
+	Password Password
 }
+
+func (u *User) GetName() Name       { return u.Name }
+func (u *User) GetID() uuid.UUID    { return u.ID }
+func (u *UpdateUser) GetName() Name { return u.Name }
 
 type Name struct {
 	name *string
@@ -26,10 +30,6 @@ type Name struct {
 func NewName(un string) Name {
 	return Name{name: &un}
 }
-
-func (u *User) GetName() Name       { return u.Name }
-func (u *User) GetID() uuid.UUID    { return u.ID }
-func (u *UpdateUser) GetName() Name { return u.Name }
 
 func (n Name) IsEmpty() bool   { return n.name == nil }
 func (n Name) Set(name string) { *n.name = name }
@@ -44,8 +44,8 @@ type Email struct {
 	email *mail.Address
 }
 
-func NewEmail(email mail.Address) Email {
-	return Email{email: &email}
+func NewEmail(email string) Email {
+	return Email{email: &mail.Address{Address: email}}
 }
 func (e Email) IsEmpty() bool          { return e.email == nil }
 func (e Email) Set(email mail.Address) { *e.email = email }
@@ -54,4 +54,21 @@ func (e Email) String() mail.Address {
 		return mail.Address{}
 	}
 	return *e.email
+}
+
+type Password struct {
+	password *string
+}
+
+func NewPassword(un string) Password {
+	return Password{password: &un}
+}
+
+func (p Password) IsEmpty() bool       { return p.password == nil }
+func (p Password) Set(password string) { *p.password = password }
+func (p Password) String() string {
+	if p.IsEmpty() {
+		return ""
+	}
+	return *p.password
 }

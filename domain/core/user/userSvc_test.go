@@ -2,7 +2,7 @@ package user_test
 
 import (
 	"context"
-	"net/mail"
+	"fmt"
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/core/user"
@@ -12,40 +12,48 @@ import (
 )
 
 func Test_Update(t *testing.T) {
-	t.Run("Update Name", func(t *testing.T) {
-		u := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail(mail.Address{Address: "rob@example.com"})}
+	t.Run("Update User Name and Email", func(t *testing.T) {
+		rob := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")}
+		svc := user.NewSvc(user.NewRepo([]user.User{rob}))
 
-		users := []user.User{u}
-		svc := user.NewSvc(user.NewRepo(users))
-
-		uu := user.UpdateUser{
-			Name: user.NewName("robbie"),
+		type testCase struct {
+			u        user.User
+			uu       user.UpdateUser
+			wantUser user.User
 		}
 
-		updatedU, err := svc.Update(context.Background(), u, uu)
-		assert.NoError(t, err)
-		assert.Equal(t, updatedU.Name, uu.Name)
-		assert.Equal(t, updatedU.Name, uu.Name)
+		testCases := []testCase{
+			{
+				u:        user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")},
+				uu:       user.UpdateUser{Name: user.NewName("robbie")},
+				wantUser: user.User{ID: uuid.UUID{1}, Name: user.NewName("robbie"), Email: user.NewEmail("rob@example.com")},
+			},
+			{
+				u:        user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")},
+				uu:       user.UpdateUser{Email: user.NewEmail("robbie@example.com")},
+				wantUser: user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("robbie@example.com")},
+			},
+		}
 
-		assert.Equal(t, updatedU.Email, u.Email)
-		assert.Equal(t, updatedU.Email, u.Email)
+		for _, tc := range testCases {
+			gotU, err := svc.Update(context.Background(), tc.u, tc.uu)
+			assert.NoError(t, err)
+			assert.Equal(t, gotU.Name, tc.wantUser.Name)
+			assert.Equal(t, gotU.Email, tc.wantUser.Email)
+		}
 	})
 
-	t.Run("Update Email", func(t *testing.T) {
-		u := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail(mail.Address{Address: "rob@example.com"})}
+	t.Run("Update Password", func(t *testing.T) {
+		rob := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")}
+		svc := user.NewSvc(user.NewRepo([]user.User{rob}))
 
-		users := []user.User{u}
-		svc := user.NewSvc(user.NewRepo(users))
-
-		uu := user.UpdateUser{Email: user.NewEmail(mail.Address{Address: "robbie@example.com"})}
-
-		updatedU, err := svc.Update(context.Background(), u, uu)
+		u := rob
+		uu := user.UpdateUser{Password: user.NewPassword("new password")}
+		gotU, err := svc.Update(context.Background(), u, uu)
 		assert.NoError(t, err)
-		assert.Equal(t, updatedU.Email, uu.Email)
-		assert.Equal(t, updatedU.Email, uu.Email)
 
-		assert.Equal(t, updatedU.Name, u.Name)
-		assert.Equal(t, updatedU.Name, u.Name)
+		fmt.Println(uu.Password.String())
+		assert.NoError(t, bcrypt.CompareHashAndPassword(gotU.PasswordHash, []byte(uu.Password.String())))
 	})
 }
 
@@ -62,23 +70,23 @@ func Test_Create(t *testing.T) {
 			{
 				newUser: user.UpdateUser{
 					Name:     user.NewName("rob"),
-					Email:    user.NewEmail(mail.Address{Address: "rob@example.com"}),
-					Password: "password",
+					Email:    user.NewEmail("rob@example.com"),
+					Password: user.NewPassword("password"),
 				},
 				wantUser: user.User{
 					Name:  user.NewName("rob"),
-					Email: user.NewEmail(mail.Address{Address: "rob@example.com"}),
+					Email: user.NewEmail("rob@example.com"),
 				},
 			},
 			{
 				newUser: user.UpdateUser{
 					Name:     user.NewName("anna"),
-					Email:    user.NewEmail(mail.Address{Address: "anna@example.com"}),
-					Password: "passwordAnna",
+					Email:    user.NewEmail("anna@example.com"),
+					Password: user.NewPassword("passwordAnna"),
 				},
 				wantUser: user.User{
 					Name:  user.NewName("anna"),
-					Email: user.NewEmail(mail.Address{Address: "anna@example.com"}),
+					Email: user.NewEmail("anna@example.com"),
 				},
 			},
 		}
@@ -90,7 +98,7 @@ func Test_Create(t *testing.T) {
 			assert.NotEqual(t, createdUser.ID, uuid.UUID{})
 			assert.Equal(t, tc.wantUser.Name, createdUser.Name)
 			assert.Equal(t, tc.wantUser.Email, createdUser.Email)
-			assert.NoError(t, bcrypt.CompareHashAndPassword(createdUser.PasswordHash, []byte(tc.newUser.Password)))
+			assert.NoError(t, bcrypt.CompareHashAndPassword(createdUser.PasswordHash, []byte(tc.newUser.Password.String())))
 
 			retrievedUser, err := svc.QueryByID(context.Background(), createdUser.ID)
 			assert.NoError(t, err)
@@ -101,8 +109,8 @@ func Test_Create(t *testing.T) {
 	t.Run("Password checking", func(t *testing.T) {
 		newUser := user.UpdateUser{
 			Name:     user.NewName("rob"),
-			Email:    user.NewEmail(mail.Address{Address: "rob@example.com"}),
-			Password: "",
+			Email:    user.NewEmail("rob@example.com"),
+			Password: user.NewPassword(""),
 		}
 
 		_, err := svc.Create(context.Background(), newUser)
@@ -111,8 +119,8 @@ func Test_Create(t *testing.T) {
 
 		newUser = user.UpdateUser{
 			Name:     user.NewName("rob"),
-			Email:    user.NewEmail(mail.Address{Address: "rob@example.com"}),
-			Password: "72727272727272727272727272727272727272727272727272727272727272727272727272",
+			Email:    user.NewEmail("rob@example.com"),
+			Password: user.NewPassword("72727272727272727272727272727272727272727272727272727272727272727272727272"),
 		}
 
 		_, err = svc.Create(context.Background(), newUser)
@@ -124,8 +132,8 @@ func Test_Create(t *testing.T) {
 func Test_QueryByID(t *testing.T) {
 	t.Run("I can get a user by the ID", func(t *testing.T) {
 		users := []user.User{
-			{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail(mail.Address{Address: "rob@example.com"})},
-			{ID: uuid.UUID{2}, Name: user.NewName("anna"), Email: user.NewEmail(mail.Address{Address: "anna@example.com"})},
+			{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")},
+			{ID: uuid.UUID{2}, Name: user.NewName("anna"), Email: user.NewEmail("anna@example.com")},
 		}
 		svc := user.NewSvc(user.NewRepo(users))
 
@@ -144,7 +152,7 @@ func Test_QueryByID(t *testing.T) {
 				want: user.User{
 					ID:    uuid.UUID{1},
 					Name:  user.NewName("rob"),
-					Email: user.NewEmail(mail.Address{Address: "rob@example.com"}),
+					Email: user.NewEmail("rob@example.com"),
 				},
 			},
 			{
@@ -153,7 +161,7 @@ func Test_QueryByID(t *testing.T) {
 				want: user.User{
 					ID:    uuid.UUID{2},
 					Name:  user.NewName("anna"),
-					Email: user.NewEmail(mail.Address{Address: "anna@example.com"}),
+					Email: user.NewEmail("anna@example.com"),
 				},
 			},
 			{

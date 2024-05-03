@@ -16,7 +16,7 @@ var (
 type Service interface {
 	QueryByID(ctx context.Context, userID uuid.UUID) (User, error)
 	Create(ctx context.Context, nu UpdateUser) (User, error)
-	Update(ctx context.Context, u User, newU UpdateUser) (User, error)
+	Update(ctx context.Context, u User, uu UpdateUser) (User, error)
 }
 
 type Svc struct {
@@ -36,16 +36,25 @@ func (s Svc) Update(ctx context.Context, u User, newU UpdateUser) (User, error) 
 		u.Email = newU.Email
 	}
 
+	if !newU.Password.IsEmpty() {
+		pwHash, err := bcrypt.GenerateFromPassword([]byte(newU.Password.String()), bcrypt.DefaultCost)
+		if err != nil {
+			return User{}, fmt.Errorf("create: %w: %w", ErrInvalidPassword, err)
+		}
+		u.PasswordHash = pwHash
+	}
+
 	return u, nil
 }
 
 func (s Svc) Create(ctx context.Context, newU UpdateUser) (User, error) {
-	if len(newU.Password) == 0 {
+	if len(newU.Password.String()) == 0 {
 		return User{}, fmt.Errorf("create: %w", ErrInvalidPassword)
 	}
 
-	pwHash, err := bcrypt.GenerateFromPassword([]byte(newU.Password), bcrypt.DefaultCost)
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(newU.Password.String()), bcrypt.DefaultCost)
 	if err != nil {
+
 		return User{}, fmt.Errorf("create: %w: %w", ErrInvalidPassword, err)
 	}
 

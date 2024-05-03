@@ -25,23 +25,6 @@ type Title struct {
 	title *string
 }
 
-func NewNote(noteID uuid.UUID, title, content string, userID uuid.UUID) Note {
-	return Note{
-		NoteID:  noteID,
-		Title:   NewTitle(title),
-		Content: NewContent(content),
-		UserID:  userID,
-	}
-}
-
-func NewUpdateNote(title, content string, userID uuid.UUID) UpdateNote {
-	return UpdateNote{
-		Title:   NewTitle(title),
-		Content: NewContent(content),
-		UserID:  userID,
-	}
-}
-
 func (n *Note) GetID() uuid.UUID { return n.NoteID }
 
 func (n *Note) SetID(id uuid.UUID) { n.NoteID = id }
