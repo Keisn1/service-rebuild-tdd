@@ -67,10 +67,10 @@ func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
 	for _, n := range notes {
 		_, err = testDB.Exec(
 			insertRow,
-			n.GetID(),
-			n.GetTitle().String(),
-			n.GetContent().String(),
-			n.GetUserID(),
+			n.ID,
+			n.Title.String(),
+			n.Content.String(),
+			n.UserID,
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -90,9 +90,9 @@ func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
 
 func fixtureNotes() []note.Note {
 	return []note.Note{
-		{NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1}},
-		{NoteID: uuid.UUID{2}, Title: note.NewTitle("robs 2nd note"), Content: note.NewContent("robs 2nd note content"), UserID: uuid.UUID{1}},
-		{NoteID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2}},
-		{NoteID: uuid.UUID{4}, Title: note.NewTitle("annas 2nd note"), Content: note.NewContent("annas 2nd note content"), UserID: uuid.UUID{2}},
+		{ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1}},
+		{ID: uuid.UUID{2}, Title: note.NewTitle("robs 2nd note"), Content: note.NewContent("robs 2nd note content"), UserID: uuid.UUID{1}},
+		{ID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2}},
+		{ID: uuid.UUID{4}, Title: note.NewTitle("annas 2nd note"), Content: note.NewContent("annas 2nd note content"), UserID: uuid.UUID{2}},
 	}
 }

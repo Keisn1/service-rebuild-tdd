@@ -23,7 +23,7 @@ func TestNoteService_Delete(t *testing.T) {
 	t.Run("I can delete a note by its ID", func(t *testing.T) {
 		notesS := Setup(t, fixtureNotes())
 		robsNote := fixtureNotes()[0]
-		noteID := robsNote.NoteID
+		noteID := robsNote.ID
 
 		err := notesS.Delete(noteID)
 		assert.NoError(t, err)
@@ -62,12 +62,12 @@ func TestNoteService_Create(t *testing.T) {
 
 		got, err := notesS.Create(context.Background(), newNote)
 		assert.NoError(t, err)
-		assert.NotEqual(t, got.NoteID, uuid.UUID{})
+		assert.NotEqual(t, got.ID, uuid.UUID{})
 		assert.Equal(t, "new note title", got.Title.String())
 		assert.Equal(t, "new note content", got.Content.String())
 		assert.Equal(t, userID, got.UserID)
 
-		noteID := got.NoteID
+		noteID := got.ID
 		want := got
 
 		got, err = notesS.QueryByID(context.Background(), noteID)
@@ -91,41 +91,41 @@ func TestNoteService_Update(t *testing.T) {
 			{
 				name: "New Title, 0length content, update of both: 'new title' and ''",
 				currNote: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 				updateNote: note.UpdateNote{Title: note.NewTitle("new title"), Content: note.NewContent(""), UserID: uuid.UUID{1}},
 				want: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent(""), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent(""), UserID: uuid.UUID{1},
 				},
 			},
 			{
 				name: "New Title, empty content, will update only title: 'new title'",
 				currNote: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 				updateNote: note.UpdateNote{Title: note.NewTitle("new title"), Content: note.Content{}, UserID: uuid.UUID{1}},
 				want: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("new title"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 			},
 			{
 				name: "0length title, New content, update of both: '' and 'new content'",
 				currNote: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 				updateNote: note.UpdateNote{Title: note.NewTitle(""), Content: note.NewContent("new content"), UserID: uuid.UUID{2}},
 				want: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle(""), Content: note.NewContent("new content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle(""), Content: note.NewContent("new content"), UserID: uuid.UUID{1},
 				},
 			},
 			{
 				name: "empty title, empty content, therefore no update at all",
 				currNote: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 				updateNote: note.UpdateNote{Title: note.Title{}, Content: note.Content{}, UserID: uuid.UUID{2}},
 				want: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 			},
 		}
@@ -136,7 +136,7 @@ func TestNoteService_Update(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // assert that the right note was sent back
 
-				got, err = notesS.QueryByID(context.Background(), tc.currNote.NoteID)
+				got, err = notesS.QueryByID(context.Background(), tc.currNote.ID)
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, got) // asssert that the note can actually be retrieved
 			})
@@ -170,13 +170,13 @@ func TestNoteService_QueryByID(t *testing.T) {
 			{
 				noteID: uuid.UUID{1},
 				want: note.Note{
-					NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
+					ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1},
 				},
 			},
 			{
 				noteID: uuid.UUID{3},
 				want: note.Note{
-					NoteID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2},
+					ID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2},
 				},
 			},
 		}
@@ -201,15 +201,15 @@ func TestNoteService_GetNotesByUserID(t *testing.T) {
 			{
 				userID: uuid.UUID{1},
 				want: []note.Note{
-					{NoteID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1}},
-					{NoteID: uuid.UUID{2}, Title: note.NewTitle("robs 2nd note"), Content: note.NewContent("robs 2nd note content"), UserID: uuid.UUID{1}},
+					{ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1}},
+					{ID: uuid.UUID{2}, Title: note.NewTitle("robs 2nd note"), Content: note.NewContent("robs 2nd note content"), UserID: uuid.UUID{1}},
 				},
 			},
 			{
 				userID: uuid.UUID{2},
 				want: []note.Note{
-					{NoteID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2}},
-					{NoteID: uuid.UUID{4}, Title: note.NewTitle("annas 2nd note"), Content: note.NewContent("annas 2nd note content"), UserID: uuid.UUID{2}},
+					{ID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2}},
+					{ID: uuid.UUID{4}, Title: note.NewTitle("annas 2nd note"), Content: note.NewContent("annas 2nd note content"), UserID: uuid.UUID{2}},
 				},
 			},
 		}

@@ -21,7 +21,7 @@ func NewRepo(notes []note.Note) (Repo, error) {
 
 	nR.notes = make(map[uuid.UUID]note.Note)
 	for _, n := range notes {
-		nR.notes[n.NoteID] = n
+		nR.notes[n.ID] = n
 	}
 	return nR, nil
 }
@@ -44,16 +44,16 @@ func (nR Repo) Delete(noteID uuid.UUID) error {
 }
 
 func (nR Repo) Create(n note.Note) error {
-	if _, ok := nR.notes[n.NoteID]; ok {
-		return fmt.Errorf("create: already present %s", n.NoteID)
+	if _, ok := nR.notes[n.ID]; ok {
+		return fmt.Errorf("create: already present %s", n.ID)
 	}
-	nR.notes[n.NoteID] = n
+	nR.notes[n.ID] = n
 	return nil
 }
 
 func (nR Repo) Update(note note.Note) error {
-	if _, ok := nR.notes[note.NoteID]; ok {
-		nR.notes[note.NoteID] = note
+	if _, ok := nR.notes[note.ID]; ok {
+		nR.notes[note.ID] = note
 		return nil
 	}
 	return errors.New("")
@@ -61,14 +61,14 @@ func (nR Repo) Update(note note.Note) error {
 
 func (nR Repo) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, error) {
 	for _, n := range nR.notes {
-		if n.NoteID == noteID {
+		if n.ID == noteID {
 			return n, nil
 		}
 	}
 	return note.Note{}, fmt.Errorf("GetNoteByID: Not found [%s]", noteID)
 }
 
-func (nR Repo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
+func (nR Repo) QueryByUserID(userID uuid.UUID) ([]note.Note, error) {
 	var ret []note.Note
 	var found bool
 	for _, n := range nR.notes {
@@ -86,10 +86,10 @@ func (nR Repo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 func noDuplicate(notes []note.Note) error {
 	noteIDSet := make(map[uuid.UUID]struct{})
 	for _, n := range notes {
-		if _, ok := noteIDSet[n.NoteID]; ok {
-			return fmt.Errorf("duplicate noteID [%s]", n.NoteID)
+		if _, ok := noteIDSet[n.ID]; ok {
+			return fmt.Errorf("duplicate noteID [%s]", n.ID)
 		}
-		noteIDSet[n.NoteID] = struct{}{}
+		noteIDSet[n.ID] = struct{}{}
 	}
 	return nil
 }

@@ -21,7 +21,7 @@ import (
 func Test_Authorize(t *testing.T) {
 	userID := uuid.New()
 	noteID := uuid.New()
-	n := note.NewNote(noteID, "", "", userID)
+	n := note.Note{ID: noteID, Title: note.NewTitle(""), Content: note.NewContent(""), UserID: userID}
 	sns := &StubNoteService{notes: map[uuid.UUID]note.Note{noteID: n}}
 	midAuthorize := mid.AuthorizeNote(sns)
 

@@ -212,5 +212,5 @@ func handleError(w http.ResponseWriter, errMsg string, status int, logMsg string
 }
 
 func toUpdateNote(np api.NotePost, userID uuid.UUID) note.UpdateNote {
-	return note.NewUpdateNote(np.Title, np.Content, userID)
+	return note.UpdateNote{Title: note.NewTitle(np.Title), Content: note.NewContent(np.Content), UserID: userID}
 }

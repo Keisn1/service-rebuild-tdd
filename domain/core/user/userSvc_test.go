@@ -5,15 +5,51 @@ import (
 	"testing"
 
 	"github.com/Keisn1/note-taking-app/domain/core/user"
+	"github.com/Keisn1/note-taking-app/domain/core/user/repositories/memory"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
 
+func Test_Delete(t *testing.T) {
+	t.Run("Deletion success", func(t *testing.T) {
+		rob := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")}
+		svc := user.NewSvc(memory.NewRepo([]user.User{rob}))
+
+		got, err := svc.QueryByID(context.Background(), rob.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, rob, got)
+
+		err = svc.Delete(context.Background(), rob.ID)
+		assert.NoError(t, err)
+
+		_, err = svc.QueryByID(context.Background(), rob.ID)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "user not found")
+	})
+
+	t.Run("Error if userID not present", func(t *testing.T) {
+		svc := user.NewSvc(memory.NewRepo([]user.User{}))
+
+		err := svc.Delete(context.Background(), uuid.New())
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "delete")
+	})
+}
+
 func Test_Update(t *testing.T) {
+	t.Run("Error if user not present", func(t *testing.T) {
+		svc := user.NewSvc(memory.NewRepo([]user.User{}))
+		u := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")}
+		uu := user.UpdateUser{Name: user.NewName("robbie")}
+
+		_, err := svc.Update(context.Background(), u, uu)
+		assert.Error(t, err)
+	})
+
 	t.Run("Update User Name and Email", func(t *testing.T) {
 		rob := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")}
-		svc := user.NewSvc(user.NewRepo([]user.User{rob}))
+		svc := user.NewSvc(memory.NewRepo([]user.User{rob}))
 
 		type testCase struct {
 			u        user.User
@@ -47,18 +83,22 @@ func Test_Update(t *testing.T) {
 
 	t.Run("Update Password", func(t *testing.T) {
 		rob := user.User{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")}
-		svc := user.NewSvc(user.NewRepo([]user.User{rob}))
+		svc := user.NewSvc(memory.NewRepo([]user.User{rob}))
 
 		u := rob
 		uu := user.UpdateUser{Password: user.NewPassword("new password")}
 		gotU, err := svc.Update(context.Background(), u, uu)
 		assert.NoError(t, err)
 		assert.NoError(t, bcrypt.CompareHashAndPassword(gotU.PasswordHash, []byte(uu.Password.String())))
+
+		retrievedUser, err := svc.QueryByID(context.Background(), u.ID)
+		assert.NoError(t, err)
+		assert.NoError(t, bcrypt.CompareHashAndPassword(retrievedUser.PasswordHash, []byte(uu.Password.String())))
 	})
 }
 
 func Test_Create(t *testing.T) {
-	svc := user.NewSvc(user.NewRepo([]user.User{}))
+	svc := user.NewSvc(memory.NewRepo([]user.User{}))
 
 	t.Run("Happy paths", func(t *testing.T) {
 		type testCase struct {
@@ -135,7 +175,7 @@ func Test_QueryByID(t *testing.T) {
 			{ID: uuid.UUID{1}, Name: user.NewName("rob"), Email: user.NewEmail("rob@example.com")},
 			{ID: uuid.UUID{2}, Name: user.NewName("anna"), Email: user.NewEmail("anna@example.com")},
 		}
-		svc := user.NewSvc(user.NewRepo(users))
+		svc := user.NewSvc(memory.NewRepo(users))
 
 		type testCase struct {
 			name          string

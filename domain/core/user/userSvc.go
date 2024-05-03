@@ -17,6 +17,7 @@ type Service interface {
 	QueryByID(ctx context.Context, userID uuid.UUID) (User, error)
 	Create(ctx context.Context, nu UpdateUser) (User, error)
 	Update(ctx context.Context, u User, uu UpdateUser) (User, error)
+	Delete(ctx context.Context, userID uuid.UUID) error
 }
 
 type Svc struct {
@@ -28,6 +29,11 @@ func NewSvc(repo Repo) Service {
 }
 
 func (s Svc) Update(ctx context.Context, u User, newU UpdateUser) (User, error) {
+	_, err := s.repo.QueryByID(ctx, u.ID)
+	if err != nil {
+		return User{}, err
+	}
+
 	if !newU.Name.IsEmpty() {
 		u.Name = newU.Name
 	}
@@ -47,6 +53,13 @@ func (s Svc) Update(ctx context.Context, u User, newU UpdateUser) (User, error) 
 	s.repo.Update(ctx, u)
 
 	return u, nil
+}
+
+func (s Svc) Delete(ctx context.Context, userID uuid.UUID) error {
+	if err := s.repo.Delete(ctx, userID); err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+	return nil
 }
 
 func (s Svc) Create(ctx context.Context, newU UpdateUser) (User, error) {
@@ -77,33 +90,4 @@ func (s Svc) QueryByID(ctx context.Context, userID uuid.UUID) (User, error) {
 		return User{}, fmt.Errorf("queryByID: %w", err)
 	}
 	return u, nil
-}
-
-type Repo struct {
-	users map[uuid.UUID]User
-}
-
-func (r Repo) Update(ctx context.Context, u User) error {
-	r.users[u.ID] = u
-	return nil
-}
-
-func (r Repo) Create(ctx context.Context, u User) error {
-	r.users[u.ID] = u
-	return nil
-}
-
-func (r Repo) QueryByID(ctx context.Context, userID uuid.UUID) (User, error) {
-	if user, ok := r.users[userID]; ok {
-		return user, nil
-	}
-	return User{}, errors.New("user not found")
-}
-
-func NewRepo(users []User) Repo {
-	us := make(map[uuid.UUID]User)
-	for _, u := range users {
-		us[u.ID] = u
-	}
-	return Repo{users: us}
 }

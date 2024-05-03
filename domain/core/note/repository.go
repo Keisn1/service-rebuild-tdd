@@ -16,5 +16,5 @@ type Repo interface {
 	Create(n Note) error
 	Update(note Note) error
 	QueryByID(ctx context.Context, noteID uuid.UUID) (Note, error)
-	GetNotesByUserID(userID uuid.UUID) ([]Note, error)
+	QueryByUserID(userID uuid.UUID) ([]Note, error)
 }

@@ -29,7 +29,7 @@ func AuthorizeNote(ns note.Service) web.MidHandler {
 				return
 			}
 
-			if n.GetUserID() != userID {
+			if n.UserID != userID {
 				http.Error(w, "", http.StatusForbidden)
 				return
 			}

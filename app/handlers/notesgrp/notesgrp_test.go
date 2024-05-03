@@ -66,13 +66,13 @@ func Test_Create(t *testing.T) {
 			userID: uuid.New(),
 			body:   api.NotePost{Title: "test title", Content: "test content"},
 			mNSP: func(userID uuid.UUID, body api.NotePost) mockNotesStoreParams {
-				updateN := note.NewUpdateNote(body.Title, body.Content, userID)
-				returnN := note.NewNote(uuid.UUID{1}, body.Title, body.Content, userID)
+				updateN := note.UpdateNote{Title: note.NewTitle(body.Title), Content: note.NewContent(body.Content), UserID: userID}
+				returnN := note.Note{ID: uuid.UUID{1}, Title: note.NewTitle(body.Title), Content: note.NewContent(body.Content), UserID: userID}
 				return mockNotesStoreParams{method: "Create", arguments: []any{updateN}, returnArguments: []any{returnN, nil}}
 			},
 			wantStatus: http.StatusAccepted,
 			wantBody: func(userID uuid.UUID, body api.NotePost) string {
-				return mustEncode(t, note.NewNote(uuid.UUID{1}, body.Title, body.Content, userID))
+				return mustEncode(t, note.Note{ID: uuid.UUID{1}, Title: note.NewTitle(body.Title), Content: note.NewContent(body.Content), UserID: userID})
 			},
 			wantLogging: func(userID uuid.UUID, body api.NotePost) []string {
 				return []string{

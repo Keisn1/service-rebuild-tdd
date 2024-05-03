@@ -41,7 +41,7 @@ func (ns NotesService) Create(ctx context.Context, nN UpdateNote) (Note, error) 
 	}
 
 	n := Note{
-		NoteID:  uuid.New(),
+		ID:      uuid.New(),
 		Title:   nN.Title,
 		Content: nN.Content,
 		UserID:  nN.UserID,
@@ -79,7 +79,7 @@ func (nS NotesService) QueryByID(ctx context.Context, noteID uuid.UUID) (Note, e
 }
 
 func (nS NotesService) GetNotesByUserID(userID uuid.UUID) ([]Note, error) {
-	notes, err := nS.repo.GetNotesByUserID(userID)
+	notes, err := nS.repo.QueryByUserID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("getNoteByUserID: [%s]: %w", userID, err)
 	}

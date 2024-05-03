@@ -1,6 +1,8 @@
 package notesgrp_test
 
 import (
+	"context"
+
 	"github.com/Keisn1/note-taking-app/domain/core/note"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -31,7 +33,7 @@ func (mNS *mockNotesSvc) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error)
 	return args.Get(0).([]note.Note), args.Error(1)
 }
 
-func (mNS *mockNotesSvc) QueryByID(noteID uuid.UUID) (note.Note, error) {
+func (mNS *mockNotesSvc) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, error) {
 	args := mNS.Called(noteID)
 	return args.Get(0).(note.Note), args.Error(1)
 }

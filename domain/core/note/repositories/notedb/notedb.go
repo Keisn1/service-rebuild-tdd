@@ -35,7 +35,7 @@ func (nR NoteRepo) Update(n note.Note) error {
 	UPDATE notes
 	SET title = $1, content = $2 WHERE id=$3 `
 
-	res, err := nR.db.Exec(updateRow, n.GetTitle().String(), n.GetContent().String(), n.GetID())
+	res, err := nR.db.Exec(updateRow, n.Title.String(), n.Content.String(), n.ID)
 	if err != nil {
 		return fmt.Errorf("update: [%v]: %w", n, err)
 	}
@@ -61,13 +61,13 @@ func (nR NoteRepo) Create(n note.Note) error {
 	insertRow := `INSERT INTO notes (id, title, content, user_id) VALUES ($1, $2, $3, $4)`
 	_, err := nR.db.Exec(
 		insertRow,
-		n.GetID(),
-		n.GetTitle().String(),
-		n.GetContent().String(),
-		n.GetUserID(),
+		n.ID,
+		n.Title.String(),
+		n.Content.String(),
+		n.UserID,
 	)
 	if err != nil {
-		return fmt.Errorf("create: [%s]", n.GetID())
+		return fmt.Errorf("create: [%s]", n.ID)
 	}
 
 	return nil
@@ -124,7 +124,7 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 
 func noteDBToNote(nDB dbNote) note.Note {
 	return note.Note{
-		NoteID:  nDB.id,
+		ID:      nDB.id,
 		Title:   note.NewTitle(nDB.title),
 		Content: note.NewContent(nDB.content),
 		UserID:  nDB.userID,

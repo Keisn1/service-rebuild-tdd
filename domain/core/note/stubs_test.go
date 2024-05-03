@@ -19,7 +19,7 @@ func (nR ErrorNoteRepo) Update(note note.Note) error   { return nil }
 func (nR ErrorNoteRepo) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, error) {
 	return note.Note{}, nil
 }
-func (nR ErrorNoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) { return nil, nil }
+func (nR ErrorNoteRepo) QueryByUserID(userID uuid.UUID) ([]note.Note, error) { return nil, nil }
 
 type StubUserService struct {
 	ids map[uuid.UUID]struct{}

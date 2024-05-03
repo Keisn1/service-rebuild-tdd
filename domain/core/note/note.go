@@ -5,7 +5,7 @@ import (
 )
 
 type Note struct {
-	NoteID  uuid.UUID
+	ID      uuid.UUID
 	Title   Title
 	Content Content
 	UserID  uuid.UUID
