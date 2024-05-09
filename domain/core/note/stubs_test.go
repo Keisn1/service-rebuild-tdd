@@ -38,3 +38,5 @@ func (sus StubUserService) Create(ctx context.Context, uu user.UpdateUser) (user
 func (sus StubUserService) Update(ctx context.Context, u user.User, uu user.UpdateUser) (user.User, error) {
 	return user.User{}, nil
 }
+
+func (sus StubUserService) Delete(ctx context.Context, userID uuid.UUID) error

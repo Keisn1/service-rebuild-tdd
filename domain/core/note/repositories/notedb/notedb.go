@@ -9,11 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type dbNote struct {
-	id      uuid.UUID
-	title   string
-	content string
-	userID  uuid.UUID
+type DBNote struct {
+	ID      uuid.UUID
+	Title   string
+	Content string
+	UserID  uuid.UUID
 }
 
 type database interface {
@@ -78,8 +78,8 @@ func (nR NoteRepo) QueryByID(ctx context.Context, noteID uuid.UUID) (note.Note, 
 	SELECT id, title, content, user_id FROM notes WHERE id=$1;
 	`
 	row := nR.db.QueryRowContext(ctx, queryByIDSqlStmt, noteID)
-	var nDB dbNote
-	err := row.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
+	var nDB DBNote
+	err := row.Scan(&nDB.ID, &nDB.Title, &nDB.Content, &nDB.UserID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return note.Note{}, note.ErrNoteNotFound
@@ -100,10 +100,10 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	}
 	defer rows.Close()
 
-	var notes []dbNote
+	var notes []DBNote
 	for rows.Next() {
-		var nDB dbNote
-		err := rows.Scan(&nDB.id, &nDB.title, &nDB.content, &nDB.userID)
+		var nDB DBNote
+		err := rows.Scan(&nDB.ID, &nDB.Title, &nDB.Content, &nDB.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("getNotesByUserId: [%s]: scan rows: %w", userID, err)
 		}
@@ -122,11 +122,11 @@ func (nR NoteRepo) GetNotesByUserID(userID uuid.UUID) ([]note.Note, error) {
 	return ret, nil
 }
 
-func noteDBToNote(nDB dbNote) note.Note {
+func noteDBToNote(nDB DBNote) note.Note {
 	return note.Note{
-		ID:      nDB.id,
-		Title:   note.NewTitle(nDB.title),
-		Content: note.NewContent(nDB.content),
-		UserID:  nDB.userID,
+		ID:      nDB.ID,
+		Title:   note.NewTitle(nDB.Title),
+		Content: note.NewContent(nDB.Content),
+		UserID:  nDB.UserID,
 	}
 }

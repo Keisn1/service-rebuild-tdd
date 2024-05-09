@@ -5,8 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Keisn1/note-taking-app/domain/core/note"
+	"github.com/Keisn1/note-taking-app/domain/core/note/repositories/notedb"
 	"github.com/google/uuid"
+)
+
+const (
+	testDBName   = "test_note_taking_app"
+	testUser     = "postgres"
+	testPassword = "password"
 )
 
 func run(m *testing.M) int {
@@ -42,7 +48,7 @@ func run(m *testing.M) int {
 	return m.Run()
 }
 
-func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
+func SetupNotesTable(t *testing.T, notes []notedb.DBNote) (*sql.DB, func()) {
 	var (
 		createNoteTable = `CREATE TABLE notes(
 							id UUID PRIMARY KEY,
@@ -68,8 +74,8 @@ func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
 		_, err = testDB.Exec(
 			insertRow,
 			n.ID,
-			n.Title.String(),
-			n.Content.String(),
+			n.Title,
+			n.Content,
 			n.UserID,
 		)
 		if err != nil {
@@ -88,11 +94,11 @@ func SetupNotesTable(t *testing.T, notes []note.Note) (*sql.DB, func()) {
 	return testDB, deleteTable
 }
 
-func fixtureNotes() []note.Note {
-	return []note.Note{
-		{ID: uuid.UUID{1}, Title: note.NewTitle("robs 1st note"), Content: note.NewContent("robs 1st note content"), UserID: uuid.UUID{1}},
-		{ID: uuid.UUID{2}, Title: note.NewTitle("robs 2nd note"), Content: note.NewContent("robs 2nd note content"), UserID: uuid.UUID{1}},
-		{ID: uuid.UUID{3}, Title: note.NewTitle("annas 1st note"), Content: note.NewContent("annas 1st note content"), UserID: uuid.UUID{2}},
-		{ID: uuid.UUID{4}, Title: note.NewTitle("annas 2nd note"), Content: note.NewContent("annas 2nd note content"), UserID: uuid.UUID{2}},
+func fixtureNotes() []notedb.DBNote {
+	return []notedb.DBNote{
+		{ID: uuid.UUID{1}, Title: "robs 1st note", Content: "robs 1st note content", UserID: uuid.UUID{1}},
+		{ID: uuid.UUID{2}, Title: "robs 2nd note", Content: "robs 2nd note content", UserID: uuid.UUID{1}},
+		{ID: uuid.UUID{3}, Title: "annas 1st note", Content: "annas 1st note content", UserID: uuid.UUID{2}},
+		{ID: uuid.UUID{4}, Title: "annas 2nd note", Content: "annas 2nd note content", UserID: uuid.UUID{2}},
 	}
 }

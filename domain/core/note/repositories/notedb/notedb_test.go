@@ -14,12 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	testDBName   = "test_note_taking_app"
-	testUser     = "postgres"
-	testPassword = "password"
-)
-
 func TestMain(m *testing.M) {
 	exitCode := run(m)
 	os.Exit(exitCode)
@@ -92,7 +86,7 @@ func TestNotesRepo_Delete(t *testing.T) {
 
 func TestNotesRepo_Create(t *testing.T) {
 	t.Run("Add a note", func(t *testing.T) {
-		testDB, deleteTable := SetupNotesTable(t, []note.Note{})
+		testDB, deleteTable := SetupNotesTable(t, []notedb.DBNote{})
 		defer testDB.Close()
 		defer deleteTable()
 		nR := notedb.NewNotesRepo(testDB)
