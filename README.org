@@ -1,7 +1,7 @@
 #+title: Readme
 
 * Project Title
-This project README contains build and usage instructions for a note-taking application.
+This Repo is a try to rebuild the [[https://github.com/ardanlabs/service][Service - Repo from ArdanLabs]], in an effort to learn more about Go, Domain-Driven architecture, Kubernnetes and others.
 
 ** Setting Up Environment Variables
 
@@ -50,6 +50,3 @@ To stop the service, run:
 docker-compose down
 #+end_src
 
-** Maintainer
-
-For any questions or issues, contact the maintainer at =<kay@kayarch>=.
